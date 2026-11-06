@@ -1,0 +1,158 @@
+@import "tailwindcss" source(none);
+@source "../templates";
+
+/* The theme is switched by a class on <html>, set by theme.js from the saved choice or the system setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* The few parts of the interface that repeat everywhere. Each one is written out in full, not built from the others. */
+@layer components {
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+  }
+  .field {
+    @apply mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 disabled:opacity-50 dark:focus-visible:ring-offset-slate-950;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:ring-offset-slate-950;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:opacity-50 dark:focus-visible:ring-offset-slate-950;
+  }
+  .alert-error {
+    @apply flex gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200;
+  }
+  .alert-ok {
+    @apply flex gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200;
+  }
+  .nav-link {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white;
+  }
+  .nav-link[aria-current="page"] {
+    @apply bg-teal-50 text-teal-800 dark:bg-teal-950/60 dark:text-teal-200;
+  }
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900;
+  }
+  .tbl {
+    @apply w-full text-left text-sm;
+  }
+  .tbl thead {
+    @apply bg-slate-50 text-xs tracking-wide text-slate-500 uppercase dark:bg-slate-800/50 dark:text-slate-400;
+  }
+  .tbl th,
+  .tbl td {
+    @apply px-4 py-3 align-middle;
+  }
+  .tbl tbody tr {
+    @apply border-t border-slate-200 dark:border-slate-800;
+  }
+  .badge-gray {
+    @apply inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700;
+  }
+  .badge-teal {
+    @apply inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-800 ring-1 ring-teal-200 ring-inset dark:bg-teal-950/60 dark:text-teal-200 dark:ring-teal-900;
+  }
+  .badge-amber {
+    @apply inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200 ring-inset dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-900;
+  }
+  .badge-rose {
+    @apply inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800 ring-1 ring-rose-200 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-900;
+  }
+  .link {
+    @apply font-medium text-teal-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-teal-400;
+  }
+  .link-danger {
+    @apply font-medium text-rose-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:text-rose-400;
+  }
+  .btn-sm {
+    @apply inline-flex items-center rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+  }
+  .hint {
+    @apply mt-1 text-xs text-slate-500 dark:text-slate-400;
+  }
+  .h-page {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  .h-section {
+    @apply text-base font-semibold;
+  }
+  .tab {
+    @apply -mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-3.5 py-2.5 text-sm font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-white;
+  }
+  .tab[aria-current="page"] {
+    @apply border-teal-600 text-teal-700 dark:border-teal-400 dark:text-teal-300;
+  }
+  .alert-warn {
+    @apply flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200;
+  }
+
+  /* File manager */
+  .tool-btn {
+    @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-slate-700 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:pointer-events-none disabled:opacity-40 dark:text-slate-200 dark:hover:bg-slate-800;
+  }
+  .tool-btn-main {
+    @apply inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-white shadow-sm hover:bg-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900;
+  }
+  .tool-btn-danger {
+    @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium whitespace-nowrap text-rose-700 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:text-rose-300 dark:hover:bg-rose-950/40;
+  }
+  .ico-btn {
+    @apply grid size-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white;
+  }
+  .ico-btn-danger {
+    @apply grid size-8 place-items-center rounded-md text-slate-500 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:text-slate-400 dark:hover:bg-rose-950/40 dark:hover:text-rose-300;
+  }
+  .fm-check {
+    @apply size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 dark:border-slate-600 dark:bg-slate-900;
+  }
+  .fm-th {
+    @apply px-3 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400;
+  }
+  .fm-sort {
+    @apply inline-flex items-center gap-1 rounded text-xs font-semibold tracking-wide uppercase hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:hover:text-white;
+  }
+  .fm-row {
+    @apply border-t border-slate-100 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40;
+  }
+  .fm-row[data-selected="1"] {
+    @apply bg-teal-50 hover:bg-teal-50 dark:bg-teal-950/30 dark:hover:bg-teal-950/30;
+  }
+  .fm-dialog {
+    @apply m-auto w-[min(34rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+  }
+  .fm-menu {
+    @apply fixed z-50 outline-none focus:outline-none min-w-[13rem] rounded-xl border border-slate-200 bg-white p-1 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+  }
+  .fm-mi {
+    @apply flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:bg-slate-800;
+  }
+  .fm-mi svg {
+    @apply text-slate-500 dark:text-slate-400;
+  }
+  .fm-mi-danger {
+    @apply text-rose-700 hover:bg-rose-50 focus:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40 dark:focus:bg-rose-950/40;
+  }
+  .fm-mi-danger svg {
+    @apply text-rose-500;
+  }
+  .fm-sep {
+    @apply my-1 border-slate-200 dark:border-slate-700;
+  }
+  .fm-drop {
+    @apply flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-600 dark:border-slate-700 dark:text-slate-400;
+  }
+  .fm-drop[data-over="1"] {
+    @apply border-teal-500 bg-teal-50 text-teal-800 dark:border-teal-400 dark:bg-teal-950/30 dark:text-teal-200;
+  }
+}

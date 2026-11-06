@@ -1,0 +1,109 @@
+{{define "filedialogs"}}
+{{/* One dialog for each kind of action. The script fills in the title, the target and the names; each one is a plain form that posts to the panel. */}}
+<dialog id="dlg-name" class="fm-dialog" aria-labelledby="dlg-name-title">
+  <form method="post" action="" class="p-6" id="dlg-name-form">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}"><input type="hidden" name="path" value="" id="dlg-name-path">
+    <h2 id="dlg-name-title" class="h-section"></h2>
+    <label for="dlg-name-input" class="label mt-4">{{T "fm.name"}}</label>
+    <input id="dlg-name-input" name="name" class="field font-mono" required maxlength="255" autocomplete="off" spellcheck="false">
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" data-close>{{T "c.cancel"}}</button>
+      <button class="btn-primary" id="dlg-name-ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-zip" class="fm-dialog" aria-labelledby="dlg-zip-title">
+  <form method="post" action="/sites/{{.Site.Name}}/files/zip" class="p-6" id="dlg-zip-form">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}">
+    <h2 id="dlg-zip-title" class="h-section">{{T "fm.zip.title"}}</h2>
+    <p id="dlg-zip-list" class="mt-2 max-h-32 overflow-y-auto font-mono text-xs break-all text-slate-600 dark:text-slate-400"></p>
+    <label for="dlg-zip-name" class="label mt-4">{{T "fm.zipname"}}</label>
+    <input id="dlg-zip-name" name="zipname" class="field font-mono" value="archive.zip" required maxlength="255" autocomplete="off" spellcheck="false">
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" data-close>{{T "c.cancel"}}</button>
+      <button class="btn-primary">{{T "fm.zip.btn"}}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-unzip" class="fm-dialog" aria-labelledby="dlg-unzip-title">
+  <form method="post" action="/sites/{{.Site.Name}}/files/unzip" class="p-6">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}"><input type="hidden" name="zip" value="" id="dlg-unzip-zip">
+    <h2 id="dlg-unzip-title" class="h-section">{{T "fm.unzip.title"}}</h2>
+    <p class="mt-2 font-mono text-sm break-all" id="dlg-unzip-name"></p>
+    <p class="hint">{{T "fm.unzip.into"}}</p>
+    <label class="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" name="overwrite" class="fm-check"><span>{{T "fm.unzip.over"}}</span></label>
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" data-close>{{T "c.cancel"}}</button>
+      <button class="btn-primary">{{T "fm.unzip"}}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-delete" class="fm-dialog" aria-labelledby="dlg-delete-title">
+  <form method="post" action="/sites/{{.Site.Name}}/files/delete" class="p-6">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}"><input type="hidden" name="items" value="" id="dlg-delete-items">
+    <h2 id="dlg-delete-title" class="h-section"></h2>
+    <ul id="dlg-delete-list" class="mt-3 max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-3 font-mono text-[13px] dark:border-slate-700"></ul>
+    <p class="alert-warn mt-4">{{T "fm.delete.warn"}}</p>
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" data-close>{{T "c.cancel"}}</button>
+      <button class="btn-danger">{{T "fm.delete.btn"}}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-chmod" class="fm-dialog" aria-labelledby="dlg-chmod-title">
+  <form method="post" action="/sites/{{.Site.Name}}/files/chmod" class="p-6" id="dlg-chmod-form">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}">
+    <h2 id="dlg-chmod-title" class="h-section">{{T "fm.chmod.title"}}</h2>
+    <p id="dlg-chmod-list" class="mt-2 max-h-20 overflow-y-auto font-mono text-xs break-all text-slate-600 dark:text-slate-400"></p>
+    <table class="mt-4 w-full text-sm">
+      <thead><tr class="text-xs text-slate-500 dark:text-slate-400"><th class="py-1 text-left font-medium"></th><th class="font-medium">{{T "fm.perm.r"}}</th><th class="font-medium">{{T "fm.perm.w"}}</th><th class="font-medium">{{T "fm.perm.x"}}</th></tr></thead>
+      <tbody>
+        <tr class="border-t border-slate-100 dark:border-slate-800"><th class="py-2 text-left font-medium">{{T "fm.perm.owner"}}</th><td class="text-center"><input type="checkbox" class="fm-check" data-bit="400" aria-label="{{T "fm.perm.owner"}} {{T "fm.perm.r"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="200" aria-label="{{T "fm.perm.owner"}} {{T "fm.perm.w"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="100" aria-label="{{T "fm.perm.owner"}} {{T "fm.perm.x"}}"></td></tr>
+        <tr class="border-t border-slate-100 dark:border-slate-800"><th class="py-2 text-left font-medium">{{T "fm.perm.group"}}</th><td class="text-center"><input type="checkbox" class="fm-check" data-bit="40" aria-label="{{T "fm.perm.group"}} {{T "fm.perm.r"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="20" aria-label="{{T "fm.perm.group"}} {{T "fm.perm.w"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="10" aria-label="{{T "fm.perm.group"}} {{T "fm.perm.x"}}"></td></tr>
+        <tr class="border-t border-slate-100 dark:border-slate-800"><th class="py-2 text-left font-medium">{{T "fm.perm.others"}}</th><td class="text-center"><input type="checkbox" class="fm-check" data-bit="4" aria-label="{{T "fm.perm.others"}} {{T "fm.perm.r"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="2" aria-label="{{T "fm.perm.others"}} {{T "fm.perm.w"}}"></td><td class="text-center"><input type="checkbox" class="fm-check" data-bit="1" aria-label="{{T "fm.perm.others"}} {{T "fm.perm.x"}}"></td></tr>
+      </tbody>
+    </table>
+    <div class="mt-3 flex flex-wrap items-end gap-3">
+      <div class="w-28"><label for="chmod-octal" class="label">{{T "fm.perm.octal"}}</label><input id="chmod-octal" name="mode" class="field font-mono" required pattern="[0-7]{3}" maxlength="3" inputmode="numeric" autocomplete="off" value="644"></div>
+      <div class="flex gap-2 pb-0.5"><button type="button" class="btn-sm" data-preset="644">{{T "fm.perm.file"}}</button><button type="button" class="btn-sm" data-preset="755">{{T "fm.perm.dir"}}</button></div>
+    </div>
+    <div id="chmod-rec" hidden class="mt-4 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="recursive" class="fm-check" id="chmod-rec-box"><span>{{T "fm.perm.rec"}}</span></label>
+      <select name="scope" id="chmod-scope" class="field mt-2 !w-auto" disabled aria-label="{{T "fm.perm.rec"}}">
+        <option value="all">{{T "fm.perm.scope.all"}}</option><option value="files">{{T "fm.perm.scope.files"}}</option><option value="dirs">{{T "fm.perm.scope.dirs"}}</option>
+      </select>
+    </div>
+    <p class="hint">{{T "fm.perm.hint"}}</p>
+    <div class="mt-6 flex justify-end gap-2">
+      <button type="button" class="btn-secondary" data-close>{{T "c.cancel"}}</button>
+      <button class="btn-primary">{{T "fm.chmod.btn"}}</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-upload" class="fm-dialog" aria-labelledby="dlg-upload-title">
+  <div class="p-6">
+    <div class="flex items-center justify-between gap-3">
+      <h2 id="dlg-upload-title" class="h-section">{{T "fm.upload"}}</h2>
+      <button type="button" class="ico-btn" data-close aria-label="{{T "fm.close"}}">{{template "fmbtn" "close"}}</button>
+    </div>
+    <div class="fm-drop mt-4" id="up-zone">
+      <span class="grid size-11 place-items-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800">{{template "fmbtn" "upload"}}</span>
+      <p>{{T "fm.drop.here"}}</p>
+      <label class="btn-secondary cursor-pointer" for="up-input">{{T "fm.choose"}}</label>
+      <input id="up-input" type="file" multiple class="sr-only">
+    </div>
+    <label class="mt-4 flex items-center gap-2 text-sm"><input type="checkbox" class="fm-check" id="up-over"><span>{{T "fm.overwrite"}}</span></label>
+    <div id="up-run" hidden class="mt-4">
+      <progress id="up-progress" class="h-2 w-full overflow-hidden rounded-full accent-teal-600" max="100" value="0"></progress>
+      <p id="up-status" class="hint" aria-live="polite"></p>
+    </div>
+    <ul id="up-errors" hidden class="mt-3 max-h-32 overflow-y-auto rounded-lg border border-rose-200 bg-rose-50 p-3 font-mono text-xs text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"></ul>
+    <div class="mt-6 flex justify-end"><button type="button" class="btn-secondary" data-close id="up-close">{{T "fm.close"}}</button></div>
+  </div>
+</dialog>
+{{end}}

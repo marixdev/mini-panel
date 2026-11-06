@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="card p-6 sm:p-8">
+  <h1 class="text-xl font-semibold tracking-tight">{{T "login.title"}}</h1>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "login.sub"}}</p>
+  {{if .Error}}
+  <div role="alert" class="alert-error mt-5">
+    <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+    <span>{{.Error}}</span>
+  </div>
+  {{end}}
+  <form method="post" action="/login" class="mt-6 space-y-4">
+    <div>
+      <label for="user" class="label">{{T "login.user"}}</label>
+      <input id="user" name="user" class="field" autocomplete="username" required autofocus>
+    </div>
+    <div>
+      <label for="password" class="label">{{T "login.pass"}}</label>
+      <input id="password" name="password" type="password" class="field" autocomplete="current-password" required>
+    </div>
+    <button class="btn-primary w-full py-2.5">{{T "login.submit"}}</button>
+  </form>
+</section>
+{{end}}

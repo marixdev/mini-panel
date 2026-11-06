@@ -1,0 +1,61 @@
+package web
+
+// Vietnamese text of the overview of a site: its state and its settings.
+func init() {
+	for k, v := range map[string]string{
+		"ov.status": "Trạng thái", "ov.running": "Đang chạy", "ov.stopped": "Không chạy", "ov.run.of": "Dịch vụ: %s",
+		"ov.disk": "Dung lượng", "ov.disk.big": "Quá lớn để đo nhanh", "ov.disk.note": "Cả thư mục home của tài khoản website",
+		"ov.cert": "Chứng chỉ SSL", "ov.cert.until": "Hết hạn %s (còn %d ngày)", "ov.cert.none": "Chưa có chứng chỉ", "ov.cert.soon": "Sắp hết hạn",
+		"ov.backup": "Sao lưu gần nhất", "ov.nobackup": "Chưa có bản sao lưu", "ov.info": "Thông tin",
+		"ov.settings": "Cài đặt", "ov.settings.sub": "Lưu xong panel dựng lại cấu hình, kiểm tra rồi mới nạp. Nếu lỗi, cấu hình cũ được giữ nguyên.",
+		"ov.save": "Lưu cài đặt", "ov.reset": "Bỏ thay đổi",
+		"ov.root.title": "Thư mục gốc của website", "ov.root.sub": "Thư mục con", "ov.root.ph": "để trống = htdocs",
+		"ov.root.hint":    "Thư mục con của htdocs mà nginx phục vụ, ví dụ public cho Laravel. Thư mục chưa có sẽ được tạo.",
+		"ov.root.outside": "Thư mục gốc của website này nằm ngoài htdocs nên không đổi được ở đây.",
+		"ov.php.title":    "PHP", "ov.php.version": "Phiên bản PHP", "ov.php.common": "Tham số thường dùng", "ov.php.more": "Thêm tham số",
+		"ov.php.default": "mặc định %s", "ov.php.changed": "đã đổi", "ov.php.note": "Chỉ các tham số trong danh sách này đổi được, để một website không thể ghi đè giới hạn cách ly của website khác.",
+		"ov.php.notinstalled": "Chỉ hiện các phiên bản đã cài trên máy này. Cài thêm bằng: mpn plan -php <phiên bản> -apply",
+		"ov.node.title":       "Node.js", "ov.node.version": "Phiên bản Node.js", "ov.node.entry": "Tệp khởi động", "ov.node.entry.hint": "Đường dẫn từ thư mục gốc, ví dụ server.js hoặc dist/index.js.",
+		"ov.node.port": "Cổng ứng dụng", "ov.node.port.hint": "nginx chuyển yêu cầu tới cổng này. Ứng dụng phải lắng nghe đúng cổng (biến môi trường PORT).",
+		"ov.node.mem": "Bộ nhớ tối đa (MB)", "ov.node.mem.hint": "Để trống dùng mặc định. Vượt mức này ứng dụng bị dừng và tự khởi động lại.",
+		"ph.memory_limit":           "Bộ nhớ tối đa cho một yêu cầu: 64M, 256M, 1G (từ 1M đến 4G)",
+		"ph.max_execution_time":     "Số giây một yêu cầu được chạy, từ 0 đến 3600 (0 là không giới hạn)",
+		"ph.max_input_time":         "Số giây đọc dữ liệu gửi lên, từ -1 đến 3600",
+		"ph.max_input_vars":         "Số biến tối đa trong một yêu cầu, từ 100 đến 100000",
+		"ph.post_max_size":          "Dung lượng tối đa của một yêu cầu: 8M, 64M, 1G (từ 1M đến 4G)",
+		"ph.upload_max_filesize":    "Dung lượng tối đa của một tệp tải lên: 2M, 64M, 1G (từ 1M đến 4G)",
+		"ph.display_errors":         "Hiện lỗi PHP ra trang: On hoặc Off (nên để Off khi chạy thật)",
+		"ph.error_reporting":        "Mức báo lỗi, một số từ 0 đến 32767",
+		"ph.date.timezone":          "UTC hoặc Khu vực/Thành phố, ví dụ Asia/Ho_Chi_Minh",
+		"ph.session.gc_maxlifetime": "Số giây giữ phiên đăng nhập, từ 60 đến 864000",
+		"ph.max_file_uploads":       "Số tệp tối đa trong một lần tải lên, từ 1 đến 1000",
+		"ph.short_open_tag":         "Cho phép viết <? thay cho <?php: On hoặc Off",
+		"hd.user":                   "Tài khoản", "hd.open": "Mở website", "hd.others": "+%d tên miền khác", "hd.sections": "Các mục của website",
+		"hd.https.on": "SSL đang bật", "hd.https.off": "Chưa bật SSL",
+		"ov.python.title": "Python", "ov.python.version": "Phiên bản Python", "ov.python.entry": "Tệp khởi động", "ov.python.entry.hint": "Đường dẫn từ thư mục gốc, ví dụ app.py, hoặc -m và tên module, ví dụ -m myapp. Ứng dụng chạy bằng môi trường ảo ~/venv của website.",
+		"ov.python.notinstalled": "Chỉ hiện các phiên bản đã cài trên máy này (gói python3.x và python3.x-venv).",
+		"ov.proxy.title":         "Proxy ngược", "ov.proxy.upstream": "Địa chỉ đích", "ov.proxy.hint": "Địa chỉ http hoặc https mà nginx chuyển yêu cầu tới.",
+		"ov.nginx": "Cấu hình nginx của website", "ov.nginx.hint": "Chỉ để xem. Sửa trực tiếp sẽ có ở một tab riêng sau.", "ov.copy": "Sao chép", "ov.copied": "Đã chép",
+		"ov.actions.title": "Thao tác", "ov.actions.apply.hint": "Dựng lại và nạp cấu hình của website từ những gì panel đang lưu.",
+
+		"act.site.set": "Cài đặt website %s", "set.fail": "Chưa lưu cài đặt", "set.restored": "Cấu hình đang chạy được giữ nguyên.",
+		"set.err.rootoutside":  "Thư mục gốc của website này nằm ngoài htdocs nên không đổi được ở đây.",
+		"set.err.root":         "Thư mục con không hợp lệ. Dùng chữ cái, số, dấu chấm, gạch dưới và gạch ngang, ngăn cách bằng dấu /; tên không được bắt đầu bằng dấu chấm.",
+		"set.err.php":          "Phiên bản PHP %q không có trên máy này.",
+		"set.err.ini":          "%s: giá trị %q không hợp lệ (%s).",
+		"set.err.upload":       "upload_max_filesize không được lớn hơn post_max_size, nếu không PHP sẽ từ chối những tệp mà nó được phép nhận.",
+		"set.err.node":         "Phiên bản Node.js %q không có trên máy này.",
+		"set.err.python":       "Phiên bản Python %q không có trên máy này.",
+		"set.err.pyentry":      "Tệp khởi động phải là đường dẫn tương đối từ thư mục gốc (không có ..), hoặc -m và tên module.",
+		"set.err.entry":        "Tệp khởi động phải là đường dẫn tương đối từ thư mục gốc, không có ..",
+		"set.err.port":         "Cổng phải từ 1024 đến 65535 và không trùng cổng mà chính máy chủ dùng (22, 80, 443, 3306, 2610, 8780…).",
+		"set.err.mem":          "Bộ nhớ phải để trống hoặc từ 64 đến 8192 MB.",
+		"set.err.upstream":     "Địa chỉ đích phải là địa chỉ http hoặc https thông thường, không có dấu cách hay ký tự đặc biệt.",
+		"set.err.portused":     "Cổng này đang được một website khác dùng.",
+		"set.err.notinstalled": "Phiên bản này chưa được cài trên máy.",
+	} {
+		if _, have := vi[k]; !have {
+			vi[k] = v
+		}
+	}
+}

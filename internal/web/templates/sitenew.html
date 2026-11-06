@@ -1,0 +1,71 @@
+{{define "content"}}
+<div class="mx-auto max-w-3xl">
+  <h1 class="h-page">{{T "new.title"}}{{if .Kind}} · {{T (printf "kind.%s" .Kind)}}{{end}}</h1>
+  {{if not .Kind}}
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "new.sub"}}</p>
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    {{range .Kinds}}
+    <a href="/sites/new?kind={{.}}" class="card block p-5 transition hover:border-teal-400 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:hover:border-teal-600">
+      <span class="badge-teal">{{T (printf "kind.%s" .)}}</span>
+      <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">{{T (printf "new.desc.%s" .)}}</p>
+    </a>
+    {{end}}
+  </div>
+  <div class="mt-6"><a class="btn-secondary" href="/">{{T "new.back"}}</a></div>
+  {{else}}
+  {{if .Error}}<div role="alert" class="alert-error mt-5"><span>{{.Error}}</span></div>{{end}}
+  <form method="post" action="/sites/add" autocomplete="off" class="card mt-6 p-6">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <input type="hidden" name="kind" value="{{.Kind}}">
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div{{if eq .Kind "static"}} class="sm:col-span-2"{{end}}>
+        <label for="f-hosts" class="label">{{T "f.hosts"}}</label>
+        <input id="f-hosts" name="hosts" class="field" required placeholder="example.com" data-hosts autofocus>
+        <p class="hint">{{T "f.hosts.hint"}}</p>
+      </div>
+      {{if eq .Kind "php"}}
+      <div>
+        <label for="f-php" class="label">{{T "f.php"}}</label>
+        <select id="f-php" name="php" class="field">{{range .PHPVersions}}<option{{if eq . "8.4"}} selected{{end}}>{{.}}</option>{{end}}</select>
+      </div>
+      {{else if eq .Kind "node"}}
+      <div>
+        <label for="f-node" class="label">{{T "f.node"}}</label>
+        <select id="f-node" name="node" class="field">{{range .NodeVersions}}<option{{if eq . "22"}} selected{{end}}>{{.}}</option>{{end}}</select>
+      </div>
+      <div class="sm:col-span-2">
+        <label for="f-entry" class="label">{{T "f.entry"}}</label>
+        <input id="f-entry" name="entry" class="field" value="server.js">
+      </div>
+      {{else if eq .Kind "python"}}
+      <div class="sm:col-span-2">
+        <label for="f-entry" class="label">{{T "f.entry"}}</label>
+        <input id="f-entry" name="entry" class="field" value="app.py">
+        <p class="hint">{{T "ov.python.entry.hint"}}</p>
+      </div>
+      {{else if eq .Kind "proxy"}}
+      <div>
+        <label for="f-up" class="label">{{T "f.upstream"}}</label>
+        <input id="f-up" name="upstream" class="field" required placeholder="http://10.0.0.5:8080">
+      </div>
+      {{end}}
+      <div>
+        <label for="f-user" class="label">{{T "f.user"}}</label>
+        <input id="f-user" name="user" class="field font-mono" pattern="[a-z_][a-z0-9_-]{0,31}" data-user data-reserved="{{.Reserved}}">
+        <p class="hint">{{T "f.user.hint"}}</p>
+      </div>
+      <div>
+        <label for="f-pass" class="label">{{T "f.password"}}</label>
+        <input id="f-pass" name="password" class="field font-mono" minlength="12" maxlength="64" placeholder="{{T "f.password.empty"}}" value="{{.Password}}" data-password>
+        <button type="button" class="link mt-1 text-sm" data-gen-password="f-pass">{{T "f.password.gen"}}</button>
+        <p class="hint">{{T "f.password.hint"}}</p>
+      </div>
+    </div>
+    <div class="mt-6 flex items-center justify-between">
+      <a class="btn-secondary" href="/sites/new">{{T "new.back"}}</a>
+      <button class="btn-primary px-6">{{T "new.create"}}</button>
+    </div>
+  </form>
+  {{end}}
+</div>
+{{end}}

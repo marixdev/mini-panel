@@ -1,0 +1,108 @@
+{{define "ssltab"}}
+{{$s := .SSL}}
+{{if .Notice}}<div role="status" class="alert-ok mb-4"><span>{{.Notice.Title}}</span></div>{{end}}
+{{if $s.Error}}<div role="alert" class="alert-error mb-4"><span>{{$s.Error}}</span></div>{{end}}
+
+<section class="card p-6">
+  {{if .Site.TLS}}
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <p class="flex items-center gap-2 text-sm font-semibold text-teal-700 dark:text-teal-300"><svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg>{{T "ssl.on"}}</p>
+    </div>
+    <span class="badge-gray">{{if $s.LetsEncrypt}}{{T "ssl.source.le"}}{{else}}{{T "ssl.source.custom"}}{{end}}</span>
+  </div>
+  <dl class="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if $s.Issuer}}{{$s.Issuer}}{{else}}–{{end}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssl.names"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{range $s.Names}}<div>{{.}}</div>{{end}}</dd></div>
+    {{if $s.UntilText}}<div class="sm:col-span-2"><dt class="text-slate-500 dark:text-slate-400">{{T "ssl.until" $s.UntilText $s.Days}}</dt>
+      <dd class="mt-1">{{if $s.Soon}}<span class="badge-amber">{{T "ssl.soon"}}</span>{{end}}</dd></div>{{end}}
+  </dl>
+  {{if $s.LetsEncrypt}}<p class="hint">{{T "ssl.auto"}}</p>{{else}}<p class="hint">{{T "ssl.manual"}}</p>{{end}}
+  {{if not $s.Covers}}<p class="alert-warn mt-4">{{T "ssl.notcover"}}</p>{{end}}
+  {{if not $s.Trusted}}<p class="alert-warn mt-4">{{T "ssl.untrusted"}}</p>{{end}}
+  {{else}}
+  <p class="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300"><svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 5.6-1.5"/></svg>{{T "ssl.off"}}</p>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{T "ssl.off.d"}}</p>
+  {{end}}
+</section>
+
+{{if .Site.TLS}}
+<form method="post" action="/sites/{{.Site.Name}}/ssl/redirect" class="card mt-4 p-6">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <h2 class="h-section">{{T "ssl.redirect.title"}}</h2>
+  <label class="mt-3 flex cursor-pointer items-start gap-3 sm:max-w-xl">
+    <input type="checkbox" name="redirect" value="1" class="mt-1 size-4 accent-teal-600"{{if $s.Redirect}} checked{{end}}>
+    <span><span class="block text-sm font-medium">{{T "ssl.redirect.label"}}</span><span class="hint mt-0">{{T "ssl.redirect.hint"}}</span></span>
+  </label>
+  <div class="mt-4"><button class="btn-primary">{{T "ssl.redirect.save"}}</button></div>
+</form>
+{{end}}
+
+<div class="mt-4 grid gap-4 {{if not .Site.TLS}}lg:grid-cols-2{{end}}">
+  {{if or (not .Site.TLS) $s.Own}}
+  <section class="card p-6">
+    <h2 class="h-section">{{T "ssl.le.title"}}</h2>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.le.desc"}}</p>
+    <form method="post" action="/sites/{{.Site.Name}}/ssl/letsencrypt" class="mt-4">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <button class="btn-primary">{{if .Site.TLS}}{{T "ssl.le.replace"}}{{else}}{{T "ssl.le.btn"}}{{end}}</button>
+    </form>
+    <p class="hint">{{T "ssl.le.hint" $s.Domain (or $s.ServerIP (T "ssl.le.ip"))}}</p>
+  </section>
+  {{end}}
+
+  <section class="card p-6">
+    <h2 class="h-section">{{T "ssl.own.title"}}</h2>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.own.desc"}}</p>
+    <form method="post" action="/sites/{{.Site.Name}}/ssl/custom" class="mt-4" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <label for="c-cert" class="label">{{T "ssl.cert"}}</label>
+      <textarea id="c-cert" name="cert" rows="5" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+      <p class="hint">{{T "ssl.cert.hint"}}</p>
+      <label for="c-key" class="label mt-4">{{T "ssl.key"}}</label>
+      <textarea id="c-key" name="key" rows="5" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+      <p class="hint">{{T "ssl.key.hint"}}</p>
+      <label for="c-chain" class="label mt-4">{{T "ssl.chain"}}</label>
+      <textarea id="c-chain" name="chain" rows="3" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+      <p class="hint">{{T "ssl.chain.hint"}}</p>
+      <label class="mt-4 flex cursor-pointer items-start gap-3">
+        <input type="checkbox" name="allow_untrusted" value="1" class="mt-1 size-4 accent-teal-600">
+        <span class="text-sm">{{T "ssl.untrusted.allow"}}</span>
+      </label>
+      <div class="mt-5"><button class="btn-primary">{{if .Site.TLS}}{{T "ssl.own.replace"}}{{else}}{{T "ssl.own.btn"}}{{end}}</button></div>
+    </form>
+  </section>
+</div>
+
+<details class="card mt-4"{{if $s.PendingCSR}} open{{end}}>
+  <summary class="cursor-pointer px-6 py-4 text-sm font-semibold">{{T "ssl.csr.title"}}</summary>
+  <div class="border-t border-slate-200 px-6 pb-6 dark:border-slate-800">
+    <p class="mt-3 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.csr.desc"}}</p>
+    <form method="post" action="/sites/{{.Site.Name}}/ssl/csr" class="mt-4 flex flex-wrap items-end gap-3">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <div>
+        <label for="csr-algo" class="label">{{T "ssl.csr.algo"}}</label>
+        <select id="csr-algo" name="algo" class="field"><option value="ecdsa">{{T "ssl.csr.ecdsa"}}</option><option value="rsa">{{T "ssl.csr.rsa"}}</option></select>
+      </div>
+      <button class="btn-secondary">{{T "ssl.csr.btn"}}</button>
+    </form>
+    {{if $s.PendingCSR}}
+    <div class="mt-5">
+      <div class="flex items-center justify-between gap-3"><h3 class="text-sm font-medium">{{T "ssl.csr.pending"}}</h3><button type="button" class="btn-sm" data-copy="{{$s.PendingCSR}}" data-copied="{{T "ov.copied"}}">{{T "ov.copy"}}</button></div>
+      <p class="hint mt-1">{{T "ssl.csr.pending.d"}}</p>
+      <pre class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-900 p-4 font-mono text-xs leading-relaxed whitespace-pre text-slate-100 dark:border-slate-800 dark:bg-black">{{$s.PendingCSR}}</pre>
+    </div>
+    {{end}}
+  </div>
+</details>
+
+{{if .Site.TLS}}
+<details class="card mt-4">
+  <summary class="cursor-pointer px-6 py-4 text-sm font-semibold text-rose-700 dark:text-rose-400">{{T "ssl.remove.title"}}</summary>
+  <div class="border-t border-slate-200 px-6 pb-6 dark:border-slate-800">
+    <p class="alert-warn mt-4">{{T "ssl.remove.warn"}}</p>
+    <form method="post" action="/sites/{{.Site.Name}}/ssl/off" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "ssl.remove.btn"}}</button></form>
+  </div>
+</details>
+{{end}}
+{{end}}

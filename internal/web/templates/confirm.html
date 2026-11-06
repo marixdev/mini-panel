@@ -1,0 +1,30 @@
+{{define "content"}}
+<div class="mx-auto max-w-xl">
+  <h1 class="h-page">{{.Confirm.Title}}</h1>
+  <div role="alert" class="alert-warn mt-5">
+    <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
+    <span>{{.Confirm.Warning}}</span>
+  </div>
+  <form method="post" action="{{.Confirm.Action}}" class="card mt-6 space-y-4 p-6">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    {{range $k, $v := .Confirm.Hidden}}<input type="hidden" name="{{$k}}" value="{{$v}}">{{end}}
+    {{range .Confirm.Checks}}
+    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" name="{{.Name}}" value="{{.Value}}"{{if .On}} checked{{end}}><span>{{.Label}}</span></label>
+    {{end}}
+    {{if .Confirm.Purge}}
+    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" name="purge"><span>{{T "c.purge"}}</span></label>
+    {{end}}
+    {{if .Confirm.Lines}}<ul class="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-3 font-mono text-[13px] dark:border-slate-800">{{range .Confirm.Lines}}<li class="break-all">{{.}}</li>{{end}}</ul>{{end}}
+    {{if not .Confirm.NoType}}
+    <div>
+      <label for="confirm" class="label">{{T "c.type.pre"}} <b>{{.Confirm.Expect}}</b> {{T "c.type.post"}}</label>
+      <input id="confirm" name="confirm" class="field" autocomplete="off" required>
+    </div>
+    {{end}}
+    <div class="flex items-center gap-3">
+      <button class="btn-danger">{{.Confirm.Button}}</button>
+      <a class="btn-secondary" href="{{if .Confirm.Back}}{{.Confirm.Back}}{{else}}/{{end}}">{{T "c.cancel"}}</a>
+    </div>
+  </form>
+</div>
+{{end}}

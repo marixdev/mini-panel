@@ -1,0 +1,21 @@
+# build output and tools
+/bin/
+*.exe
+*.test
+node_modules/
+
+# editors and local files
+.vscode/
+.idea/
+*.log
+.env
+.env.*
+*.pem
+*.key
+
+# Tests and the tools used only to test stay on the developer's disk and are not published.
+*_test.go
+testdata/
+internal/sshtest/
+tools/wscheck/
+scripts/browser-check.ps1

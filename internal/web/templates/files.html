@@ -1,0 +1,122 @@
+{{define "filestab"}}
+{{if .Notice}}
+<div role="{{if .Notice.OK}}status{{else}}alert{{end}}" class="{{if .Notice.OK}}alert-ok{{else}}alert-error{{end}} mb-4">
+  <div><span class="font-medium">{{.Notice.Title}}</span>{{if .Notice.Error}} <span>{{.Notice.Error}}</span>{{end}}
+  {{if .Notice.Output}}<pre class="mt-2 whitespace-pre-wrap break-all font-mono text-xs">{{.Notice.Output}}</pre>{{end}}</div>
+</div>
+{{end}}
+
+<section id="fm" class="card overflow-hidden" data-site="{{.Site.Name}}" data-dir="{{.Dir}}" data-csrf="{{.CSRF}}"
+  data-t-create="{{T "fm.create"}}" data-t-newfile="{{T "fm.newfile"}}" data-t-newdir="{{T "fm.mkdir"}}" data-t-rename="{{T "fm.rename.title"}}" data-t-selected="{{T "fm.sel.count"}}" data-t-none="{{T "fm.filter.none"}}" data-t-uploading="{{T "fm.uploading"}}"
+  data-t-delete-one="{{T "fm.delete.one"}}" data-t-delete-many="{{T "fm.delete.title"}}" data-t-failed="{{T "fm.upload.failed"}}">
+
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-3 py-2.5 dark:border-slate-800">
+    <nav aria-label="{{T "fm.path"}}" class="flex min-w-0 flex-wrap items-center gap-1 font-mono text-[13px]">
+      {{range $i, $c := .Crumbs}}{{if $i}}{{template "fmbtn" "chev"}}{{end}}<a class="inline-flex items-center gap-1 rounded-md px-1.5 py-1 {{if $c.Path}}text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800{{else}}text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-teal-950/40{{end}}" href="/sites/{{$.Site.Name}}/files{{if $c.Path}}?path={{$c.Path}}{{end}}">{{if not $c.Path}}{{template "fmbtn" "home"}}{{end}}{{if $c.Path}}{{$c.Name}}{{else}}<span class="sr-only">{{$c.Name}}</span>{{end}}</a>{{end}}
+    </nav>
+    <div class="relative w-full sm:w-60">
+      <span class="pointer-events-none absolute inset-y-0 left-2.5 grid place-items-center text-slate-400">{{template "fmbtn" "search"}}</span>
+      <input id="fm-filter" type="search" class="field !mt-0 pl-8" placeholder="{{T "fm.filter"}}" aria-label="{{T "fm.filter"}}" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-1 border-b border-slate-200 px-3 py-2 dark:border-slate-800">
+    <button type="button" class="tool-btn-main" data-fm="upload">{{template "fmbtn" "upload"}}<span>{{T "fm.upload.btn"}}</span></button>
+    <span class="mx-1 hidden h-5 w-px bg-slate-200 sm:block dark:bg-slate-700" aria-hidden="true"></span>
+    <button type="button" class="tool-btn" data-fm="newfile">{{template "fmbtn" "newfile"}}<span>{{T "fm.newfile"}}</span></button>
+    <button type="button" class="tool-btn" data-fm="newdir">{{template "fmbtn" "newdir"}}<span>{{T "fm.mkdir"}}</span></button>
+    {{if .Dir}}<a class="tool-btn ml-auto" href="/sites/{{.Site.Name}}/files{{if .Parent}}?path={{.Parent}}{{end}}">{{template "fmbtn" "up"}}<span>{{T "fm.up"}}</span></a>{{end}}
+  </div>
+
+  <div id="fm-sel" hidden class="flex flex-wrap items-center gap-1 border-b border-teal-200 bg-teal-50 px-3 py-2 dark:border-teal-900 dark:bg-teal-950/30">
+    <span id="fm-count" class="mr-2 text-sm font-medium text-teal-800 dark:text-teal-200" aria-live="polite"></span>
+    <button type="button" class="tool-btn" data-fm="zip">{{template "fmbtn" "zip"}}<span>{{T "fm.sel.zip"}}</span></button>
+    <button type="button" class="tool-btn" data-fm="chmod">{{template "fmbtn" "chmod"}}<span>{{T "fm.chmod"}}</span></button>
+    <button type="button" class="tool-btn-danger" data-fm="delete-selected">{{template "fmbtn" "delete"}}<span>{{T "fm.delete.btn"}}</span></button>
+    <button type="button" class="tool-btn ml-auto" data-fm="clear">{{template "fmbtn" "close"}}<span>{{T "fm.sel.clear"}}</span></button>
+  </div>
+
+  {{if .Cut}}<p class="alert-warn m-3">{{T "fm.cut"}}</p>{{end}}
+
+  {{if .Files}}
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm" id="fm-table">
+      <thead class="bg-slate-50 dark:bg-slate-800/50">
+        <tr>
+          <th class="w-10 py-2 pl-4"><input type="checkbox" class="fm-check" id="fm-all" aria-label="{{T "fm.sel.all"}}"></th>
+          <th class="fm-th w-full"><button type="button" class="fm-sort" data-sort="name">{{T "fm.col.name"}}<span data-arrow aria-hidden="true"></span></button></th>
+          <th class="fm-th hidden text-right sm:table-cell"><button type="button" class="fm-sort" data-sort="size">{{T "fm.col.size"}}<span data-arrow aria-hidden="true"></span></button></th>
+          <th class="fm-th hidden md:table-cell">{{T "fm.col.mode"}}</th>
+          <th class="fm-th hidden md:table-cell"><button type="button" class="fm-sort" data-sort="time">{{T "fm.col.time"}}<span data-arrow aria-hidden="true"></span></button></th>
+          <th class="w-px px-3"><span class="sr-only">{{T "fm.actions"}}</span></th>
+        </tr>
+      </thead>
+      <tbody id="fm-body">
+      {{range .Files}}
+      <tr class="fm-row" data-name="{{.Name}}" data-dir="{{if .IsDir}}1{{else}}0{{end}}" data-size="{{.Bytes}}" data-time="{{.Unix}}" data-mode="{{.Mode}}" data-edit="{{if .CanEdit}}1{{else}}0{{end}}" data-zip="{{if .IsZip}}1{{else}}0{{end}}">
+        <td class="py-2 pl-4"><input type="checkbox" class="fm-check" name="item" value="{{.Name}}" aria-label="{{.Name}}"></td>
+        <td class="max-w-0 py-2 pr-3 font-mono text-[13px]">
+          <div class="flex min-w-0 items-center gap-2.5">
+            {{template "fileicon" .Kind}}
+            {{if .IsDir}}<a class="truncate font-medium text-slate-900 hover:text-teal-700 hover:underline dark:text-slate-100 dark:hover:text-teal-300" href="/sites/{{$.Site.Name}}/files?path={{.Path}}">{{.Name}}</a>
+            {{else if .CanEdit}}<a class="truncate text-slate-900 hover:text-teal-700 hover:underline dark:text-slate-100 dark:hover:text-teal-300" href="/sites/{{$.Site.Name}}/files/edit?path={{.Path}}">{{.Name}}</a>
+            {{else}}<span class="truncate text-slate-900 dark:text-slate-100">{{.Name}}</span>{{end}}
+            {{if .IsLink}}<span class="badge-gray shrink-0">{{T "fm.link"}}</span>{{end}}
+          </div>
+        </td>
+        <td class="hidden whitespace-nowrap py-2 pr-4 text-right text-slate-600 tabular-nums sm:table-cell dark:text-slate-400">{{.Size}}</td>
+        <td class="hidden whitespace-nowrap py-2 pr-4 font-mono text-xs text-slate-500 md:table-cell dark:text-slate-400">{{if .Mode}}<button type="button" class="rounded px-1.5 py-0.5 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:hover:bg-slate-800 dark:hover:text-white" data-fm="chmod" data-name="{{.Name}}" title="{{T "fm.chmod"}}" aria-label="{{T "fm.chmod"}} {{.Name}}">{{.Mode}}</button>{{end}}</td>
+        <td class="hidden whitespace-nowrap py-2 pr-4 text-slate-600 md:table-cell dark:text-slate-400">{{.Time}}</td>
+        <td class="py-1 pr-3">
+          <div class="flex items-center justify-end gap-0.5">
+            {{if .CanEdit}}<a class="ico-btn" href="/sites/{{$.Site.Name}}/files/edit?path={{.Path}}" title="{{T "fm.edit"}}" aria-label="{{T "fm.edit"}} {{.Name}}">{{template "fmbtn" "edit"}}</a>{{end}}
+            {{if not .IsDir}}<a class="ico-btn" href="/sites/{{$.Site.Name}}/files/download?path={{.Path}}" title="{{T "fm.download"}}" aria-label="{{T "fm.download"}} {{.Name}}">{{template "fmbtn" "download"}}</a>{{end}}
+            {{if .IsZip}}<button type="button" class="ico-btn" data-fm="unzip" data-name="{{.Name}}" title="{{T "fm.unzip"}}" aria-label="{{T "fm.unzip"}} {{.Name}}">{{template "fmbtn" "unzip"}}</button>{{end}}
+            <a class="ico-btn" data-fm="rename" data-name="{{.Name}}" href="/sites/{{$.Site.Name}}/files/rename?dir={{$.Dir}}&amp;name={{.Name}}" title="{{T "fm.rename"}}" aria-label="{{T "fm.rename"}} {{.Name}}">{{template "fmbtn" "rename"}}</a>
+            <button type="button" class="ico-btn-danger" data-fm="delete" data-name="{{.Name}}" title="{{T "fm.delete.btn"}}" aria-label="{{T "fm.delete.btn"}} {{.Name}}">{{template "fmbtn" "delete"}}</button>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  <p id="fm-nomatch" hidden class="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">{{T "fm.filter.none"}}</p>
+  {{else}}
+  <div class="flex flex-col items-center gap-2 px-4 py-16 text-center">
+    <span class="grid size-14 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800">{{template "fileicon" "dir"}}</span>
+    <p class="font-medium">{{T "fm.empty"}}</p>
+    <p class="text-sm text-slate-500 dark:text-slate-400">{{T "fm.empty.hint"}}</p>
+  </div>
+  {{end}}
+
+  <div id="fm-bar" class="flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-400">
+    <span>{{len .Files}} {{T "fm.items"}}</span><span class="hidden sm:inline">{{T "fm.drag.hint"}}</span>
+  </div>
+</section>
+
+<div id="fm-drop" hidden class="fixed inset-0 z-40 grid place-items-center bg-slate-950/60 p-6">
+  <div class="rounded-2xl border-2 border-dashed border-teal-300 bg-white/95 px-10 py-12 text-center text-lg font-semibold text-teal-800 dark:bg-slate-900/95 dark:text-teal-200">{{T "fm.drop"}}</div>
+</div>
+
+<div id="fm-menu" hidden role="menu" aria-label="{{T "fm.actions"}}" class="fm-menu">
+  <button type="button" role="menuitem" class="fm-mi" data-m="open">{{template "fmbtn" "open"}}<span>{{T "fm.menu.open"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="edit">{{template "fmbtn" "edit"}}<span>{{T "fm.edit"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="download">{{template "fmbtn" "download"}}<span>{{T "fm.download"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="upload">{{template "fmbtn" "upload"}}<span>{{T "fm.upload.btn"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="newfile">{{template "fmbtn" "newfile"}}<span>{{T "fm.newfile"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="newdir">{{template "fmbtn" "newdir"}}<span>{{T "fm.mkdir"}}</span></button>
+  <hr class="fm-sep" role="separator">
+  <button type="button" role="menuitem" class="fm-mi" data-m="rename">{{template "fmbtn" "rename"}}<span>{{T "fm.rename"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="chmod">{{template "fmbtn" "chmod"}}<span>{{T "fm.chmod"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="zip">{{template "fmbtn" "zip"}}<span>{{T "fm.zip.btn"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="unzip">{{template "fmbtn" "unzip"}}<span>{{T "fm.unzip"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="refresh">{{template "fmbtn" "refresh"}}<span>{{T "fm.menu.refresh"}}</span></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="selectall">{{template "fmbtn" "selectall"}}<span>{{T "fm.sel.all"}}</span></button>
+  <hr class="fm-sep" role="separator">
+  <button type="button" role="menuitem" class="fm-mi fm-mi-danger" data-m="delete">{{template "fmbtn" "delete"}}<span>{{T "fm.delete.btn"}}</span></button>
+</div>
+
+{{template "filedialogs" .}}
+<script src="{{asset "filemanager.js"}}" defer></script>
+{{end}}
