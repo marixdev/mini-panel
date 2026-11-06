@@ -67,6 +67,16 @@ ALTER TABLE sites ADD COLUMN allow_http INTEGER NOT NULL DEFAULT 0;`,
 UPDATE sites SET ssl_mode = 'letsencrypt' WHERE tls = 1;`,
 	// The nginx configuration a person wrote by hand; empty means the one mpn makes.
 	`ALTER TABLE sites ADD COLUMN vhost TEXT NOT NULL DEFAULT '';`,
+	// Scheduled jobs of a site. They go away with the site.
+	`CREATE TABLE cron_jobs (
+    id         INTEGER PRIMARY KEY,
+    site_id    INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+    schedule   TEXT NOT NULL,
+    command    TEXT NOT NULL,
+    enabled    INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX cron_jobs_site ON cron_jobs(site_id);`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.

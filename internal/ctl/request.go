@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"mpn/internal/backup"
+	"mpn/internal/cron"
 	"mpn/internal/dbadmin"
 	"mpn/internal/site"
 	"mpn/internal/vhost"
@@ -53,6 +54,11 @@ type Request struct {
 	Redirect       bool   `json:"redirect,omitempty"` // site.sslredirect: send http:// visitors to SSL
 	// site.vhostset: the nginx configuration written by hand. It reaches mpn on standard input only.
 	Vhost string `json:"vhost,omitempty"`
+	// Scheduled jobs. site.cronadd sends the schedule and the command on standard input.
+	Schedule string `json:"schedule,omitempty"`
+	Command  string `json:"command,omitempty"`
+	JobID    int64  `json:"job_id,omitempty"` // site.cronset and site.crondel
+	On       bool   `json:"on,omitempty"`     // site.cronset: the job runs
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -63,6 +69,12 @@ func (r Request) Stdin() string {
 		return r.Password + "\n"
 	case r.Op == "site.vhostset":
 		return r.Vhost
+	case r.Op == "site.cronadd":
+		b, _ := json.Marshal(struct {
+			Schedule string `json:"schedule"`
+			Command  string `json:"command"`
+		}{r.Schedule, r.Command})
+		return string(b)
 	case r.Op == "site.sslcustom":
 		b, _ := json.Marshal(struct {
 			Key            string `json:"key"`
@@ -83,12 +95,13 @@ var writes = map[string]bool{
 	"site.add": true, "site.apply": true, "site.remove": true, "site.access": true, "site.panelkey": true, "site.set": true, "site.domain": true,
 	"site.ssl": true, "site.sslcustom": true, "site.csr": true, "site.ssloff": true, "site.sslredirect": true, // where the certificate comes from
 	"site.vhostset": true, "site.vhostreset": true, // the nginx configuration of a site
+	"site.cronadd": true, "site.cronset": true, "site.crondel": true, // the scheduled jobs of a site
 	"db.add": true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -158,6 +171,33 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"site", "domain", "-name", r.Site, "-domain", r.Domain, "-www", r.WWW, "-apply"}, nil
 	case "site.ssl", "site.ssloff", "site.sslinfo", "site.sslcustom", "site.csr", "site.sslredirect":
 		return r.sslArgv()
+	case "site.cronlist", "site.cronadd", "site.cronset", "site.crondel":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		switch r.Op {
+		case "site.cronlist":
+			return []string{"cron", "list", "-site", r.Site, "-json"}, nil
+		case "site.cronadd":
+			if err := cron.ValidSchedule(r.Schedule); err != nil {
+				return nil, err
+			}
+			if err := cron.ValidCommand(r.Command); err != nil {
+				return nil, err
+			}
+			return []string{"cron", "add", "-site", r.Site, "-stdin", "-apply"}, nil
+		}
+		if r.JobID < 1 {
+			return nil, fmt.Errorf("job number %d is not valid", r.JobID)
+		}
+		if r.Op == "site.crondel" {
+			return []string{"cron", "remove", "-site", r.Site, "-id", strconv.FormatInt(r.JobID, 10), "-apply"}, nil
+		}
+		verb := "disable"
+		if r.On {
+			verb = "enable"
+		}
+		return []string{"cron", verb, "-site", r.Site, "-id", strconv.FormatInt(r.JobID, 10), "-apply"}, nil
 	case "site.vhost", "site.vhostset", "site.vhostreset":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err

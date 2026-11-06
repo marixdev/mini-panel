@@ -131,6 +131,8 @@ func RemovePlan(s site.Site, purge bool) (installer.Plan, error) {
 		installer.Run("nginx", "-t"),
 		installer.ReloadNginx(),
 	}}}
+	// The scheduled jobs of the site stop with it; the rows in the database go when the site is deleted from the database.
+	plan[0].Actions = append([]installer.Action{installer.Run("rm", "-f", "/etc/cron.d/mpn-"+s.Name)}, plan[0].Actions...)
 	switch s.Kind {
 	case site.PHP:
 		v, dir := s.PHPVersion, "/etc/php/"+s.PHPVersion+"/fpm/pool.d/"

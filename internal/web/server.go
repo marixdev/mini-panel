@@ -238,6 +238,7 @@ type view struct {
 	Dom                                         *domainView
 	SSL                                         *sslView
 	VH                                          *vhostView
+	Cron                                        *cronView
 	DBs                                         []dbRow
 	Backups                                     []backupRow
 	SiteNames                                   []string

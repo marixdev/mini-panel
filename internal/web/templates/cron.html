@@ -1,0 +1,47 @@
+{{define "crontab"}}
+{{$c := .Cron}}
+{{if .Notice}}<div role="status" class="alert-ok mb-4"><span>{{.Notice.Title}}</span></div>{{end}}
+{{if $c.Error}}<div role="alert" class="alert-error mb-4"><span>{{$c.Error}}</span></div>{{end}}
+
+{{if $c.Jobs}}
+<div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>{{T "cr.col.when"}}</th><th>{{T "cr.col.command"}}</th><th>{{T "cr.col.state"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range $c.Jobs}}<tr>
+      <td class="whitespace-nowrap"><div class="font-medium">{{.Human}}</div>{{if ne .Human .Schedule}}<div class="font-mono text-xs text-slate-500 dark:text-slate-400">{{.Schedule}}</div>{{end}}</td>
+      <td class="max-w-md"><code class="block overflow-x-auto font-mono text-[13px] whitespace-pre">{{.Command}}</code></td>
+      <td>{{if .Enabled}}<span class="badge-teal">{{T "cr.on"}}</span>{{else}}<span class="badge-gray">{{T "cr.off"}}</span>{{end}}</td>
+      <td><div class="flex items-center justify-end gap-3">
+        <form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/toggle"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="on" value="{{if .Enabled}}0{{else}}1{{end}}"><button class="btn-sm">{{if .Enabled}}{{T "cr.pause"}}{{else}}{{T "cr.resume"}}{{end}}</button></form>
+        <form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="link-danger text-sm">{{T "cr.delete"}}</button></form>
+      </div></td>
+    </tr>{{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "cr.empty"}}</p><p class="hint">{{T "cr.empty.d"}}</p></div>{{end}}
+
+<form method="post" action="/sites/{{.Site.Name}}/cron" class="card mt-6 p-6" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <h2 class="h-section">{{T "cr.add.title"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cr.add.sub" .Site.User}}</p>
+  <div class="mt-5 grid gap-5 sm:grid-cols-2">
+    <div>
+      <label for="cr-preset" class="label">{{T "cr.when"}}</label>
+      <select id="cr-preset" name="preset" class="field">{{range $c.Presets}}<option value="{{.Value}}"{{if eq .Value "0 3 * * *"}} selected{{end}}>{{T .Key}}</option>{{end}}</select>
+    </div>
+    <div>
+      <label for="cr-custom" class="label">{{T "cr.custom"}}</label>
+      <input id="cr-custom" name="custom" class="field font-mono" placeholder="*/10 8-18 * * 1-5" maxlength="80" spellcheck="false">
+      <p class="hint">{{T "cr.custom.hint"}}</p>
+    </div>
+    <div class="sm:col-span-2">
+      <label for="cr-cmd" class="label">{{T "cr.command"}}</label>
+      <input id="cr-cmd" name="command" class="field font-mono" required maxlength="1000" spellcheck="false" autocapitalize="none" placeholder="php8.4 /home/{{.Site.User}}/htdocs/cron.php">
+      <p class="hint">{{T "cr.command.hint" .Site.User}}</p>
+    </div>
+  </div>
+  <div class="mt-6 flex items-center gap-3"><button class="btn-primary">{{T "cr.add.btn"}}</button><span class="hint mt-0">{{T "cr.max" $c.Max}}</span></div>
+</form>
+{{end}}

@@ -15,16 +15,19 @@ type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, in the order it is shown: what the site is, what it holds, then how to get in.
 func siteMenu() []siteTabLink {
-	return []siteTabLink{{"overview", ""}, {"ssl", "/ssl"}, {"vhost", "/vhost"}, {"files", "/files"}, {"databases", "/databases"}, {"backups", "/backups"}, {"ssh", "/ssh"}, {"terminal", "/terminal"}}
+	return []siteTabLink{{"overview", ""}, {"ssl", "/ssl"}, {"vhost", "/vhost"}, {"files", "/files"}, {"databases", "/databases"}, {"backups", "/backups"}, {"cron", "/cron"}, {"ssh", "/ssh"}, {"terminal", "/terminal"}}
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/ssh", "/databases", "/backups"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/ssh", "/databases", "/backups", "/cron"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/ssh": "ssh", "/databases": "databases", "/backups": "backups"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/ssh": "ssh", "/databases": "databases", "/backups": "backups", "/cron": "cron"}[tab])
 		}))
 	}
+	mux.HandleFunc("POST /sites/{name}/cron", s.auth(s.addCron))
+	mux.HandleFunc("POST /sites/{name}/cron/{id}/toggle", s.auth(s.toggleCron))
+	mux.HandleFunc("POST /sites/{name}/cron/{id}/delete", s.auth(s.deleteCron))
 	mux.HandleFunc("POST /sites/{name}/vhost", s.auth(s.saveVhost))
 	mux.HandleFunc("POST /sites/{name}/vhost/reset", s.auth(s.resetVhost))
 	mux.HandleFunc("POST /sites/{name}/domain", s.auth(s.saveDomain))
@@ -85,6 +88,8 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.SSL = s.loadSSL(row, v.ServerIP)
 	case "vhost":
 		v.VH = s.loadVhost(row)
+	case "cron":
+		v.Cron = s.loadCron(row)
 	case "ssh":
 		v.SSHHost = hostOnly(r.Host)
 		v.SSHEnabled = access.Enabled(s.passwdFile(), row.User)
