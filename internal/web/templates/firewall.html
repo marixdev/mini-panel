@@ -1,0 +1,107 @@
+{{define "content"}}
+{{$f := .FW}}
+<div class="mb-6">
+  <h1 class="h-page">{{T "fw.title"}}</h1>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "fw.sub"}}</p>
+</div>
+{{if $f.Error}}<div role="alert" class="alert-error mb-6"><span>{{$f.Error}}</span></div>{{end}}
+
+<section class="card p-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "fw.status"}}</h2>
+      {{if $f.On}}
+      <p class="mt-2 flex items-center gap-2 text-sm font-semibold text-teal-700 dark:text-teal-300"><svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.7 2.5 6.6 6 8 3.5-1.4 6-4.3 6-8V5z"/><path d="m7.5 10 1.8 1.8L12.8 8"/></svg>{{T "fw.on"}}</p>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{T "fw.on.d"}}</p>
+      {{if not $f.Active}}<p class="alert-warn mt-3">{{T "fw.notloaded"}}</p>{{end}}
+      {{else}}
+      <p class="mt-2 flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300"><svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.7 2.5 6.6 6 8 3.5-1.4 6-4.3 6-8V5z"/></svg>{{T "fw.off"}}</p>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{T "fw.off.d"}}</p>
+      {{end}}
+    </div>
+    <div class="shrink-0">
+      {{if $f.On}}
+      <form method="post" action="/firewall/disable"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "fw.disable"}}</button></form>
+      {{if not $f.Active}}<form method="post" action="/firewall/enable" class="mt-2"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "fw.enable"}}</button></form>{{end}}
+      {{else if not $f.Conflict}}
+      <form method="post" action="/firewall/enable"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "fw.enable"}}</button></form>
+      {{end}}
+    </div>
+  </div>
+  {{if $f.Conflict}}<p class="alert-warn mt-4">{{T "fw.conflict" $f.Conflict $f.Conflict}}</p>{{end}}
+  {{if not $f.On}}{{if not $f.Conflict}}<p class="hint">{{T "fw.enable.hint"}}</p>{{end}}{{else}}<p class="hint">{{T "fw.disable.d"}}</p>{{end}}
+  {{if not $f.HasNft}}<p class="hint">{{T "fw.nonft"}}</p>{{end}}
+</section>
+
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "fw.locked"}}</h2>
+  <dl class="mt-3 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "fw.locked.ssh"}}</dt><dd class="mt-0.5 flex flex-wrap gap-1">{{range $f.Locked.SSH}}<span class="badge-teal font-mono">{{.}}</span>{{end}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "fw.locked.panel"}}</dt><dd class="mt-0.5 flex flex-wrap gap-1">{{range $f.Locked.Panel}}<span class="badge-teal font-mono">{{.}}</span>{{end}}</dd></div>
+  </dl>
+  <p class="hint">{{T "fw.locked.d"}}</p>
+</section>
+
+<h2 class="h-section mt-8 mb-3">{{T "fw.rules"}}</h2>
+{{if $f.Rules}}
+<div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>{{T "fw.col.action"}}</th><th>{{T "fw.col.proto"}}</th><th>{{T "fw.col.port"}}</th><th>{{T "fw.col.source"}}</th><th>{{T "fw.col.note"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range $f.Rules}}<tr>
+      <td>{{if eq .Action "allow"}}<span class="badge-teal">{{T "fw.allow"}}</span>{{else}}<span class="badge-rose">{{T "fw.deny"}}</span>{{end}}</td>
+      <td class="font-mono text-[13px] uppercase">{{if eq .Proto "both"}}{{T "fw.both"}}{{else}}{{.Proto}}{{end}}</td>
+      <td class="font-mono text-[13px]">{{if .Port}}{{.Port}}{{else}}<span class="font-sans text-slate-500 dark:text-slate-400">{{T "fw.anyport"}}</span>{{end}}</td>
+      <td class="font-mono text-[13px]">{{if .Source}}{{.Source}}{{else}}<span class="font-sans text-slate-500 dark:text-slate-400">{{T "fw.anysource"}}</span>{{end}}</td>
+      <td class="text-sm text-slate-600 dark:text-slate-300">{{.Comment}}</td>
+      <td class="text-right"><form method="post" action="/firewall/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="link-danger text-sm">{{T "fw.delete"}}</button></form></td>
+    </tr>{{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "fw.rules.empty"}}</p><p class="hint">{{T "fw.rules.empty.d"}}</p></div>{{end}}
+
+<div class="mt-6 grid gap-4 lg:grid-cols-3">
+  <form method="post" action="/firewall/add" class="card p-6 lg:col-span-2" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <h2 class="h-section">{{T "fw.add.title"}}</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="fw-action" class="label">{{T "fw.add.action"}}</label>
+        <select id="fw-action" name="action" class="field"><option value="allow">{{T "fw.allow"}}</option><option value="deny">{{T "fw.deny"}}</option></select>
+      </div>
+      <div>
+        <label for="fw-proto" class="label">{{T "fw.add.proto"}}</label>
+        <select id="fw-proto" name="proto" class="field"><option value="tcp">TCP</option><option value="udp">UDP</option><option value="both">{{T "fw.both"}}</option></select>
+      </div>
+      <div>
+        <label for="fw-port" class="label">{{T "fw.add.port"}}</label>
+        <input id="fw-port" name="port" class="field font-mono" maxlength="11" placeholder="8080" spellcheck="false">
+        <p class="hint">{{T "fw.add.port.hint"}}</p>
+      </div>
+      <div>
+        <label for="fw-source" class="label">{{T "fw.add.source"}}</label>
+        <input id="fw-source" name="source" class="field font-mono" maxlength="45" placeholder="203.0.113.0/24" spellcheck="false">
+        <p class="hint">{{T "fw.add.source.hint"}}</p>
+      </div>
+      <div class="sm:col-span-2">
+        <label for="fw-note" class="label">{{T "fw.add.note"}}</label>
+        <input id="fw-note" name="comment" class="field" maxlength="80">
+      </div>
+    </div>
+    <div class="mt-5 flex items-center gap-3"><button class="btn-primary">{{T "fw.add.btn"}}</button><span class="hint mt-0">{{T "fw.max" $f.Max}}</span></div>
+  </form>
+
+  <form method="post" action="/firewall/block" class="card p-6" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <h2 class="h-section">{{T "fw.block.title"}}</h2>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "fw.block.d"}}</p>
+    <label for="fb-source" class="label mt-4">{{T "fw.add.source"}}</label>
+    <input id="fb-source" name="source" class="field font-mono" required maxlength="45" placeholder="203.0.113.7" spellcheck="false">
+    <label for="fb-note" class="label mt-3">{{T "fw.add.note"}}</label>
+    <input id="fb-note" name="comment" class="field" maxlength="80">
+    <div class="mt-4"><button class="btn-secondary">{{T "fw.block.btn"}}</button></div>
+    {{if $f.Client}}<p class="hint">{{T "fw.you" $f.Client}}</p>{{end}}
+  </form>
+</div>
+{{end}}

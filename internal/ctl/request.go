@@ -6,6 +6,7 @@ package ctl
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"mpn/internal/backup"
 	"mpn/internal/cron"
 	"mpn/internal/dbadmin"
+	"mpn/internal/firewall"
 	"mpn/internal/site"
 	"mpn/internal/vhost"
 )
@@ -59,6 +61,14 @@ type Request struct {
 	Command  string `json:"command,omitempty"`
 	JobID    int64  `json:"job_id,omitempty"` // site.cronset and site.crondel
 	On       bool   `json:"on,omitempty"`     // site.cronset: the job runs
+	// The firewall. Client is the address of the person, so a rule that would block it is refused.
+	FwAction  string `json:"fw_action,omitempty"`
+	FwProto   string `json:"fw_proto,omitempty"`
+	FwPort    string `json:"fw_port,omitempty"`
+	FwSource  string `json:"fw_source,omitempty"`
+	FwComment string `json:"fw_comment,omitempty"`
+	RuleID    int64  `json:"rule_id,omitempty"`
+	Client    string `json:"client,omitempty"`
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -96,12 +106,13 @@ var writes = map[string]bool{
 	"site.ssl": true, "site.sslcustom": true, "site.csr": true, "site.ssloff": true, "site.sslredirect": true, // where the certificate comes from
 	"site.vhostset": true, "site.vhostreset": true, // the nginx configuration of a site
 	"site.cronadd": true, "site.cronset": true, "site.crondel": true, // the scheduled jobs of a site
+	"firewall.enable": true, "firewall.disable": true, "firewall.add": true, "firewall.del": true,
 	"db.add": true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -171,6 +182,28 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"site", "domain", "-name", r.Site, "-domain", r.Domain, "-www", r.WWW, "-apply"}, nil
 	case "site.ssl", "site.ssloff", "site.sslinfo", "site.sslcustom", "site.csr", "site.sslredirect":
 		return r.sslArgv()
+	case "firewall.status":
+		return []string{"firewall", "status", "-json"}, nil
+	case "firewall.enable":
+		return []string{"firewall", "enable", "-apply"}, nil
+	case "firewall.disable":
+		return []string{"firewall", "disable", "-apply"}, nil
+	case "firewall.del":
+		if r.RuleID < 1 {
+			return nil, fmt.Errorf("rule number %d is not valid", r.RuleID)
+		}
+		return []string{"firewall", "remove", "-id", strconv.FormatInt(r.RuleID, 10), "-apply"}, nil
+	case "firewall.add":
+		rule, err := firewall.ValidRule(firewall.Rule{Action: r.FwAction, Proto: r.FwProto, Port: r.FwPort, Source: r.FwSource, Comment: r.FwComment})
+		if err != nil {
+			return nil, err
+		}
+		if r.Client != "" && net.ParseIP(r.Client) == nil {
+			return nil, fmt.Errorf("client address %q is not valid", r.Client)
+		}
+		// "=" joins each value to its flag, so a value that starts with "-" or is empty cannot be read as another flag.
+		return []string{"firewall", "add", "-action=" + rule.Action, "-proto=" + rule.Proto, "-port=" + rule.Port, "-source=" + rule.Source,
+			"-comment=" + rule.Comment, "-client=" + r.Client, "-apply"}, nil
 	case "site.cronlist", "site.cronadd", "site.cronset", "site.crondel":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err

@@ -16,6 +16,7 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 - Tab SSL: Let's Encrypt (kiểm tra DNS trước, tự gia hạn), chứng chỉ riêng đã mua (kiểm tra khóa, chuỗi, tên được phủ), tạo CSR, chuyển hướng http sang https.
 - Tab vHost: sửa tay cấu hình nginx của site. Panel kiểm tra bằng `nginx -t` trước khi nạp, lỗi thì giữ nguyên cấu hình đang chạy, có nút về cấu hình mặc định. Khi site dùng cấu hình tự sửa, các thao tác ghi đè vhost (đổi tên miền, SSL, chuyển hướng) bị từ chối với thông báo rõ.
 - Tab Cron: công việc định kỳ cho từng site, chạy bằng tài khoản của site (không phải root), ghi vào `/etc/cron.d/mpn-<site>` với quyền 0600. Lịch và lệnh được kiểm tra chặt để không chèn được dòng vào tệp của root.
+- Tường lửa (nftables): bảng `inet mpn` riêng, không đụng luật của chương trình khác. Cổng SSH và cổng panel luôn mở và không xóa được, luật chặn chính người đang thao tác bị từ chối, từ chối bật khi ufw hoặc firewalld đang chạy. Nạp luật nguyên tử và tự nạp lại khi khởi động.
 - Trình quản lý tệp qua SFTP (sửa bằng CodeMirror, nén và giải nén, đổi quyền), terminal trên web, SSH/SFTP bằng khóa riêng của panel.
 - Cơ sở dữ liệu theo site, mở phpMyAdmin bằng tài khoản tạm không lưu mật khẩu.
 - Sao lưu hằng đêm (tệp và cơ sở dữ liệu), khôi phục từ giao diện.
@@ -51,7 +52,7 @@ Panel ở `https://<IP>:2610` (chứng chỉ tự ký cho tới khi có chứng 
 ## Dòng lệnh
 
 ```
-mpn version | tune | plan | site | db | backup | cron | root | web
+mpn version | tune | plan | site | db | backup | cron | firewall | root | web
 mpn site add|list|show|delete|apply|set|info|domain|vhost|remove|access|ssl|ssl-custom|ssl-csr|ssl-off|ssl-redirect|ssl-info|ssl-renew
 mpn db add|list|passwd|remove        mpn backup create|list|restore|prune
 ```
@@ -106,10 +107,11 @@ Các bài kiểm thử không nằm trong repo này (xem `.gitignore`).
 
 ## Còn thiếu
 
-Tường lửa, giám sát tài nguyên, xem log và chặn IP, chứng chỉ thật cho chính panel, nhiều người dùng và 2FA, sao lưu ra ngoài máy chủ, xoay vòng log PHP và Node.
+Giám sát tài nguyên, xem log và chặn IP, chứng chỉ thật cho chính panel, nhiều người dùng và 2FA, sao lưu ra ngoài máy chủ, xoay vòng log PHP và Node.
 
 ## Giấy phép
 
 Chưa chọn. Thư viện bên thứ ba được liệt kê trong [NOTICE](NOTICE).
+
 
 

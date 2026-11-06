@@ -66,6 +66,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /{$}", s.auth(s.sitesPage))
 	s.sitePages(mux)
 	s.dbPages(mux)
+	s.firewallPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
 	s.sitePagesOfOne(mux)
@@ -239,6 +240,7 @@ type view struct {
 	SSL                                         *sslView
 	VH                                          *vhostView
 	Cron                                        *cronView
+	FW                                          *fwView
 	DBs                                         []dbRow
 	Backups                                     []backupRow
 	SiteNames                                   []string

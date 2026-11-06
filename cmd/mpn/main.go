@@ -11,7 +11,7 @@ import (
 const version = "0.0.1-dev"
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|root|web> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|root|web> [flags]")
 	os.Exit(2)
 }
 
@@ -34,6 +34,8 @@ func main() {
 		runBackup(os.Args[2:])
 	case "cron":
 		runCron(os.Args[2:])
+	case "firewall":
+		runFirewall(os.Args[2:])
 	case "root":
 		runRoot(os.Args[2:])
 	case "web":

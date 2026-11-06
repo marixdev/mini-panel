@@ -77,6 +77,20 @@ UPDATE sites SET ssl_mode = 'letsencrypt' WHERE tls = 1;`,
     created_at INTEGER NOT NULL
 );
 CREATE INDEX cron_jobs_site ON cron_jobs(site_id);`,
+	// The firewall: the rules a person added, and a place for settings of the whole server.
+	`CREATE TABLE firewall_rules (
+    id         INTEGER PRIMARY KEY,
+    action     TEXT NOT NULL CHECK (action IN ('allow','deny')),
+    proto      TEXT NOT NULL CHECK (proto IN ('tcp','udp','both')),
+    port       TEXT NOT NULL DEFAULT '',
+    source     TEXT NOT NULL DEFAULT '',
+    comment    TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.
