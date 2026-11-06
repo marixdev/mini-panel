@@ -17,6 +17,7 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 - Tab vHost: sửa tay cấu hình nginx của site. Panel kiểm tra bằng `nginx -t` trước khi nạp, lỗi thì giữ nguyên cấu hình đang chạy, có nút về cấu hình mặc định. Khi site dùng cấu hình tự sửa, các thao tác ghi đè vhost (đổi tên miền, SSL, chuyển hướng) bị từ chối với thông báo rõ.
 - Tab Cron: công việc định kỳ cho từng site, chạy bằng tài khoản của site (không phải root), ghi vào `/etc/cron.d/mpn-<site>` với quyền 0600. Lịch và lệnh được kiểm tra chặt để không chèn được dòng vào tệp của root.
 - Tường lửa (nftables): bảng `inet mpn` riêng, không đụng luật của chương trình khác. Cổng SSH và cổng panel luôn mở và không xóa được, luật chặn chính người đang thao tác bị từ chối, từ chối bật khi ufw hoặc firewalld đang chạy. Nạp luật nguyên tử và tự nạp lại khi khởi động.
+- Giám sát: bộ xử lý, bộ nhớ, tải, mạng, ổ đĩa và trạng thái các dịch vụ. Panel tự đo mỗi 30 giây từ `/proc`, giữ 24 giờ (lưu ra `/var/lib/mpn-web/metrics.json` để không mất khi khởi động lại), vẽ biểu đồ SVG không cần thư viện, có chú giải khi rê chuột và bảng số liệu thay thế.
 - Trình quản lý tệp qua SFTP (sửa bằng CodeMirror, nén và giải nén, đổi quyền), terminal trên web, SSH/SFTP bằng khóa riêng của panel.
 - Cơ sở dữ liệu theo site, mở phpMyAdmin bằng tài khoản tạm không lưu mật khẩu.
 - Sao lưu hằng đêm (tệp và cơ sở dữ liệu), khôi phục từ giao diện.
@@ -112,6 +113,7 @@ Giám sát tài nguyên, xem log và chặn IP, chứng chỉ thật cho chính 
 ## Giấy phép
 
 Chưa chọn. Thư viện bên thứ ba được liệt kê trong [NOTICE](NOTICE).
+
 
 
 

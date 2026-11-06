@@ -59,6 +59,7 @@ CapabilityBoundingSet=
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectSystem=strict
+ReadWritePaths=/var/lib/mpn-web
 ProtectHome=yes
 ProtectKernelTunables=yes
 ProtectKernelModules=yes

@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"os/user"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 
 	"mpn/internal/ctl"
 	"mpn/internal/dbadmin"
+	"mpn/internal/monitor"
 	"mpn/internal/panelkey"
 	"mpn/internal/panelssh"
 	"mpn/internal/unit"
@@ -82,7 +84,10 @@ func webServe(args []string) {
 	if _, err := webauth.LoadAccount(*account); err != nil {
 		fail(fmt.Errorf("%w\ncreate the account as root with: mpn web passwd", err))
 	}
+	// The measurements are kept next to the account file: the one place the panel is allowed to write.
+	collector := monitor.New(monitor.ProcSource, filepath.Join(filepath.Dir(*account), "metrics.json"))
 	srv := &web.Server{
+		Mon:        collector,
 		Account:    func() (webauth.Account, error) { return webauth.LoadAccount(*account) },
 		Sessions:   webauth.NewSessions(30*time.Minute, 12*time.Hour, 20),
 		Throttle:   webauth.NewThrottle(),
@@ -120,6 +125,7 @@ func webServe(args []string) {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	go collector.Run(ctx)
 	go func() {
 		<-ctx.Done()
 		sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"mpn/internal/ctl"
+	"mpn/internal/monitor"
 	"mpn/internal/webauth"
 )
 
@@ -36,6 +37,10 @@ type Server struct {
 	// PHPDir (where php-fpm<version> programs are, /usr/sbin) and NodeRoot (/opt/node) tell which versions are installed, so
 	// the form to add a website offers only those. When empty, every version mpn knows is offered.
 	PHPDir, NodeRoot string
+	// Mon takes the measurements the monitoring page draws; nil leaves the page empty. UnitState asks systemd about a service;
+	// the real systemd when nil.
+	Mon       *monitor.Collector
+	UnitState monitor.UnitState
 	// Dialer logs in as a website's account for the terminal; nil switches the terminal off.
 	Dialer            Dialer
 	TermIdle, TermMax time.Duration // a terminal closes after this long without typing, and after this long in all
@@ -67,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	s.sitePages(mux)
 	s.dbPages(mux)
 	s.firewallPages(mux)
+	s.monitorPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
 	s.sitePagesOfOne(mux)
@@ -241,6 +247,7 @@ type view struct {
 	VH                                          *vhostView
 	Cron                                        *cronView
 	FW                                          *fwView
+	Mon                                         *monView
 	DBs                                         []dbRow
 	Backups                                     []backupRow
 	SiteNames                                   []string

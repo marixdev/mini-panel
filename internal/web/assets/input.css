@@ -81,6 +81,40 @@
   .hint {
     @apply mt-1 text-xs text-slate-500 dark:text-slate-400;
   }
+
+  /* Charts. The colours are the two first slots of the palette the validator passed, for the light and the dark card. */
+  :root {
+    --viz-1: #2a78d6; --viz-2: #eb6834; --viz-grid: #e1e0d9; --viz-axis: #c3c2b7; --viz-muted: #6b6a65; --viz-surface: #ffffff;
+    --viz-ok: #2a78d6; --viz-warn: #fab219; --viz-crit: #d03b3b; --viz-track: #e8f0fb;
+  }
+  .dark {
+    --viz-1: #3987e5; --viz-2: #d95926; --viz-grid: #2c2c2a; --viz-axis: #383835; --viz-muted: #a8a79f; --viz-surface: #0f172a;
+    --viz-ok: #3987e5; --viz-track: #1c2a40;
+  }
+  .viz { position: relative; margin: 0; outline: none; }
+  .viz:focus-visible { box-shadow: 0 0 0 2px var(--viz-1); border-radius: 0.5rem; }
+  .viz-scroll { overflow-x: auto; }
+  .viz-svg { display: block; width: 100%; min-width: 420px; height: auto; touch-action: pan-y; }
+  .viz-grid { stroke: var(--viz-grid); stroke-width: 1; }
+  .viz-tick { fill: var(--viz-muted); font-size: 13px; }
+  .viz-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .viz-line-1 { stroke: var(--viz-1); } .viz-line-2 { stroke: var(--viz-2); }
+  .viz-area { opacity: 0.1; } .viz-area-1 { fill: var(--viz-1); } .viz-area-2 { fill: var(--viz-2); }
+  .viz-dot { stroke: var(--viz-surface); stroke-width: 2; }
+  .viz-dot-1 { fill: var(--viz-1); } .viz-dot-2 { fill: var(--viz-2); }
+  .viz-cross { stroke: var(--viz-axis); stroke-width: 1; }
+  .viz-tip { position: absolute; top: 8px; z-index: 5; pointer-events: none; min-width: 9.5rem; padding: 0.5rem 0.65rem; border-radius: 0.5rem;
+    border: 1px solid var(--viz-grid); background: var(--viz-surface); box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); font-size: 0.75rem; }
+  .viz-tip-time { color: var(--viz-muted); margin-bottom: 0.25rem; }
+  .viz-tip-row { display: flex; align-items: center; gap: 0.5rem; line-height: 1.5; }
+  .viz-tip-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .viz-tip-name { color: var(--viz-muted); }
+  .viz-key { display: inline-block; width: 14px; height: 2px; border-radius: 1px; flex: none; }
+  .viz-key-1 { background: var(--viz-1); } .viz-key-2 { background: var(--viz-2); }
+  /* A meter is an SVG: the page's policy forbids a style attribute, which is how a width would otherwise be set. */
+  .viz-meter { display: block; width: 100%; height: 8px; }
+  .viz-track { fill: var(--viz-track); }
+  .viz-fill-ok { fill: var(--viz-ok); } .viz-fill-warn { fill: var(--viz-warn); } .viz-fill-crit { fill: var(--viz-crit); }
   .h-page {
     @apply text-2xl font-semibold tracking-tight;
   }

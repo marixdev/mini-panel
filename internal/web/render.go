@@ -13,7 +13,7 @@ import (
 //go:embed templates/*.html
 var templateFS embed.FS
 
-//go:embed assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/editor assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
+//go:embed assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/monitor.js assets/editor assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
 var assetFS embed.FS
 
 // page is a page drawn from the files in templates/: a shell (the frame around the page) and the page's own content.
@@ -26,8 +26,8 @@ type page struct {
 var pages = map[string]page{}
 
 func init() {
-	for name, shell := range map[string]string{"login": "auth", "sites": "base", "databases": "base", "backups": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base"} {
-		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu}).
+	for name, shell := range map[string]string{"login": "auth", "sites": "base", "databases": "base", "backups": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "monitor": "base"} {
+		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict}).
 			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
 	}
@@ -55,6 +55,7 @@ var assetFiles = map[string]struct{ path, ctype string }{
 	"terminal.js":    {"assets/terminal.js", "text/javascript; charset=utf-8"},
 	"fileeditor.js":  {"assets/fileeditor.js", "text/javascript; charset=utf-8"},
 	"filemanager.js": {"assets/filemanager.js", "text/javascript; charset=utf-8"},
+	"monitor.js":     {"assets/monitor.js", "text/javascript; charset=utf-8"},
 	"xterm.js":       {"assets/vendor/xterm.js", "text/javascript; charset=utf-8"},
 	"xterm.css":      {"assets/vendor/xterm.css", "text/css; charset=utf-8"},
 	"addon-fit.js":   {"assets/vendor/addon-fit.js", "text/javascript; charset=utf-8"},

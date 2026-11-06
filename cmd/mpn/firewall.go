@@ -152,8 +152,11 @@ func enablePlan(rules []firewall.Rule) installer.Plan {
 
 func disablePlan() installer.Plan {
 	return installer.Plan{{Name: "remove the firewall", Actions: []installer.Action{
+		// The unit stays "active" after it has loaded the rules (RemainAfterExit), so it is stopped as well as disabled: stopping
+		// it runs the script that deletes the table, and the state it reports is then the truth. The table is also deleted
+		// directly, for a machine where the unit was never made.
 		installer.Run("sh", "-c", nftBin+" list table inet mpn >/dev/null 2>&1 && "+nftBin+" delete table inet mpn || true"),
-		installer.Run("systemctl", "disable", fwUnitName),
+		installer.Run("sh", "-c", "systemctl disable --now "+fwUnitName+" 2>/dev/null || true"),
 	}}}
 }
 

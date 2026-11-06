@@ -6,7 +6,7 @@ import "time"
 var shellName = map[string]string{"auth": "auth", "base": "app"}
 
 // navOf says which menu entry is highlighted on a page. Result and confirmation pages highlight none.
-var navOf = map[string]string{"sites": "sites", "sitenew": "sites", "site": "sites", "fileedit": "sites", "filerename": "sites", "pmaopen": "databases", "databases": "databases", "backups": "backups", "firewall": "firewall"}
+var navOf = map[string]string{"sites": "sites", "sitenew": "sites", "site": "sites", "fileedit": "sites", "filerename": "sites", "pmaopen": "databases", "databases": "databases", "backups": "backups", "firewall": "firewall", "monitor": "monitor"}
 
 // stampText turns a backup name such as 20261104-031500 into 04/11/2026 03:15:00. Anything else is shown as it is.
 func stampText(s string) string {
