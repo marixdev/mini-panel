@@ -32,7 +32,7 @@ type Runner interface {
 }
 
 const (
-	maxRequest  = 64 << 10
+	maxRequest  = 160 << 10 // a configuration of 48 KB can grow to twice that once it is JSON
 	maxResponse = 2 << 20
 	readTimeout = 10 * time.Second
 )

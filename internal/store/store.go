@@ -65,6 +65,8 @@ ALTER TABLE sites ADD COLUMN allow_http INTEGER NOT NULL DEFAULT 0;`,
 	// Where the certificate comes from. Every site that has SSL until now got it from Let's Encrypt.
 	`ALTER TABLE sites ADD COLUMN ssl_mode TEXT NOT NULL DEFAULT '';
 UPDATE sites SET ssl_mode = 'letsencrypt' WHERE tls = 1;`,
+	// The nginx configuration a person wrote by hand; empty means the one mpn makes.
+	`ALTER TABLE sites ADD COLUMN vhost TEXT NOT NULL DEFAULT '';`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.
@@ -299,6 +301,18 @@ func (s *Store) SetSSL(name, mode string) error {
 	return nil
 }
 
+// SetVhost stores the nginx configuration a person wrote for a site, or "" to go back to the one mpn makes.
+func (s *Store) SetVhost(name, text string) error {
+	res, err := s.db.Exec(`UPDATE sites SET vhost = ? WHERE name = ?`, text, name)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("site %q: %w", name, ErrNotFound)
+	}
+	return nil
+}
+
 // SetTLS records whether a site is served over SSL, from Let's Encrypt when it is.
 func (s *Store) SetTLS(name string, on bool) error {
 	if on {
@@ -381,7 +395,7 @@ func (s *Store) AllocNodePort(lo, hi int) (int, error) {
 
 // load reads sites matching where (a fixed string from this package, never user input) and their hostnames.
 func (s *Store) load(where string, args ...any) ([]site.Site, error) {
-	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http
+	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, vhost
 		FROM sites `+where+` ORDER BY name`, args...)
 	if err != nil {
 		return nil, err
@@ -394,7 +408,7 @@ func (s *Store) load(where string, args ...any) ([]site.Site, error) {
 		var kind string
 		var php, up, nodeVer, pyVer, entry, ini sql.NullString
 		var port sql.NullInt64
-		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP); err != nil {
+		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP, &st.CustomVhost); err != nil {
 			rows.Close()
 			return nil, err
 		}

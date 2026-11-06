@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode"
@@ -24,6 +25,7 @@ type siteRow struct {
 	WWW              string `json:"www"`
 	AllowHTTP        bool   `json:"allow_http"`
 	CertExpiry       int64  `json:"cert_expiry"`
+	CustomVhost      bool   `json:"custom_vhost"`
 }
 
 // Primary is the first host name: the one the site is known by.
@@ -93,6 +95,17 @@ func (s *Server) ask(req ctl.Request) (ctl.Response, error) {
 	return s.Call(req)
 }
 
+var exitStatusRe = regexp.MustCompile(`^exit status \d+$`)
+
+// plainError replaces what only a programmer reads ("exit status 2") with a sentence that sends the person to the details,
+// which the page shows right below. Any other error message is kept as it is.
+func plainError(e string) string {
+	if exitStatusRe.MatchString(strings.TrimSpace(e)) {
+		return T("err.exitstatus")
+	}
+	return e
+}
+
 // run sends the requests one after another and stops at the first that fails. The output of all of them is shown.
 func (s *Server) run(title string, reqs ...ctl.Request) *result {
 	res := &result{Title: title, OK: true}
@@ -107,7 +120,7 @@ func (s *Server) run(title string, reqs ...ctl.Request) *result {
 			break
 		}
 		if !resp.OK {
-			res.OK, res.Error = false, resp.Error
+			res.OK, res.Error = false, plainError(resp.Error)
 			break
 		}
 	}
@@ -150,8 +163,24 @@ func splitHosts(v string) []string {
 
 var siteKinds = []string{"php", "node", "python", "static", "proxy"}
 
+// installedPHP and installedNode are the versions the form may offer: the ones on this machine, or every known one when the
+// server was not told where to look (a test, or a build that does not know the machine).
+func (s *Server) installedPHP() []string {
+	if s.PHPDir == "" {
+		return site.PHPVersions
+	}
+	return site.InstalledPHP(s.PHPDir)
+}
+
+func (s *Server) installedNode() []string {
+	if s.NodeRoot == "" {
+		return site.NodeVersions
+	}
+	return site.InstalledNode(s.NodeRoot)
+}
+
 func (s *Server) newSitePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	v := view{Page: "sitenew", Kinds: siteKinds, Reserved: reservedList(), PHPVersions: site.PHPVersions, NodeVersions: site.NodeVersions}
+	v := view{Page: "sitenew", Kinds: siteKinds, Reserved: reservedList(), PHPVersions: s.installedPHP(), NodeVersions: s.installedNode()}
 	if k := r.URL.Query().Get("kind"); k != "" {
 		if !slices.Contains(siteKinds, k) {
 			http.Error(w, T("err.kind"), http.StatusBadRequest)
@@ -214,6 +243,19 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		nothing(T("err.userexists", user))
 		return
 	}
+	// A runtime that is not installed would only fail at the last step with a message about a missing program.
+	switch r.PostFormValue("kind") {
+	case "php":
+		if v := r.PostFormValue("php"); !slices.Contains(s.installedPHP(), v) {
+			nothing(T("err.phpmissing", v))
+			return
+		}
+	case "node":
+		if v := r.PostFormValue("node"); !slices.Contains(s.installedNode(), v) {
+			nothing(T("err.nodemissing", v))
+			return
+		}
+	}
 	password := r.PostFormValue("password")
 	if password == "" {
 		var err error
@@ -237,6 +279,9 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 				return
 			case row.User == user:
 				nothing(T("err.userused", user, row.Name))
+				return
+			case slices.Contains(row.Hostnames, hosts[0]):
+				nothing(T("dm.err.used", hosts[0], row.Name))
 				return
 			}
 		}

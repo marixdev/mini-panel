@@ -33,6 +33,9 @@ type Server struct {
 	LoginCheck func(user string) error
 	// PasswdFile is where the shell of an account is read from; /etc/passwd when empty.
 	PasswdFile string
+	// PHPDir (where php-fpm<version> programs are, /usr/sbin) and NodeRoot (/opt/node) tell which versions are installed, so
+	// the form to add a website offers only those. When empty, every version mpn knows is offered.
+	PHPDir, NodeRoot string
 	// Dialer logs in as a website's account for the terminal; nil switches the terminal off.
 	Dialer            Dialer
 	TermIdle, TermMax time.Duration // a terminal closes after this long without typing, and after this long in all
@@ -234,6 +237,7 @@ type view struct {
 	ServerIP                                    string // shown in the header of a site
 	Dom                                         *domainView
 	SSL                                         *sslView
+	VH                                          *vhostView
 	DBs                                         []dbRow
 	Backups                                     []backupRow
 	SiteNames                                   []string
@@ -257,6 +261,8 @@ func bodyLimit(p string) int64 {
 		return 0
 	case strings.HasPrefix(p, "/sites/") && strings.HasSuffix(p, "/files/save"):
 		return 6 << 20
+	case strings.HasPrefix(p, "/sites/") && strings.HasSuffix(p, "/vhost"):
+		return 256 << 10 // up to 48 KB of configuration; the encoding of a form can make every character three bytes long
 	case strings.HasPrefix(p, "/sites/") && strings.HasSuffix(p, "/ssl/custom"):
 		return 128 << 10 // three boxes of up to 16 KB, which the encoding of the form makes larger
 	}

@@ -40,6 +40,7 @@ func siteSSL(args []string) {
 	defer st.Close()
 	s, err := st.GetSite(*name)
 	fail(err)
+	refuseCustomVhost(s, "SSL")
 	cfg := acmeConfig(*email, *staging)
 	if !*apply {
 		fmt.Printf("would check that %v lead to this server, request a certificate from %s,\nsave it in %s and %s\n", s.Hostnames, cfg.Directory, provision.CertDir(s.Name), map[bool]string{true: "leave SSL off (staging)", false: "switch the site to SSL"}[*staging])
@@ -93,6 +94,7 @@ func siteSSLCustom(args []string) {
 	defer st.Close()
 	s, err := st.GetSite(*name)
 	fail(err)
+	refuseCustomVhost(s, "SSL")
 
 	raw, err := io.ReadAll(io.LimitReader(os.Stdin, 64<<10))
 	fail(err)
@@ -171,6 +173,7 @@ func siteSSLOff(args []string) {
 	defer st.Close()
 	s, err := st.GetSite(*name)
 	fail(err)
+	refuseCustomVhost(s, "removing SSL")
 	if !*apply {
 		fmt.Println("would serve the site over HTTP and delete its certificate files")
 		return
@@ -207,6 +210,7 @@ func siteSSLRedirect(args []string) {
 	defer st.Close()
 	s, err := st.GetSite(*name)
 	fail(err)
+	refuseCustomVhost(s, "the redirect")
 	s.AllowHTTP = !*redirect
 	if !*apply {
 		fmt.Printf("would set: send http:// visitors to SSL = %v\n", *redirect)

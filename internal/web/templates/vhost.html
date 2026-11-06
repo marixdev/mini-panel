@@ -1,0 +1,32 @@
+{{define "vhosttab"}}
+{{$v := .VH}}
+{{if .Notice}}<div role="status" class="alert-ok mb-4"><span>{{.Notice.Title}}</span></div>{{end}}
+{{if $v.Error}}<div role="alert" class="alert-error mb-4"><span>{{$v.Error}}</span></div>{{end}}
+
+<form method="post" action="/sites/{{.Site.Name}}/vhost" class="card p-6" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "vh.title"}}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "vh.sub"}}</p>
+    </div>
+    {{if $v.Custom}}<span class="badge-amber">{{T "vh.custom.badge"}}</span>{{else}}<span class="badge-gray">{{T "vh.default.badge"}}</span>{{end}}
+  </div>
+  {{if $v.Custom}}<p class="alert-warn mt-4">{{T "vh.custom.warn"}}</p>{{else}}<p class="hint">{{T "vh.default.hint"}}</p>{{end}}
+  <label for="vh-text" class="label mt-5">{{T "vh.text"}}</label>
+  <textarea id="vh-text" name="vhost" rows="26" wrap="off" class="field font-mono text-xs leading-relaxed" spellcheck="false" autocapitalize="none" autocomplete="off" required>{{$v.Text}}</textarea>
+  <p class="hint">{{T "vh.hint" $v.MaxKB}}</p>
+  {{if .Site.TLS}}<p class="hint">{{T "vh.hint.ssl"}}</p>{{end}}
+  <div class="mt-5"><button class="btn-primary">{{T "vh.save"}}</button></div>
+</form>
+
+{{if $v.Custom}}
+<details class="card mt-4">
+  <summary class="cursor-pointer px-6 py-4 text-sm font-semibold">{{T "vh.reset.title"}}</summary>
+  <div class="border-t border-slate-200 px-6 pb-6 dark:border-slate-800">
+    <p class="alert-warn mt-4">{{T "vh.reset.warn"}}</p>
+    <form method="post" action="/sites/{{.Site.Name}}/vhost/reset" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "vh.reset.btn"}}</button></form>
+  </div>
+</details>
+{{end}}
+{{end}}

@@ -68,6 +68,8 @@ func (s *Server) sslAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 	res.Back = back
 	if !res.OK {
 		switch {
+		case strings.Contains(res.Output, "custom-vhost"):
+			res.Error = T("vh.err.custom")
 		case strings.Contains(res.Output, dnscheck.Marker):
 			res.Error = T("ssl.err.dns")
 		case strings.Contains(res.Output, "ssl-untrusted"):

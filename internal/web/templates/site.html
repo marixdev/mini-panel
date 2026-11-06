@@ -24,6 +24,7 @@
   </div>
 </section>
 {{else if eq .Tab "ssl"}}{{template "ssltab" .}}
+{{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "ssh"}}
 <section class="card p-6">
   <h2 class="h-section">{{T "ssh.title"}}</h2>

@@ -46,6 +46,7 @@ func siteDomain(args []string) {
 	}
 	cur.Hostnames = site.NamesFor(d, cur.WWW)
 	fail(cur.Validate())
+	refuseCustomVhost(old, "a new domain")
 
 	// A name that another site holds is refused before anything is written.
 	all, err := st.ListSites()

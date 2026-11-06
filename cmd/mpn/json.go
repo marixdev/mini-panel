@@ -8,16 +8,17 @@ import (
 // The list commands print these with -json, which is what the web panel reads. Slices are never nil, so an empty
 // result is [] and not null.
 type siteRow struct {
-	Name       string   `json:"name"`
-	Kind       string   `json:"kind"`
-	User       string   `json:"user"`
-	Hostnames  []string `json:"hostnames"`
-	Detail     string   `json:"detail"`
-	TLS        bool     `json:"tls"`
-	Root       string   `json:"root"`
-	WWW        string   `json:"www"`
-	AllowHTTP  bool     `json:"allow_http"`
-	CertExpiry int64    `json:"cert_expiry,omitempty"` // when the certificate ends, for a site with HTTPS
+	Name        string   `json:"name"`
+	Kind        string   `json:"kind"`
+	User        string   `json:"user"`
+	Hostnames   []string `json:"hostnames"`
+	Detail      string   `json:"detail"`
+	TLS         bool     `json:"tls"`
+	Root        string   `json:"root"`
+	WWW         string   `json:"www"`
+	AllowHTTP   bool     `json:"allow_http"`
+	CertExpiry  int64    `json:"cert_expiry,omitempty"` // when the certificate ends, for a site with HTTPS
+	CustomVhost bool     `json:"custom_vhost"`          // the nginx configuration was written by hand
 }
 
 type dbRow struct {

@@ -26,12 +26,14 @@
       {{if eq .Kind "php"}}
       <div>
         <label for="f-php" class="label">{{T "f.php"}}</label>
-        <select id="f-php" name="php" class="field">{{range .PHPVersions}}<option{{if eq . "8.4"}} selected{{end}}>{{.}}</option>{{end}}</select>
+        {{if .PHPVersions}}<select id="f-php" name="php" class="field">{{range .PHPVersions}}<option{{if eq . "8.4"}} selected{{end}}>{{.}}</option>{{end}}</select>
+        {{else}}<p class="alert-warn mt-1">{{T "new.nophp"}}</p>{{end}}
       </div>
       {{else if eq .Kind "node"}}
       <div>
         <label for="f-node" class="label">{{T "f.node"}}</label>
-        <select id="f-node" name="node" class="field">{{range .NodeVersions}}<option{{if eq . "22"}} selected{{end}}>{{.}}</option>{{end}}</select>
+        {{if .NodeVersions}}<select id="f-node" name="node" class="field">{{range .NodeVersions}}<option{{if eq . "22"}} selected{{end}}>{{.}}</option>{{end}}</select>
+        {{else}}<p class="alert-warn mt-1">{{T "new.nonode"}}</p>{{end}}
       </div>
       <div class="sm:col-span-2">
         <label for="f-entry" class="label">{{T "f.entry"}}</label>

@@ -23,6 +23,11 @@ func init() {
 		"err.userexists":   "Máy chủ đã có tài khoản %q. Hãy chọn tên khác.",
 		"err.userused":     "Tài khoản %q đã được website %q dùng. Hãy chọn tên khác.",
 		"err.siteused":     "Đã có website tên %q.",
+		"err.phpmissing":   "PHP %q chưa được cài trên máy này. Cài bằng: mpn plan -php <phiên bản> -apply",
+		"err.nodemissing":  "Node.js %q chưa được cài trên máy này. Cài bằng: mpn plan -node <phiên bản> -apply",
+		"new.nophp":        "Chưa cài phiên bản PHP nào trên máy này. Cài bằng: mpn plan -php 8.4 -apply",
+		"new.nonode":       "Chưa cài phiên bản Node.js nào trên máy này. Cài bằng: mpn plan -node 22 -apply",
+		"err.exitstatus":   "Lệnh không thực hiện được. Chi tiết nằm ở phần kết quả bên dưới.",
 	} {
 		vi[k] = v
 	}

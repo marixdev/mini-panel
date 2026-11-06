@@ -67,6 +67,9 @@ type Site struct {
 	WWW       string // WWWOff, WWWBare or WWWWith
 	AllowHTTP bool   // with SSL on, still serve over plain HTTP instead of sending visitors to SSL
 	SSLMode   string // SSLNone, SSLLetsEncrypt or SSLCustom; TLS is true exactly when this is not SSLNone
+	// CustomVhost is the whole nginx configuration of the site when a person wrote it by hand on the vHost tab. It replaces the
+	// one mpn makes, so settings that mpn writes into that one (domain, SSL, port, web root) no longer reach it.
+	CustomVhost string
 }
 
 // reservedUsers are accounts that exist on a stock Debian or Ubuntu server or that the software installed by mpn runs

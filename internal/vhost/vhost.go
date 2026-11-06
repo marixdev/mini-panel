@@ -4,8 +4,10 @@ package vhost
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 	"text/template"
+	"unicode/utf8"
 
 	"mpn/internal/site"
 )
@@ -111,10 +113,39 @@ server {
 {{- end}}
 `))
 
-// Render validates the site and returns the nginx config for it.
+// MaxCustom is the longest configuration a person may write by hand. It has to fit in one request to the root helper.
+const MaxCustom = 48 << 10
+
+var serverBlockRe = regexp.MustCompile(`(?m)^\s*server\s*\{`)
+
+// CheckCustom says what is wrong with a configuration written by hand, or nil. nginx -t decides whether nginx accepts it; this
+// catches what nginx cannot know: that it is a server block at all, and that the renewal of a certificate would still work.
+func CheckCustom(text string, ssl bool) error {
+	switch {
+	case strings.TrimSpace(text) == "":
+		return fmt.Errorf("the configuration is empty")
+	case len(text) > MaxCustom:
+		return fmt.Errorf("the configuration is longer than %d KB", MaxCustom>>10)
+	case !utf8.ValidString(text) || strings.ContainsRune(text, 0):
+		return fmt.Errorf("the configuration has characters that cannot be part of a text file")
+	case !serverBlockRe.MatchString(text):
+		return fmt.Errorf("the configuration has no server { } block")
+	case ssl && !strings.Contains(text, "/.well-known/acme-challenge/"):
+		return fmt.Errorf("the location /.well-known/acme-challenge/ is missing: without it the certificate cannot be renewed")
+	}
+	return nil
+}
+
+// Render validates the site and returns the nginx config for it: the one a person wrote, when there is one.
 func Render(s site.Site, o Options) (string, error) {
 	if err := s.Validate(); err != nil {
 		return "", err
+	}
+	if s.CustomVhost != "" {
+		if err := CheckCustom(s.CustomVhost, o.TLS); err != nil {
+			return "", err
+		}
+		return strings.TrimRight(s.CustomVhost, "\r\n") + "\n", nil
 	}
 	if o.TLS && !site.SafePath(o.CertDir) {
 		return "", fmt.Errorf("certificate directory %q is not a safe path", o.CertDir)

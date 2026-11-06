@@ -15,16 +15,18 @@ type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, in the order it is shown: what the site is, what it holds, then how to get in.
 func siteMenu() []siteTabLink {
-	return []siteTabLink{{"overview", ""}, {"ssl", "/ssl"}, {"files", "/files"}, {"databases", "/databases"}, {"backups", "/backups"}, {"ssh", "/ssh"}, {"terminal", "/terminal"}}
+	return []siteTabLink{{"overview", ""}, {"ssl", "/ssl"}, {"vhost", "/vhost"}, {"files", "/files"}, {"databases", "/databases"}, {"backups", "/backups"}, {"ssh", "/ssh"}, {"terminal", "/terminal"}}
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/ssh", "/databases", "/backups"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/ssh", "/databases", "/backups"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/ssh": "ssh", "/databases": "databases", "/backups": "backups"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/ssh": "ssh", "/databases": "databases", "/backups": "backups"}[tab])
 		}))
 	}
+	mux.HandleFunc("POST /sites/{name}/vhost", s.auth(s.saveVhost))
+	mux.HandleFunc("POST /sites/{name}/vhost/reset", s.auth(s.resetVhost))
 	mux.HandleFunc("POST /sites/{name}/domain", s.auth(s.saveDomain))
 	mux.HandleFunc("POST /sites/{name}/ssl/letsencrypt", s.auth(s.sslLetsEncrypt))
 	mux.HandleFunc("POST /sites/{name}/ssl/custom", s.auth(s.sslCustom))
@@ -81,6 +83,8 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		}
 	case "ssl":
 		v.SSL = s.loadSSL(row, v.ServerIP)
+	case "vhost":
+		v.VH = s.loadVhost(row)
 	case "ssh":
 		v.SSHHost = hostOnly(r.Host)
 		v.SSHEnabled = access.Enabled(s.passwdFile(), row.User)

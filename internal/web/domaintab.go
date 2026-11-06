@@ -78,5 +78,8 @@ func (s *Server) saveDomain(w http.ResponseWriter, r *http.Request, ss webauth.S
 	}
 	res := s.run(T("act.site.domain", row.Name), req)
 	res.Back = back
+	if !res.OK && strings.Contains(res.Output, "custom-vhost") {
+		res.Error = T("vh.err.custom")
+	}
 	s.finish(w, r, res)
 }

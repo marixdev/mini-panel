@@ -68,6 +68,8 @@ func runSite(args []string) {
 		siteAccess(args[1:])
 	case "domain":
 		siteDomain(args[1:])
+	case "vhost":
+		siteVhost(args[1:])
 	case "ssl":
 		siteSSL(args[1:])
 	case "ssl-custom":
@@ -88,7 +90,7 @@ func runSite(args []string) {
 }
 
 func siteUsage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn site <add|list|show|delete|apply|set|info|domain|remove|access|ssl|ssl-renew> [flags]   (add -h for the flags)")
+	fmt.Fprintln(os.Stderr, "usage: mpn site <add|list|show|delete|apply|set|info|domain|vhost|remove|access|ssl|ssl-renew> [flags]   (add -h for the flags)")
 	os.Exit(2)
 }
 
@@ -185,7 +187,7 @@ func siteList(args []string) {
 			detail = s.Upstream
 		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", s.Name, s.Kind, s.User, strings.Join(s.Hostnames, ","), detail)
-		rows = append(rows, siteRow{Name: s.Name, Kind: string(s.Kind), User: s.User, Hostnames: append([]string{}, s.Hostnames...), Detail: detail, TLS: s.TLS, Root: s.Root, WWW: s.WWW, AllowHTTP: s.AllowHTTP, CertExpiry: expiryOf(s)})
+		rows = append(rows, siteRow{Name: s.Name, Kind: string(s.Kind), User: s.User, Hostnames: append([]string{}, s.Hostnames...), Detail: detail, TLS: s.TLS, Root: s.Root, WWW: s.WWW, AllowHTTP: s.AllowHTTP, CertExpiry: expiryOf(s), CustomVhost: s.CustomVhost != ""})
 	}
 	if *asJSON {
 		printJSON(rows)

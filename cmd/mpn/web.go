@@ -23,6 +23,7 @@ import (
 	"mpn/internal/dbadmin"
 	"mpn/internal/panelkey"
 	"mpn/internal/panelssh"
+	"mpn/internal/unit"
 	"mpn/internal/web"
 	"mpn/internal/webauth"
 )
@@ -91,6 +92,8 @@ func webServe(args []string) {
 		Secure:     *secure,
 		TrustProxy: *trustProxy,
 		Dialer:     panelssh.Client{Addr: *sshAddr, KeyPath: panelkey.Default.Private, HostKeyGlob: "/etc/ssh/ssh_host_*_key.pub", Timeout: 8 * time.Second},
+		PHPDir:     "/usr/sbin",
+		NodeRoot:   unit.NodeRoot,
 		TermLog: func(event, site string, err error) {
 			if err != nil {
 				log.Printf("terminal %s: site %s: %v", event, site, err)

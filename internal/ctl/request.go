@@ -13,6 +13,7 @@ import (
 	"mpn/internal/backup"
 	"mpn/internal/dbadmin"
 	"mpn/internal/site"
+	"mpn/internal/vhost"
 )
 
 type Request struct {
@@ -50,6 +51,8 @@ type Request struct {
 	AllowUntrusted bool   `json:"allow_untrusted,omitempty"`
 	Algo           string `json:"algo,omitempty"`     // site.csr: ecdsa or rsa
 	Redirect       bool   `json:"redirect,omitempty"` // site.sslredirect: send http:// visitors to SSL
+	// site.vhostset: the nginx configuration written by hand. It reaches mpn on standard input only.
+	Vhost string `json:"vhost,omitempty"`
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -58,6 +61,8 @@ func (r Request) Stdin() string {
 	switch {
 	case r.Op == "site.access" && r.Enable:
 		return r.Password + "\n"
+	case r.Op == "site.vhostset":
+		return r.Vhost
 	case r.Op == "site.sslcustom":
 		b, _ := json.Marshal(struct {
 			Key            string `json:"key"`
@@ -77,12 +82,13 @@ const maxCertText = 16 << 10
 var writes = map[string]bool{
 	"site.add": true, "site.apply": true, "site.remove": true, "site.access": true, "site.panelkey": true, "site.set": true, "site.domain": true,
 	"site.ssl": true, "site.sslcustom": true, "site.csr": true, "site.ssloff": true, "site.sslredirect": true, // where the certificate comes from
+	"site.vhostset": true, "site.vhostreset": true, // the nginx configuration of a site
 	"db.add": true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -152,6 +158,23 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"site", "domain", "-name", r.Site, "-domain", r.Domain, "-www", r.WWW, "-apply"}, nil
 	case "site.ssl", "site.ssloff", "site.sslinfo", "site.sslcustom", "site.csr", "site.sslredirect":
 		return r.sslArgv()
+	case "site.vhost", "site.vhostset", "site.vhostreset":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		switch r.Op {
+		case "site.vhost":
+			return []string{"site", "vhost", "-name", r.Site}, nil
+		case "site.vhostreset":
+			return []string{"site", "vhost", "-name", r.Site, "-reset", "-apply"}, nil
+		}
+		if len(r.Vhost) > vhost.MaxCustom {
+			return nil, fmt.Errorf("the configuration is longer than %d KB", vhost.MaxCustom>>10)
+		}
+		if strings.TrimSpace(r.Vhost) == "" || strings.ContainsRune(r.Vhost, 0) {
+			return nil, fmt.Errorf("the configuration is empty or has a character that cannot be part of a text file")
+		}
+		return []string{"site", "vhost", "-name", r.Site, "-stdin", "-apply"}, nil
 	case "site.apply":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err
