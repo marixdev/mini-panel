@@ -38,16 +38,20 @@
 </form>
 {{end}}
 
-<div class="mt-4 grid gap-4 {{if not .Site.TLS}}lg:grid-cols-2{{end}}">
+<div class="mt-4 grid gap-4">
   {{if or (not .Site.TLS) $s.Own}}
   <section class="card p-6">
-    <h2 class="h-section">{{T "ssl.le.title"}}</h2>
-    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.le.desc"}}</p>
-    <form method="post" action="/sites/{{.Site.Name}}/ssl/letsencrypt" class="mt-4">
-      <input type="hidden" name="csrf" value="{{.CSRF}}">
-      <button class="btn-primary">{{if .Site.TLS}}{{T "ssl.le.replace"}}{{else}}{{T "ssl.le.btn"}}{{end}}</button>
-    </form>
-    <p class="hint">{{T "ssl.le.hint" $s.Domain (or $s.ServerIP (T "ssl.le.ip"))}}</p>
+    <div class="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+      <div class="min-w-0 flex-1 basis-80">
+        <h2 class="h-section">{{T "ssl.le.title"}}</h2>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.le.desc"}}</p>
+        <p class="hint">{{T "ssl.le.hint" $s.Domain (or $s.ServerIP (T "ssl.le.ip"))}}</p>
+      </div>
+      <form method="post" action="/sites/{{.Site.Name}}/ssl/letsencrypt" class="shrink-0">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <button class="btn-primary">{{if .Site.TLS}}{{T "ssl.le.replace"}}{{else}}{{T "ssl.le.btn"}}{{end}}</button>
+      </form>
+    </div>
   </section>
   {{end}}
 
@@ -56,15 +60,23 @@
     <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssl.own.desc"}}</p>
     <form method="post" action="/sites/{{.Site.Name}}/ssl/custom" class="mt-4" autocomplete="off">
       <input type="hidden" name="csrf" value="{{.CSRF}}">
-      <label for="c-cert" class="label">{{T "ssl.cert"}}</label>
-      <textarea id="c-cert" name="cert" rows="5" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
-      <p class="hint">{{T "ssl.cert.hint"}}</p>
-      <label for="c-key" class="label mt-4">{{T "ssl.key"}}</label>
-      <textarea id="c-key" name="key" rows="5" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
-      <p class="hint">{{T "ssl.key.hint"}}</p>
-      <label for="c-chain" class="label mt-4">{{T "ssl.chain"}}</label>
-      <textarea id="c-chain" name="chain" rows="3" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
-      <p class="hint">{{T "ssl.chain.hint"}}</p>
+      <div class="grid gap-x-4 gap-y-4 lg:grid-cols-3">
+        <div>
+          <label for="c-cert" class="label">{{T "ssl.cert"}}</label>
+          <textarea id="c-cert" name="cert" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+          <p class="hint">{{T "ssl.cert.hint"}}</p>
+        </div>
+        <div>
+          <label for="c-key" class="label">{{T "ssl.key"}}</label>
+          <textarea id="c-key" name="key" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+          <p class="hint">{{T "ssl.key.hint"}}</p>
+        </div>
+        <div>
+          <label for="c-chain" class="label">{{T "ssl.chain"}}</label>
+          <textarea id="c-chain" name="chain" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+          <p class="hint">{{T "ssl.chain.hint"}}</p>
+        </div>
+      </div>
       <label class="mt-4 flex cursor-pointer items-start gap-3">
         <input type="checkbox" name="allow_untrusted" value="1" class="mt-1 size-4 accent-teal-600">
         <span class="text-sm">{{T "ssl.untrusted.allow"}}</span>

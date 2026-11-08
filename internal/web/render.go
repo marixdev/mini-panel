@@ -26,7 +26,7 @@ type page struct {
 var pages = map[string]page{}
 
 func init() {
-	for name, shell := range map[string]string{"login": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "monitor": "base"} {
+	for name, shell := range map[string]string{"login": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "cloudlist": "base", "monitor": "base"} {
 		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict}).
 			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
@@ -103,4 +103,4 @@ func (s *Server) assetRoutes(mux *http.ServeMux) {
 }
 
 // extraTemplates are files parsed together with a page, for parts of it that are too long to keep in one file.
-var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html"}, "fileedit": {"templates/fileicons.html"}}
+var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html", "templates/cloud.html"}, "fileedit": {"templates/fileicons.html"}}

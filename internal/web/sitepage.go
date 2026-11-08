@@ -46,6 +46,7 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/ssl/redirect", s.auth(s.sslRedirect))
 	mux.HandleFunc("POST /sites/{name}/settings", s.auth(s.saveSettings))
 	mux.HandleFunc("POST /sites/{name}/speed", s.auth(s.saveSpeed))
+	s.cloudRoutes(mux)
 	mux.HandleFunc("POST /sites/{name}/ssh/enable", s.auth(s.sshEnable))
 	mux.HandleFunc("GET /sites/{name}/ssh/reset", s.auth(s.sshConfirm("reset")))
 	mux.HandleFunc("POST /sites/{name}/ssh/reset", s.auth(s.sshAct("reset")))
@@ -106,6 +107,7 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.Error = s.list(ctl.Request{Op: "db.list", Site: row.Name}, &v.DBs)
 	case "backups":
 		v.Error = s.list(ctl.Request{Op: "backup.list", Site: row.Name}, &v.Backups)
+		v.Cloud = s.loadCloud(row.Name)
 	}
 	s.show(w, 200, ss, v)
 }

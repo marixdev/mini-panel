@@ -26,6 +26,7 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 - Trình quản lý tệp qua SFTP (sửa bằng CodeMirror, nén và giải nén, đổi quyền), terminal trên web, SSH/SFTP bằng khóa riêng của panel.
 - Cơ sở dữ liệu theo site, mở phpMyAdmin bằng tài khoản tạm không lưu mật khẩu.
 - Sao lưu hằng đêm (tệp và cơ sở dữ liệu), khôi phục từ giao diện.
+- Đồng bộ sao lưu lên Google Drive (thẻ cuối tab Sao lưu của từng site): đăng nhập bằng OAuth kiểu thiết bị, bạn tự tạo Client ID và Client secret trong Google Cloud Console (loại "TVs and Limited Input devices") nên không cần mở trình duyệt trên máy chủ. Panel chỉ xin quyền `drive.file`, tức chỉ thấy các tệp do chính nó tạo. Mỗi site bật hoặc tắt riêng; kết nối dùng chung. Bản sao nằm ở `mpn-backups/<site>/<thời điểm>/` trong Drive, `MANIFEST` tải lên cuối cùng nên thư mục thiếu `MANIFEST` là bản dở và được làm lại. Số bản giữ trên Drive bằng số bản giữ trên máy (7), bản cũ hơn tự xóa và chỉ đụng vào thư mục có tên dạng thời điểm. Tải lên theo từng khối 8 MB, mất mạng giữa chừng chỉ tải lại một khối. Chạy tự động sau sao lưu hằng đêm (drop-in `mpn-backup.service.d/cloud.conf`, lỗi đồng bộ không làm hỏng việc sao lưu), hoặc bấm "Đồng bộ ngay" để chạy nền. Khôi phục từ Drive: nút "Xem các bản trên Drive" liệt kê các bản hoàn chỉnh và tải một bản về `/var/backups/mpn/<site>/` (chạy nền, tiếp tục từ chỗ đứt nếu mất mạng). Bản tải về chỉ xuất hiện trong danh sách sao lưu khi đã đủ: mỗi tệp khớp mã MD5 của Google, mỗi `.gz` đọc hết không lỗi, `MANIFEST` đúng website và thời điểm, cơ sở dữ liệu thuộc đúng website, và máy chủ còn đủ chỗ trống. Sau đó khôi phục bằng đúng luồng khôi phục thường (trang xác nhận, chọn tệp hoặc cơ sở dữ liệu). Client secret và token nằm trong `/etc/mpn/gdrive.json` quyền 0600, chỉ đi qua đầu vào chuẩn, không nằm trong đối số dòng lệnh.
 
 **Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13.
 
@@ -58,10 +59,11 @@ Panel ở `https://<IP>:2610` (chứng chỉ tự ký cho tới khi có chứng 
 ## Dòng lệnh
 
 ```
-mpn version | tune | plan | site | db | backup | cron | firewall | security | panel | root | web
+mpn version | tune | plan | site | db | backup | cron | firewall | security | panel | cloud | root | web
 mpn site add|list|show|delete|apply|set|info|domain|vhost|remove|access|ssl|ssl-custom|ssl-csr|ssl-off|ssl-redirect|ssl-info|ssl-renew
 mpn db add|list|passwd|remove        mpn backup create|list|restore|prune
 mpn security status|waf|f2b|unban    mpn panel ssl-info|ssl|ssl-custom|ssl-off
+mpn cloud status|connect|finish|disconnect|enable|sync|list|fetch
 ```
 
 Thêm `-h` sau lệnh con để xem các cờ. Lệnh thay đổi máy đều mặc định xem thử và cần `-apply`.
@@ -96,6 +98,8 @@ internal/
   fm/          trình quản lý tệp qua SFTP
   security/    cấu hình ModSecurity (OWASP CRS) và fail2ban, kiểm tra giá trị
   panelssl/    chứng chỉ của chính panel: thư mục dùng chung, tên miền, khối nginx cho thử thách ACME
+  gdrive/      client Google Drive chỉ dùng net/http: đăng nhập thiết bị, làm mới token, tải lên tiếp tục được
+  cloudsync/   đồng bộ sao lưu của một site lên ổ đám mây, kết nối và khóa chạy một lần
   dbadmin/ backup/ access/ panelkey/ panelssh/ tune/ webauth/ ...
 cmd/mpn/       dòng lệnh
 tools/editor/  dựng trình soạn mã CodeMirror thành một tệp nhúng

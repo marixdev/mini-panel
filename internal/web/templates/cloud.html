@@ -1,0 +1,97 @@
+{{define "cloudcard"}}
+{{$c := .Cloud}}
+<section class="card mt-6 p-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "cld.title"}}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cld.sub"}}</p>
+    </div>
+    <span>{{if and $c.Connected $c.Enabled}}<span class="badge-teal">{{T "cld.on"}}</span>{{else if $c.Connected}}<span class="badge-gray">{{T "cld.off"}}</span>{{else}}<span class="badge-amber">{{T "cld.notconn"}}</span>{{end}}</span>
+  </div>
+  {{if $c.Error}}<p class="alert-error mt-4">{{$c.Error}}</p>{{end}}
+
+  {{if $c.Connected}}
+  <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-3">
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "cld.account"}}</dt><dd class="mt-0.5 font-medium break-all">{{if $c.Email}}{{$c.Email}}{{else}}–{{end}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "cld.folder"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{T "cld.folder.v"}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "cld.last"}}</dt>
+      <dd class="mt-0.5">
+        {{if $c.State}}
+        <span class="font-medium">{{$c.AtText}}</span> {{if $c.State.OK}}<span class="badge-teal">{{T "cld.last.ok"}}</span>{{else}}<span class="badge-rose">{{T "cld.last.fail"}}</span>{{end}}
+        {{if $c.State.OK}}<span class="hint mt-1">{{T "cld.last.detail" $c.State.Uploaded $c.State.Present}}</span>{{end}}
+        {{else}}<span class="text-slate-600 dark:text-slate-300">{{T "cld.last.none"}}</span>{{end}}
+      </dd></div>
+  </dl>
+  {{if $c.Revoked}}<p class="alert-warn mt-4">{{T "cld.revoked"}}</p>{{end}}
+  {{if $c.StateMsg}}<p class="alert-error mt-4 break-words">{{$c.StateMsg}}</p>{{end}}
+  {{with $c.Fetch}}
+  {{if .Running}}<p class="alert-warn mt-4">{{T "cld.fetch.running" (stamp .Stamp)}}</p>
+  {{else if .OK}}<p class="alert-ok mt-4">{{T "cld.fetch.ok" (stamp .Stamp)}}</p>
+  {{else}}<p class="alert-error mt-4 break-words">{{T "cld.fetch.fail" (stamp .Stamp)}} {{$c.FetchMsg}}</p>{{end}}
+  {{end}}
+
+  <div class="mt-5 flex flex-wrap items-start gap-x-10 gap-y-5 border-t border-slate-200 pt-5 dark:border-slate-800">
+    <form method="post" action="/sites/{{.Site.Name}}/cloud/enable" class="min-w-0 flex-1 basis-72">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <h3 class="text-sm font-semibold">{{T "cld.site.title"}}</h3>
+      <p class="hint mt-1">{{T "cld.site.d"}}</p>
+      <div class="mt-3"><button name="on" value="{{if $c.Enabled}}0{{else}}1{{end}}" class="{{if $c.Enabled}}btn-secondary{{else}}btn-primary{{end}}">{{if $c.Enabled}}{{T "cld.site.off"}}{{else}}{{T "cld.site.on"}}{{end}}</button></div>
+    </form>
+    <form method="post" action="/sites/{{.Site.Name}}/cloud/sync" class="min-w-0 flex-1 basis-72">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <h3 class="text-sm font-semibold">{{T "cld.sync"}}</h3>
+      <p class="hint mt-1">{{T "cld.sync.d"}}</p>
+      <div class="mt-3"><button class="btn-secondary">{{T "cld.sync"}}</button></div>
+    </form>
+    <div class="min-w-0 flex-1 basis-72">
+      <h3 class="text-sm font-semibold">{{T "cld.restore"}}</h3>
+      <p class="hint mt-1">{{T "cld.restore.d"}}</p>
+      <div class="mt-3"><a class="btn-secondary" href="/sites/{{.Site.Name}}/cloud/backups">{{T "cld.restore.btn"}}</a></div>
+    </div>
+  </div>
+  <p class="hint">{{T "cld.shared"}}</p>
+
+  <details class="mt-4 rounded-lg border border-slate-200 dark:border-slate-800">
+    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700 dark:text-rose-400">{{T "cld.disconnect"}}</summary>
+    <div class="border-t border-slate-200 p-4 dark:border-slate-800">
+      <p class="alert-warn">{{T "cld.disconnect.w"}}</p>
+      <form method="post" action="/sites/{{.Site.Name}}/cloud/disconnect" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "cld.disconnect.btn"}}</button></form>
+    </div>
+  </details>
+
+  {{else if $c.Pending}}
+  <div class="mt-5 grid gap-x-10 gap-y-5 lg:grid-cols-2">
+    <div>
+      <h3 class="text-sm font-semibold">{{T "cld.pending.title"}}</h3>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cld.pending.step" $c.ExpiresText}}</p>
+      <dl class="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+        <div><dt class="text-slate-500 dark:text-slate-400">{{T "cld.pending.url"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all"><a class="link" href="{{$c.Pending.URL}}" target="_blank" rel="noopener noreferrer">{{$c.Pending.URL}}</a></dd></div>
+        <div><dt class="text-slate-500 dark:text-slate-400">{{T "cld.pending.code"}}</dt><dd class="mt-0.5 font-mono text-xl font-semibold tracking-widest">{{$c.Pending.UserCode}}</dd></div>
+      </dl>
+    </div>
+    <div class="flex flex-wrap items-end gap-3">
+      <form method="post" action="/sites/{{.Site.Name}}/cloud/finish"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "cld.finish"}}</button></form>
+      <form method="post" action="/sites/{{.Site.Name}}/cloud/disconnect"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "cld.cancel"}}</button></form>
+    </div>
+  </div>
+
+  {{else}}
+  <form method="post" action="/sites/{{.Site.Name}}/cloud/connect" class="mt-5" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="grid gap-x-6 gap-y-4 lg:grid-cols-2">
+      <div>
+        <label for="cld-id" class="label">{{T "cld.client.id"}}</label>
+        <input id="cld-id" name="client_id" class="field font-mono" maxlength="200" spellcheck="false" autocapitalize="none" placeholder="1234567890-abc.apps.googleusercontent.com" required>
+      </div>
+      <div>
+        <label for="cld-secret" class="label">{{T "cld.client.secret"}}</label>
+        <input id="cld-secret" name="client_secret" type="password" class="field font-mono" maxlength="200" spellcheck="false" autocapitalize="none" autocomplete="new-password" placeholder="GOCSPX-..." required>
+      </div>
+    </div>
+    <p class="hint">{{T "cld.client.hint"}}</p>
+    <div class="mt-4"><button class="btn-primary">{{T "cld.connect"}}</button></div>
+  </form>
+  {{end}}
+  <p class="hint">{{T "cld.note"}}</p>
+</section>
+{{end}}

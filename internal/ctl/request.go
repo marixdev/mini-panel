@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"mpn/internal/backup"
+	"mpn/internal/cloudsync"
 	"mpn/internal/cron"
 	"mpn/internal/dbadmin"
 	"mpn/internal/firewall"
@@ -78,6 +79,10 @@ type Request struct {
 	SecIgnore []string `json:"sec_ignore,omitempty"` // security.f2b: addresses and networks that are never banned
 	Jail      string   `json:"jail,omitempty"`       // security.unban
 	IP        string   `json:"ip,omitempty"`         // security.unban
+	// The copy of the backups to Google Drive. The client secret reaches mpn on standard input only.
+	CloudClientID string `json:"cloud_client_id,omitempty"` // cloud.connect
+	CloudSecret   string `json:"cloud_secret,omitempty"`    // cloud.connect
+	CloudOn       bool   `json:"cloud_on,omitempty"`        // cloud.enable: the site is copied
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -93,6 +98,12 @@ func (r Request) Stdin() string {
 			Schedule string `json:"schedule"`
 			Command  string `json:"command"`
 		}{r.Schedule, r.Command})
+		return string(b)
+	case r.Op == "cloud.connect":
+		b, _ := json.Marshal(struct {
+			ClientID     string `json:"client_id"`
+			ClientSecret string `json:"client_secret"`
+		}{r.CloudClientID, r.CloudSecret})
 		return string(b)
 	case r.Op == "site.sslcustom", r.Op == "panel.sslcustom":
 		b, _ := json.Marshal(struct {
@@ -118,12 +129,13 @@ var writes = map[string]bool{
 	"firewall.enable": true, "firewall.disable": true, "firewall.add": true, "firewall.del": true,
 	"security.waf": true, "security.f2b": true, "security.unban": true, // ModSecurity with the OWASP rules, and fail2ban
 	"panel.ssl": true, "panel.sslcustom": true, "panel.ssloff": true, // the certificate of the panel and of the database browser
+	"cloud.connect": true, "cloud.finish": true, "cloud.disconnect": true, "cloud.enable": true, "cloud.sync": true, "cloud.fetch": true, // the copy of backups to Google Drive
 	"db.add": true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "panel.sslinfo": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -220,6 +232,47 @@ func (r Request) Argv() ([]string, error) {
 		// "=" joins each value to its flag, so a value that starts with "-" or is empty cannot be read as another flag.
 		return []string{"firewall", "add", "-action=" + rule.Action, "-proto=" + rule.Proto, "-port=" + rule.Port, "-source=" + rule.Source,
 			"-comment=" + rule.Comment, "-client=" + r.Client, "-apply"}, nil
+	case "cloud.status":
+		if err := optionalSite(r.Site); err != nil {
+			return nil, err
+		}
+		a := []string{"cloud", "status", "-json"}
+		if r.Site != "" {
+			a = append(a, "-site="+r.Site)
+		}
+		return a, nil
+	case "cloud.connect":
+		if err := cloudsync.ValidClient(r.CloudClientID, r.CloudSecret); err != nil {
+			return nil, err
+		}
+		return []string{"cloud", "connect", "-apply"}, nil
+	case "cloud.finish":
+		return []string{"cloud", "finish", "-apply"}, nil
+	case "cloud.disconnect":
+		return []string{"cloud", "disconnect", "-apply"}, nil
+	case "cloud.enable":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"cloud", "enable", "-site=" + r.Site, "-on=" + strconv.FormatBool(r.CloudOn), "-apply"}, nil
+	case "cloud.sync":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"cloud", "sync", "-site=" + r.Site, "-detach", "-apply"}, nil
+	case "cloud.list":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"cloud", "list", "-site=" + r.Site}, nil
+	case "cloud.fetch":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		if !backup.ValidStamp(r.Backup) {
+			return nil, fmt.Errorf("backup name %q is not valid", r.Backup)
+		}
+		return []string{"cloud", "fetch", "-site=" + r.Site, "-backup=" + r.Backup, "-detach", "-apply"}, nil
 	case "panel.sslinfo":
 		return []string{"panel", "ssl-info"}, nil
 	case "panel.ssloff":

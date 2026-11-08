@@ -33,30 +33,46 @@
   <p class="alert-warn mt-4">{{T "psl.selfsigned.d"}}</p>
   {{end}}
 
-  <div class="mt-5 grid gap-4 lg:grid-cols-2">
+  <div class="mt-5 grid gap-4">
     <form method="post" action="/security/panel-ssl/letsencrypt" class="rounded-lg border border-slate-200 p-4 dark:border-slate-800" autocomplete="off">
       <input type="hidden" name="csrf" value="{{$.CSRF}}">
       <h3 class="text-sm font-semibold">{{T "psl.le.title"}}</h3>
       <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "psl.le.desc"}}</p>
-      <label for="psl-le-domain" class="label mt-4">{{T "psl.domain"}}</label>
-      <input id="psl-le-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" placeholder="panel.example.com" spellcheck="false" autocapitalize="none" required>
+      <div class="mt-4 flex flex-wrap items-end gap-3">
+        <div class="min-w-64 max-w-md flex-1">
+          <label for="psl-le-domain" class="label">{{T "psl.domain"}}</label>
+          <input id="psl-le-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" placeholder="panel.example.com" spellcheck="false" autocapitalize="none" required>
+        </div>
+        <button class="btn-primary">{{if eq .Mode "letsencrypt"}}{{T "psl.le.replace"}}{{else}}{{T "psl.le.btn"}}{{end}}</button>
+      </div>
       <p class="hint">{{T "psl.le.hint" (or .ServerIP "–")}}</p>
-      <div class="mt-4"><button class="btn-primary">{{if eq .Mode "letsencrypt"}}{{T "psl.le.replace"}}{{else}}{{T "psl.le.btn"}}{{end}}</button></div>
     </form>
 
     <form method="post" action="/security/panel-ssl/custom" class="rounded-lg border border-slate-200 p-4 dark:border-slate-800" autocomplete="off">
       <input type="hidden" name="csrf" value="{{$.CSRF}}">
       <h3 class="text-sm font-semibold">{{T "psl.own.title"}}</h3>
       <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "psl.own.desc"}}</p>
-      <label for="psl-c-domain" class="label mt-4">{{T "psl.domain"}}</label>
-      <input id="psl-c-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" placeholder="panel.example.com" spellcheck="false" autocapitalize="none" required>
-      <label for="psl-c-cert" class="label mt-4">{{T "ssl.cert"}}</label>
-      <textarea id="psl-c-cert" name="cert" rows="4" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
-      <label for="psl-c-key" class="label mt-4">{{T "ssl.key"}}</label>
-      <textarea id="psl-c-key" name="key" rows="4" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
-      <p class="hint">{{T "ssl.key.hint"}}</p>
-      <label for="psl-c-chain" class="label mt-4">{{T "ssl.chain"}}</label>
-      <textarea id="psl-c-chain" name="chain" rows="3" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+      <div class="mt-4 max-w-md">
+        <label for="psl-c-domain" class="label">{{T "psl.domain"}}</label>
+        <input id="psl-c-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" placeholder="panel.example.com" spellcheck="false" autocapitalize="none" required>
+      </div>
+      <div class="mt-4 grid gap-4 lg:grid-cols-3">
+        <div>
+          <label for="psl-c-cert" class="label">{{T "ssl.cert"}}</label>
+          <textarea id="psl-c-cert" name="cert" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+          <p class="hint">{{T "ssl.cert.hint"}}</p>
+        </div>
+        <div>
+          <label for="psl-c-key" class="label">{{T "ssl.key"}}</label>
+          <textarea id="psl-c-key" name="key" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+          <p class="hint">{{T "ssl.key.hint"}}</p>
+        </div>
+        <div>
+          <label for="psl-c-chain" class="label">{{T "ssl.chain"}}</label>
+          <textarea id="psl-c-chain" name="chain" rows="7" class="field font-mono text-xs" spellcheck="false" autocapitalize="none" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+          <p class="hint">{{T "ssl.chain.hint"}}</p>
+        </div>
+      </div>
       <label class="mt-4 flex cursor-pointer items-start gap-3">
         <input type="checkbox" name="allow_untrusted" value="1" class="mt-1 size-4 accent-teal-600">
         <span class="text-sm">{{T "ssl.untrusted.allow"}}</span>

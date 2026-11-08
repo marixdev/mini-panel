@@ -28,7 +28,6 @@ type Server struct {
 	// HostsFile lists more such names, one per line. It is read while the panel runs, so a name added by the SSL page is
 	// accepted at once.
 	HostsFile  string
-	hosts      hostsCache
 	Secure     bool // the panel is reached over HTTPS: sets the Secure cookie flag and HSTS
 	TrustProxy bool // take the client address from X-Real-IP, which the local nginx sets
 	// Call sends a request to the root helper. The web side has no other way to change anything.
@@ -260,6 +259,8 @@ type view struct {
 	Cron                                        *cronView
 	FW                                          *fwView
 	Sec                                         *secView
+	Cloud                                       *cloudView
+	CloudList                                   *cloudListView
 	Mon                                         *monView
 	DBs                                         []dbRow
 	Backups                                     []backupRow

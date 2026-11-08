@@ -1,0 +1,28 @@
+{{define "content"}}
+{{$l := .CloudList}}
+<div class="mb-6">
+  <a class="link text-sm" href="/sites/{{.Site.Name}}/backups">&larr; {{T "cld.list.back"}}</a>
+  <h1 class="h-page mt-2">{{T "cld.list.title" .Site.Name}}</h1>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cld.list.sub"}}</p>
+</div>
+{{if $l.Error}}<div role="alert" class="alert-error mb-6"><span>{{$l.Error}}</span></div>{{end}}
+
+{{if $l.Rows}}
+<div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>{{T "cld.list.col.at"}}</th><th>{{T "cld.list.col.size"}}</th><th>{{T "cld.list.col.state"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range $l.Rows}}<tr>
+      <td class="whitespace-nowrap">{{stamp .Stamp}}</td>
+      <td class="whitespace-nowrap tabular-nums">{{printf "%.1f" .SizeMB}} MB</td>
+      <td>{{if .Local}}<span class="badge-teal">{{T "cld.list.local"}}</span>{{else}}<span class="badge-gray">{{T "cld.list.none"}}</span>{{end}}</td>
+      <td class="text-right">{{if not .Local}}<form method="post" action="/sites/{{$.Site.Name}}/cloud/fetch" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="backup" value="{{.Stamp}}"><button class="btn-sm">{{T "cld.list.fetch"}}</button></form>{{end}}</td>
+    </tr>{{end}}
+    </tbody>
+  </table>
+</div>
+<p class="hint">{{T "cld.list.next" 7}}</p>
+{{else if not $l.Error}}
+<div class="card p-10 text-center"><p class="font-medium">{{T "cld.list.empty"}}</p><p class="hint">{{T "cld.list.empty.d"}}</p></div>
+{{end}}
+{{end}}

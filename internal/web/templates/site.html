@@ -89,5 +89,6 @@
   <form method="post" action="/backups/create" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups"><button class="btn-primary">{{T "bk.create"}}</button></form>
   <p class="alert-warn mt-5">{{T "bk.note"}}</p>
 </section>
+{{template "cloudcard" .}}
 {{end}}
 {{end}}
