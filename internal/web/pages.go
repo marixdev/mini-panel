@@ -24,6 +24,7 @@ type siteRow struct {
 	Root             string
 	WWW              string `json:"www"`
 	AllowHTTP        bool   `json:"allow_http"`
+	Speed            bool   `json:"speed"`
 	CertExpiry       int64  `json:"cert_expiry"`
 	CustomVhost      bool   `json:"custom_vhost"`
 }

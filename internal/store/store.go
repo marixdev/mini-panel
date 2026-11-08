@@ -91,6 +91,8 @@ CREATE TABLE settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );`,
+	// Compression and browser caching of static files, switched on per site.
+	`ALTER TABLE sites ADD COLUMN speed INTEGER NOT NULL DEFAULT 0;`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.
@@ -361,7 +363,7 @@ func (s *Store) SetDomain(st site.Site) error {
 		return fmt.Errorf("site %q: %w", st.Name, ErrNotFound)
 	}
 	mode := sslModeOf(st)
-	if _, err := tx.Exec(`UPDATE sites SET www = ?, allow_http = ?, tls = ?, ssl_mode = ? WHERE id = ?`, st.WWW, st.AllowHTTP, mode != "", mode, id); err != nil {
+	if _, err := tx.Exec(`UPDATE sites SET www = ?, allow_http = ?, tls = ?, ssl_mode = ?, speed = ? WHERE id = ?`, st.WWW, st.AllowHTTP, mode != "", mode, st.Speed, id); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM hostnames WHERE site_id = ?`, id); err != nil {
@@ -419,7 +421,7 @@ func (s *Store) AllocNodePort(lo, hi int) (int, error) {
 
 // load reads sites matching where (a fixed string from this package, never user input) and their hostnames.
 func (s *Store) load(where string, args ...any) ([]site.Site, error) {
-	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, vhost
+	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, vhost, speed
 		FROM sites `+where+` ORDER BY name`, args...)
 	if err != nil {
 		return nil, err
@@ -432,7 +434,7 @@ func (s *Store) load(where string, args ...any) ([]site.Site, error) {
 		var kind string
 		var php, up, nodeVer, pyVer, entry, ini sql.NullString
 		var port sql.NullInt64
-		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP, &st.CustomVhost); err != nil {
+		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP, &st.CustomVhost, &st.Speed); err != nil {
 			rows.Close()
 			return nil, err
 		}

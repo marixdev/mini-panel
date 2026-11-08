@@ -13,18 +13,26 @@ import (
 // siteTabLink is one entry of the menu of a site: the key names its icon and its label (tab.<key>), the path follows /sites/<name>.
 type siteTabLink struct{ Key, Path string }
 
-// siteMenu is the menu of a site, in the order it is shown: what the site is, what it holds, then how to get in.
+// siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
 func siteMenu() []siteTabLink {
-	return []siteTabLink{{"overview", ""}, {"ssl", "/ssl"}, {"vhost", "/vhost"}, {"files", "/files"}, {"databases", "/databases"}, {"backups", "/backups"}, {"cron", "/cron"}, {"ssh", "/ssh"}, {"terminal", "/terminal"}}
+	return []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/ssh", "/databases", "/backups", "/cron"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/ssh": "ssh", "/databases": "databases", "/backups": "backups", "/cron": "cron"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron"}[tab])
 		}))
 	}
+	// SSH/SFTP moved into the Overview; the old address still works for bookmarks.
+	mux.HandleFunc("GET /sites/{name}/ssh", s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+		if !site.ValidName(r.PathValue("name")) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, siteTab(r.PathValue("name"), ""), http.StatusSeeOther)
+	}))
 	mux.HandleFunc("POST /sites/{name}/cron", s.auth(s.addCron))
 	mux.HandleFunc("POST /sites/{name}/cron/{id}/toggle", s.auth(s.toggleCron))
 	mux.HandleFunc("POST /sites/{name}/cron/{id}/delete", s.auth(s.deleteCron))
@@ -37,6 +45,7 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/ssl/off", s.auth(s.sslOff))
 	mux.HandleFunc("POST /sites/{name}/ssl/redirect", s.auth(s.sslRedirect))
 	mux.HandleFunc("POST /sites/{name}/settings", s.auth(s.saveSettings))
+	mux.HandleFunc("POST /sites/{name}/speed", s.auth(s.saveSpeed))
 	mux.HandleFunc("POST /sites/{name}/ssh/enable", s.auth(s.sshEnable))
 	mux.HandleFunc("GET /sites/{name}/ssh/reset", s.auth(s.sshConfirm("reset")))
 	mux.HandleFunc("POST /sites/{name}/ssh/reset", s.auth(s.sshAct("reset")))
@@ -84,22 +93,13 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		if v.Over, e = s.loadOverview(row); e != "" {
 			v.Error = e
 		}
+		s.loadSSH(&v, r, row)
 	case "ssl":
 		v.SSL = s.loadSSL(row, v.ServerIP)
 	case "vhost":
 		v.VH = s.loadVhost(row)
 	case "cron":
 		v.Cron = s.loadCron(row)
-	case "ssh":
-		v.SSHHost = hostOnly(r.Host)
-		v.SSHEnabled = access.Enabled(s.passwdFile(), row.User)
-		v.KeyStatus = "unknown"
-		if v.SSHEnabled && s.LoginCheck != nil {
-			v.KeyStatus = "ok"
-			if err := s.LoginCheck(row.User); err != nil {
-				v.KeyStatus = "broken"
-			}
-		}
 	case "databases":
 		v.DBBase = dbadmin.BaseName(row.Name)
 		v.PMA = s.pmaOn()
@@ -110,10 +110,23 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	s.show(w, 200, ss, v)
 }
 
+// loadSSH fills in what the SSH/SFTP card of the Overview shows.
+func (s *Server) loadSSH(v *view, r *http.Request, row siteRow) {
+	v.SSHHost = hostOnly(r.Host)
+	v.SSHEnabled = access.Enabled(s.passwdFile(), row.User)
+	v.KeyStatus = "unknown"
+	if v.SSHEnabled && s.LoginCheck != nil {
+		v.KeyStatus = "ok"
+		if err := s.LoginCheck(row.User); err != nil {
+			v.KeyStatus = "broken"
+		}
+	}
+}
+
 // loginResult runs the helper and, if it worked, adds the account and the new password to what the page shows once.
 func (s *Server) loginResult(r *http.Request, title string, row siteRow, password string) *result {
 	res := s.run(title, ctl.Request{Op: "site.access", Site: row.Name, Enable: true, Password: password})
-	res.Back = siteTab(row.Name, "ssh")
+	res.Back = siteTab(row.Name, "")
 	if res.OK {
 		res.Output += "\n\n" + T("res.access", hostOnly(r.Host), row.User, password)
 	}
@@ -128,7 +141,7 @@ func (s *Server) sshEnable(w http.ResponseWriter, r *http.Request, ss webauth.Se
 	}
 	password, err := dbadmin.NewPassword()
 	if err != nil {
-		s.refuseTo(w, ss, siteTab(row.Name, "ssh"), T("err.nothing"), err.Error())
+		s.refuseTo(w, ss, siteTab(row.Name, ""), T("err.nothing"), err.Error())
 		return
 	}
 	s.finish(w, r, s.loginResult(r, T("act.ssh.on", row.Name), row, password))
@@ -148,7 +161,7 @@ func (s *Server) sshConfirm(action string) func(http.ResponseWriter, *http.Reque
 			return
 		}
 		s.show(w, 200, ss, view{Page: "confirm", Confirm: &confirm{Title: T(a.title, row.Name), Warning: T(a.warn), Button: T(a.button),
-			Action: "/sites/" + row.Name + "/ssh/" + action, Expect: row.Name, Back: "/sites/" + row.Name + "/ssh"}})
+			Action: "/sites/" + row.Name + "/ssh/" + action, Expect: row.Name, Back: "/sites/" + row.Name}})
 	}
 }
 
@@ -161,18 +174,18 @@ func (s *Server) sshAct(action string) func(http.ResponseWriter, *http.Request, 
 			return
 		}
 		if r.PostFormValue("confirm") != row.Name {
-			s.refuseTo(w, ss, siteTab(row.Name, "ssh"), T("err.nothing"), T("err.confirm"))
+			s.refuseTo(w, ss, siteTab(row.Name, ""), T("err.nothing"), T("err.confirm"))
 			return
 		}
 		if action == "disable" {
 			res := s.run(T(a.act, row.Name), ctl.Request{Op: "site.access", Site: row.Name})
-			res.Back = siteTab(row.Name, "ssh")
+			res.Back = siteTab(row.Name, "")
 			s.finish(w, r, res)
 			return
 		}
 		password, err := dbadmin.NewPassword()
 		if err != nil {
-			s.refuseTo(w, ss, siteTab(row.Name, "ssh"), T("err.nothing"), err.Error())
+			s.refuseTo(w, ss, siteTab(row.Name, ""), T("err.nothing"), err.Error())
 			return
 		}
 		s.finish(w, r, s.loginResult(r, T(a.act, row.Name), row, password))
@@ -186,6 +199,6 @@ func (s *Server) sshPanelKey(w http.ResponseWriter, r *http.Request, ss webauth.
 		return
 	}
 	res := s.run(T("act.ssh.key", row.Name), ctl.Request{Op: "site.panelkey", Site: row.Name})
-	res.Back = siteTab(row.Name, "ssh")
+	res.Back = siteTab(row.Name, "")
 	s.finish(w, r, res)
 }

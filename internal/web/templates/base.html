@@ -19,8 +19,6 @@
     </a>
     <nav class="order-last flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
       <a href="/" class="nav-link"{{if eq .Nav "sites"}} aria-current="page"{{end}}>{{T "nav.websites"}}</a>
-      <a href="/databases" class="nav-link"{{if eq .Nav "databases"}} aria-current="page"{{end}}>{{T "nav.databases"}}</a>
-      <a href="/backups" class="nav-link"{{if eq .Nav "backups"}} aria-current="page"{{end}}>{{T "nav.backups"}}</a>
       <a href="/monitor" class="nav-link"{{if eq .Nav "monitor"}} aria-current="page"{{end}}>{{T "nav.monitor"}}</a>
       <a href="/firewall" class="nav-link"{{if eq .Nav "firewall"}} aria-current="page"{{end}}>{{T "nav.firewall"}}</a>
     </nav>

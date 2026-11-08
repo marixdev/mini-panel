@@ -54,6 +54,7 @@ type Request struct {
 	AllowUntrusted bool   `json:"allow_untrusted,omitempty"`
 	Algo           string `json:"algo,omitempty"`     // site.csr: ecdsa or rsa
 	Redirect       bool   `json:"redirect,omitempty"` // site.sslredirect: send http:// visitors to SSL
+	Speed          bool   `json:"speed,omitempty"`    // site.speed: compress and cache static files
 	// site.vhostset: the nginx configuration written by hand. It reaches mpn on standard input only.
 	Vhost string `json:"vhost,omitempty"`
 	// Scheduled jobs. site.cronadd sends the schedule and the command on standard input.
@@ -104,7 +105,7 @@ const maxCertText = 16 << 10
 var writes = map[string]bool{
 	"site.add": true, "site.apply": true, "site.remove": true, "site.access": true, "site.panelkey": true, "site.set": true, "site.domain": true,
 	"site.ssl": true, "site.sslcustom": true, "site.csr": true, "site.ssloff": true, "site.sslredirect": true, // where the certificate comes from
-	"site.vhostset": true, "site.vhostreset": true, // the nginx configuration of a site
+	"site.vhostset": true, "site.vhostreset": true, "site.speed": true, // the nginx configuration of a site
 	"site.cronadd": true, "site.cronset": true, "site.crondel": true, // the scheduled jobs of a site
 	"firewall.enable": true, "firewall.disable": true, "firewall.add": true, "firewall.del": true,
 	"db.add": true, "db.passwd": true, "db.remove": true,
@@ -180,6 +181,11 @@ func (r Request) Argv() ([]string, error) {
 			return nil, fmt.Errorf("www choice %q must be empty, bare or www", r.WWW)
 		}
 		return []string{"site", "domain", "-name", r.Site, "-domain", r.Domain, "-www", r.WWW, "-apply"}, nil
+	case "site.speed":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"site", "speed", "-name", r.Site, "-on=" + strconv.FormatBool(r.Speed), "-apply"}, nil
 	case "site.ssl", "site.ssloff", "site.sslinfo", "site.sslcustom", "site.csr", "site.sslredirect":
 		return r.sslArgv()
 	case "firewall.status":

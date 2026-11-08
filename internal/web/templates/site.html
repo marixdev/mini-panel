@@ -15,42 +15,12 @@
   </dl>
 </section>
 {{end}}
-<section class="card mt-4 p-6">
-  <h2 class="h-section">{{T "ov.actions.title"}}</h2>
-  <div class="mt-4 flex flex-wrap items-center gap-4">
-    <form method="post" action="/sites/apply"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}"><button class="btn-secondary">{{T "sites.apply"}}</button></form>
-    <p class="hint mt-0">{{T "ov.actions.apply.hint"}}</p>
-    <a class="link-danger ml-auto text-sm" href="/sites/remove?site={{.Site.Name}}">{{T "sites.remove"}}</a>
-  </div>
-</section>
+{{template "sshcard" .}}
+{{template "speedcard" .}}
+{{template "deletecard" .}}
 {{else if eq .Tab "ssl"}}{{template "ssltab" .}}
 {{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "cron"}}{{template "crontab" .}}
-{{else if eq .Tab "ssh"}}
-<section class="card p-6">
-  <h2 class="h-section">{{T "ssh.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssh.sub"}}</p>
-  <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.state"}}</dt><dd class="mt-0.5">{{if .SSHEnabled}}<span class="badge-teal">{{T "ssh.on"}}</span>{{else}}<span class="badge-amber">{{T "ssh.off"}}</span>{{end}}</dd></div>
-    {{if .SSHEnabled}}
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.key"}}</dt><dd class="mt-0.5">{{if eq .KeyStatus "ok"}}<span class="badge-teal">{{T "ssh.key.ok"}}</span>{{else if eq .KeyStatus "broken"}}<span class="badge-rose">{{T "ssh.key.broken"}}</span>{{else}}<span class="badge-gray">{{T "ssh.key.unknown"}}</span>{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.host"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.SSHHost}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.port"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">22</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
-    {{end}}
-  </dl>
-  <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
-    {{if .SSHEnabled}}
-    <a class="btn-secondary" href="/sites/{{.Site.Name}}/ssh/reset">{{T "ssh.reset"}}</a>
-    {{if eq .KeyStatus "broken"}}<form method="post" action="/sites/{{.Site.Name}}/ssh/panelkey"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "ssh.restore"}}</button></form>{{end}}
-    <a class="link-danger text-sm" href="/sites/{{.Site.Name}}/ssh/disable">{{T "ssh.disable"}}</a>
-    {{else}}
-    <form method="post" action="/sites/{{.Site.Name}}/ssh/enable"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "ssh.enable"}}</button></form>
-    {{end}}
-  </div>
-  <p class="alert-warn mt-5">{{if .SSHEnabled}}{{T "ssh.note"}}{{else}}{{T "ssh.off.note"}}{{end}}</p>
-</section>
-
 {{else if eq .Tab "files"}}{{template "filestab" .}}
 
 {{else if eq .Tab "databases"}}
@@ -95,7 +65,7 @@
 <script src="{{asset "addon-fit.js"}}"></script>
 <script src="{{asset "terminal.js"}}" defer></script>
 {{else}}
-<div class="alert-warn"><span>{{T "term.off"}} <a class="link" href="/sites/{{.Site.Name}}/ssh">{{T "tab.ssh"}}</a></span></div>
+<div class="alert-warn"><span>{{T "term.off"}} <a class="link" href="/sites/{{.Site.Name}}">{{T "tab.overview"}}</a></span></div>
 {{end}}
 
 {{else if eq .Tab "backups"}}{{if .Backups}}

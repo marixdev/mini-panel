@@ -70,6 +70,8 @@ type Site struct {
 	// CustomVhost is the whole nginx configuration of the site when a person wrote it by hand on the vHost tab. It replaces the
 	// one mpn makes, so settings that mpn writes into that one (domain, SSL, port, web root) no longer reach it.
 	CustomVhost string
+	// Speed turns on compression and long browser caching of static files (see vhost.go).
+	Speed bool
 }
 
 // reservedUsers are accounts that exist on a stock Debian or Ubuntu server or that the software installed by mpn runs

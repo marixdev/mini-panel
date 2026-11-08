@@ -40,6 +40,10 @@ var tpl = template.Must(template.New("vhost").Parse(`{{define "body"}}
     access_log /var/log/mpn/sites/{{.Site.Name}}/access.log;
     error_log /var/log/mpn/sites/{{.Site.Name}}/error.log;
     location ~ /\.(?!well-known) { deny all; }
+{{- if .Site.Speed}}
+    pagespeed on;
+    pagespeed FileCachePath /var/cache/ngx_pagespeed;
+{{- end}}
 {{- if eq .Site.Kind "static"}}
     index index.html;
     location / { try_files $uri $uri/ =404; }

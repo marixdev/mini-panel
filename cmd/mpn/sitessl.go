@@ -224,6 +224,32 @@ func siteSSLRedirect(args []string) {
 	fmt.Printf("site %q: http:// visitors are %s\n", s.Name, map[bool]string{true: "sent to SSL", false: "served as they are"}[*redirect])
 }
 
+// siteSpeed turns the nginx pagespeed module (minify HTML/CSS/JS, optimize images) on or off for a site.
+func siteSpeed(args []string) {
+	fs := flag.NewFlagSet("site speed", flag.ExitOnError)
+	db := fs.String("db", defaultDB, "database path")
+	name := fs.String("name", "", "site name")
+	on := fs.Bool("on", true, "compress text and cache static files in the browser")
+	apply := fs.Bool("apply", false, "change this machine (Linux, root)")
+	_ = fs.Parse(args)
+	st := openStore(*db)
+	defer st.Close()
+	s, err := st.GetSite(*name)
+	fail(err)
+	refuseCustomVhost(s, "the speed settings")
+	s.Speed = *on
+	if !*apply {
+		fmt.Printf("would set: speed = %v\n", *on)
+		return
+	}
+	requireLinuxRoot()
+	plan, err := provision.VhostPlan(s, "")
+	fail(err)
+	fail(runPlanQuiet(plan))
+	fail(st.SetDomain(s))
+	fmt.Printf("site %q: speed is %s\n", s.Name, map[bool]string{true: "on", false: "off"}[*on])
+}
+
 // certInfo is the answer of "site ssl-info": what the SSL tab shows.
 type certInfo struct {
 	Mode       string   `json:"mode"`

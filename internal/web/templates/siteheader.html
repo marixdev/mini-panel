@@ -29,7 +29,7 @@
     <a class="btn-secondary shrink-0 gap-1.5" href="{{.Site.URL}}" target="_blank" rel="noopener noreferrer">{{T "hd.open"}}<svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3M11 4h5v5M16 4l-7 7"/></svg></a>
   </div>
 </header>
-<nav class="mb-6 flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-800" aria-label="{{T "hd.sections"}}">
+<nav class="mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200 dark:border-slate-800" aria-label="{{T "hd.sections"}}">
   {{range $t := siteMenu}}<a class="tab" href="/sites/{{$.Site.Name}}{{$t.Path}}"{{if eq $.Tab $t.Key}} aria-current="page"{{end}}>{{template "tabicon" $t.Key}}{{T (printf "tab.%s" $t.Key)}}</a>
   {{end}}
 </nav>

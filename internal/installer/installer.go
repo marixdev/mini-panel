@@ -58,6 +58,21 @@ func ReloadNginx() Action { return Run("sh", "-c", nginxReloadScript) }
 const aptUpdateScript = `for i in $(seq 1 30); do apt-get -o DPkg::Lock::Timeout=300 update && exit 0; sleep 10; done
 echo "apt-get update kept failing for about 5 minutes" >&2; exit 1`
 
+// pagespdAptScript adds the We-Amp mod_pagespeed apt repository (packages.modpagespeed.com) so that
+// nginx-module-pagespeed can be installed. The repo ships builds matched to the distro's nginx package.
+const pagespdAptScript = `set -eu
+want=DF00E296BE9141CEA5411346F50D6054F10712A0
+keyring=/usr/share/keyrings/modpagespeed-archive-keyring.gpg
+tmp=$(mktemp)
+trap 'rm -f "$tmp" "$keyring.tmp"' EXIT
+curl -fsSL --proto '=https' https://packages.modpagespeed.com/pubkey.gpg -o "$tmp"
+got=$(gpg --batch --with-colons --show-keys "$tmp" | awk -F: '$1=="fpr"{print $10}' | sort -u)
+[ "$got" = "$want" ] || { echo "modpagespeed signing key has an unexpected fingerprint: $got" >&2; exit 1; }
+gpg --dearmor < "$tmp" > "$keyring.tmp"
+mv "$keyring.tmp" "$keyring"
+. /etc/os-release
+echo "deb [arch=$(dpkg --print-architecture) signed-by=$keyring] https://packages.modpagespeed.com/apt $VERSION_CODENAME main" > /etc/apt/sources.list.d/modpagespeed.list`
+
 // aptUpdate retries on failure; aptInstall waits up to 5 minutes for the dpkg lock instead of failing at once.
 func aptUpdate() Action { return Run("sh", "-c", aptUpdateScript) }
 
@@ -118,6 +133,14 @@ func Build(o Options) (Plan, error) {
 			Run("logrotate", "-d", "/etc/logrotate.d/mpn-sites"), // a syntax error makes this fail before anything reloads
 			Run("nginx", "-t"),
 			ReloadNginx(),
+		}},
+		Step{"nginx pagespeed", []Action{
+			Run("sh", "-c", pagespdAptScript),
+			aptUpdate(),
+			aptInstall("nginx-module-pagespeed"),
+			Run("nginx", "-t"),
+			ReloadNginx(),
+			Run("install", "-d", "-o", "www-data", "-g", "www-data", "-m", "0755", "/var/cache/ngx_pagespeed"),
 		}},
 	)
 	if o.SelfPath != "" {

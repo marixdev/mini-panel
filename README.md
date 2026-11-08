@@ -12,7 +12,8 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 
 **Mỗi website:**
 - Một tài khoản hệ thống riêng, một tên miền, tùy chọn www chuyển hướng.
-- Tab Tổng quan: trạng thái, dung lượng, thư mục web con, cài đặt theo loại site. PHP chỉ đổi được các tham số trong một danh sách an toàn cố định.
+- Tab Tổng quan: trạng thái, dung lượng, tên miền (bố trí ngang), thư mục web con, cài đặt theo loại site (PHP chỉ đổi được các tham số trong một danh sách an toàn cố định), đăng nhập SSH/SFTP, tăng tốc website và xóa website. Danh sách website chỉ có nút Quản lý để vào trang của từng site; cơ sở dữ liệu và sao lưu nằm trong tab của site.
+- Tăng tốc website: bật hoặc tắt mô-đun nginx mod_pagespeed ([We-Amp/mod_pagespeed](https://github.com/We-Amp/mod_pagespeed)), tự thu nhỏ HTML/CSS/JS và tối ưu ảnh ngay trên máy chủ. Không dùng được khi site đang dùng vHost tự sửa.
 - Tab SSL: Let's Encrypt (kiểm tra DNS trước, tự gia hạn), chứng chỉ riêng đã mua (kiểm tra khóa, chuỗi, tên được phủ), tạo CSR, chuyển hướng http sang https.
 - Tab vHost: sửa tay cấu hình nginx của site. Panel kiểm tra bằng `nginx -t` trước khi nạp, lỗi thì giữ nguyên cấu hình đang chạy, có nút về cấu hình mặc định. Khi site dùng cấu hình tự sửa, các thao tác ghi đè vhost (đổi tên miền, SSL, chuyển hướng) bị từ chối với thông báo rõ.
 - Tab Cron: công việc định kỳ cho từng site, chạy bằng tài khoản của site (không phải root), ghi vào `/etc/cron.d/mpn-<site>` với quyền 0600. Lịch và lệnh được kiểm tra chặt để không chèn được dòng vào tệp của root.

@@ -30,15 +30,16 @@
   <input type="hidden" name="csrf" value="{{$.CSRF}}">
   <h2 class="h-section">{{T "dm.title"}}</h2>
   <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "dm.sub"}}</p>
-  <div class="mt-4 max-w-xl">
+  <div class="mt-4 grid gap-x-10 gap-y-6 lg:grid-cols-2">
+  <div>
     <label for="d-domain" class="label">{{T "dm.domain"}}</label>
     <input id="d-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" spellcheck="false" autocapitalize="none" required>
     <p class="hint">{{T "dm.domain.hint"}}</p>
   </div>
-  <fieldset class="mt-6">
+  <fieldset>
     <legend class="text-sm font-semibold">{{T "dm.www.title"}}</legend>
     <p class="hint mt-1">{{T "dm.www.hint"}}</p>
-    <div class="mt-3 grid gap-2 sm:max-w-xl">
+    <div class="mt-3 grid gap-2">
       <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
         <input type="radio" name="www" value="" class="mt-1 accent-teal-600"{{if eq .WWW ""}} checked{{end}}>
         <span><span class="block text-sm font-medium">{{T "dm.www.off"}}</span><span class="hint mt-0">{{T "dm.www.off.d"}}</span></span>
@@ -53,6 +54,7 @@
       </label>
     </div>
   </fieldset>
+  </div>
   {{if .TLS}}<p class="alert-warn mt-5">{{T "dm.warn.ssl"}}</p>{{end}}
   <div class="mt-6 flex items-center gap-3"><button class="btn-primary">{{T "dm.save"}}</button><a class="btn-secondary" href="/sites/{{$.Site.Name}}">{{T "dm.reset"}}</a></div>
 </form>
@@ -184,13 +186,61 @@
   <div class="mt-8 flex items-center gap-3"><button class="btn-primary">{{T "ov.save"}}</button><a class="btn-secondary" href="/sites/{{.Site.Name}}">{{T "ov.reset"}}</a></div>
 </form>
 
-{{if $o.Nginx}}
-<details class="card mt-4">
-  <summary class="cursor-pointer px-6 py-4 text-sm font-semibold">{{T "ov.nginx"}}</summary>
-  <div class="border-t border-slate-200 px-6 pb-6 dark:border-slate-800">
-    <div class="mt-3 flex items-center justify-between gap-3"><p class="hint mt-0">{{T "ov.nginx.hint"}}</p><button type="button" class="btn-sm shrink-0" data-copy="{{$o.Nginx}}" data-copied="{{T "ov.copied"}}">{{T "ov.copy"}}</button></div>
-    <pre class="mt-3 overflow-x-auto rounded-xl border border-slate-200 bg-slate-900 p-4 font-mono text-xs leading-relaxed whitespace-pre text-slate-100 dark:border-slate-800 dark:bg-black">{{$o.Nginx}}</pre>
-  </div>
-</details>
 {{end}}
+
+{{define "speedcard"}}
+<form method="post" action="/sites/{{.Site.Name}}/speed" class="card mt-4 p-6">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "ps.title"}}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ps.sub"}}</p>
+    </div>
+    <span>{{if .Site.Speed}}<span class="badge-teal">{{T "ps.on"}}</span>{{else}}<span class="badge-gray">{{T "ps.off"}}</span>{{end}}</span>
+  </div>
+  <ul class="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 dark:text-slate-300">
+    <li>{{T "ps.gzip"}}</li>
+    <li>{{T "ps.cache"}}</li>
+  </ul>
+  {{if .Site.CustomVhost}}<p class="alert-warn mt-4">{{T "ps.custom"}}</p>
+  {{else}}
+  <input type="hidden" name="speed" value="{{if .Site.Speed}}0{{else}}1{{end}}">
+  <div class="mt-5"><button class="{{if .Site.Speed}}btn-secondary{{else}}btn-primary{{end}}">{{if .Site.Speed}}{{T "ps.btn.off"}}{{else}}{{T "ps.btn.on"}}{{end}}</button></div>
+  <p class="hint">{{T "ps.note"}}</p>
+  {{end}}
+</form>
+{{end}}
+
+{{define "deletecard"}}
+<section class="card mt-4 border-rose-200 p-6 dark:border-rose-900/60">
+  <h2 class="h-section">{{T "ov.del.title"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ov.del.d"}}</p>
+  <div class="mt-4"><a class="btn-danger" href="/sites/remove?site={{.Site.Name}}">{{T "ov.del.btn"}}</a></div>
+</section>
+{{end}}
+
+{{define "sshcard"}}
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "ssh.title"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssh.sub"}}</p>
+  <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.state"}}</dt><dd class="mt-0.5">{{if .SSHEnabled}}<span class="badge-teal">{{T "ssh.on"}}</span>{{else}}<span class="badge-amber">{{T "ssh.off"}}</span>{{end}}</dd></div>
+    {{if .SSHEnabled}}
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.key"}}</dt><dd class="mt-0.5">{{if eq .KeyStatus "ok"}}<span class="badge-teal">{{T "ssh.key.ok"}}</span>{{else if eq .KeyStatus "broken"}}<span class="badge-rose">{{T "ssh.key.broken"}}</span>{{else}}<span class="badge-gray">{{T "ssh.key.unknown"}}</span>{{end}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.host"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.SSHHost}}</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.port"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">22</dd></div>
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
+    {{end}}
+  </dl>
+  <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+    {{if .SSHEnabled}}
+    <a class="btn-secondary" href="/sites/{{.Site.Name}}/ssh/reset">{{T "ssh.reset"}}</a>
+    {{if eq .KeyStatus "broken"}}<form method="post" action="/sites/{{.Site.Name}}/ssh/panelkey"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "ssh.restore"}}</button></form>{{end}}
+    <a class="link-danger text-sm" href="/sites/{{.Site.Name}}/ssh/disable">{{T "ssh.disable"}}</a>
+    {{else}}
+    <form method="post" action="/sites/{{.Site.Name}}/ssh/enable"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "ssh.enable"}}</button></form>
+    {{end}}
+  </div>
+  <p class="alert-warn mt-5">{{if .SSHEnabled}}{{T "ssh.note"}}{{else}}{{T "ssh.off.note"}}{{end}}</p>
+</section>
 {{end}}
