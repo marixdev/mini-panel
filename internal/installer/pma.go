@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"mpn/internal/aptsrc"
+	"mpn/internal/security"
 	"mpn/internal/site"
 )
 
@@ -207,6 +208,7 @@ func pmaNginx(panelPort int) string {
     listen ` + pp + ` ssl http2;
     listen [::]:` + pp + ` ssl http2;
     server_name _;
+    ` + security.OffInclude + `
     ssl_certificate ` + panelCert + `/fullchain.pem;
     ssl_certificate_key ` + panelCert + `/privkey.pem;
     root ` + pmaDir + `;

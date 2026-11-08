@@ -64,6 +64,7 @@ func siteRenew(args []string) {
 		}
 		fmt.Printf("%s: renewed\n", s.Name)
 	}
+	failed += renewPanelCert(st, *within, *apply, *email)
 	if failed > 0 {
 		os.Exit(1)
 	}

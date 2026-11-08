@@ -17,7 +17,7 @@ var siteTabs = regexp.MustCompile(`^/sites/([^/]+)(?:/(ssh|databases|backups|fil
 // safeBack returns raw if it is the address of one of the panel's pages, otherwise def.
 func safeBack(raw, def string) string {
 	switch raw {
-	case "/", "/databases", "/backups", "/sites/new", "/firewall":
+	case "/", "/sites/new", "/firewall", "/security":
 		return raw
 	}
 	if m := siteTabs.FindStringSubmatch(raw); m != nil && site.ValidName(m[1]) && !strings.ContainsAny(raw, "\r\n\\?#%") {

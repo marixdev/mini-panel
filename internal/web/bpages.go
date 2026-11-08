@@ -19,30 +19,17 @@ type backupRow struct {
 }
 
 func (s *Server) backupPages(mux *http.ServeMux) {
-	mux.HandleFunc("GET /backups", s.auth(s.backupsPage))
+	// The list of backups is the Backups tab of each website; only the actions have addresses of their own.
 	mux.HandleFunc("POST /backups/create", s.auth(s.createBackup))
 	mux.HandleFunc("GET /backups/restore", s.auth(s.restoreConfirm))
 	mux.HandleFunc("POST /backups/restore", s.auth(s.restoreBackup))
 	mux.HandleFunc("POST /backups/prune", s.auth(s.pruneBackups))
 }
 
-func (s *Server) backupsPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	v := view{Page: "backups"}
-	var sites []siteRow
-	v.Error = s.list(ctl.Request{Op: "backup.list"}, &v.Backups)
-	if e := s.list(ctl.Request{Op: "site.list"}, &sites); e != "" && v.Error == "" {
-		v.Error = e
-	}
-	for _, x := range sites {
-		v.SiteNames = append(v.SiteNames, x.Name)
-	}
-	s.show(w, 200, ss, v)
-}
-
 func (s *Server) createBackup(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	name := r.PostFormValue("site")
 	res := s.run(T("act.bk.create", name), ctl.Request{Op: "backup.create", Site: name})
-	res.Back = safeBack(r.PostFormValue("back"), "/backups")
+	res.Back = safeBack(r.PostFormValue("back"), "/")
 	s.finish(w, r, res)
 }
 

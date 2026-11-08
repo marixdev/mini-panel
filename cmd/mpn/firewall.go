@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -87,9 +88,14 @@ func lockedPorts() firewall.Locked {
 	if len(l.Panel) == 0 {
 		l.Panel = []int{2610}
 	}
-	sort.Ints(l.SSH)
-	sort.Ints(l.Panel)
+	l.SSH, l.Panel = uniqSorted(l.SSH), uniqSorted(l.Panel)
 	return l
+}
+
+// uniqSorted sorts ports and drops repeats: sshd listens on IPv4 and IPv6, so the same port is found more than once.
+func uniqSorted(ports []int) []int {
+	sort.Ints(ports)
+	return slices.Compact(ports)
 }
 
 // conflict names another firewall that is running; two of them together make rules nobody can read.

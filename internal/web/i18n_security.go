@@ -1,0 +1,39 @@
+package web
+
+// Vietnamese text of the security page: the web application firewall (ModSecurity with the OWASP rules) and fail2ban.
+func init() {
+	for k, v := range map[string]string{
+		"nav.security": "Bảo mật", "page.security": "Bảo mật",
+		"sec.title": "Bảo mật", "sec.sub": "Chặn các cuộc tấn công vào website (ModSecurity với bộ luật OWASP) và tự khóa địa chỉ đoán mật khẩu (fail2ban).",
+		"sec.waf.title":    "Tường lửa ứng dụng web (ModSecurity + OWASP CRS)",
+		"sec.waf.sub":      "Kiểm tra từng yêu cầu gửi tới website để chặn SQL injection, XSS, đọc tệp trái phép, chạy lệnh từ xa và các công cụ dò quét. Áp dụng cho mọi website; panel và phpMyAdmin được miễn.",
+		"sec.waf.mode.off": "Tắt", "sec.waf.mode.detect": "Chỉ ghi nhận", "sec.waf.mode.block": "Chặn",
+		"sec.waf.d.off":    "Không kiểm tra gì. Chưa cài gói nào.",
+		"sec.waf.d.detect": "Ghi lại những yêu cầu bộ luật sẽ chặn, nhưng vẫn cho đi qua. Nên chạy chế độ này vài ngày để xem có chặn nhầm không.",
+		"sec.waf.d.block":  "Chặn các yêu cầu vi phạm và trả lỗi 403. Một số plugin hoặc mã tự viết có thể bị chặn nhầm.",
+		"sec.waf.cur":      "Chế độ hiện tại", "sec.waf.apply": "Áp dụng",
+		"sec.waf.pkg":   "Lần đầu panel cài thêm libnginx-mod-http-modsecurity và modsecurity-crs, bộ luật tốn khoảng 30 đến 60 MB RAM.",
+		"sec.waf.crs":   "Bộ luật OWASP CRS %s",
+		"sec.waf.where": "Các yêu cầu bộ luật bắt được nằm trong /var/log/mpn/modsec_audit.log (giữ 7 ngày). Yêu cầu bị chặn thật còn ghi vào /var/log/mpn/sites/<website>/error.log.",
+		"sec.f2b.title": "fail2ban",
+		"sec.f2b.sub":   "Tự chặn địa chỉ IP sau nhiều lần đăng nhập SSH hoặc panel sai, và sau nhiều yêu cầu bị bộ luật OWASP chặn. Địa chỉ bị khóa 1 giờ.",
+		"sec.f2b.on":    "Đang bật", "sec.f2b.off": "Đang tắt", "sec.f2b.stopped": "Đã bật nhưng dịch vụ không chạy. Bấm Bật lại.",
+		"sec.f2b.enable": "Bật fail2ban", "sec.f2b.disable": "Tắt fail2ban", "sec.f2b.save": "Lưu danh sách",
+		"sec.f2b.ignore":      "Địa chỉ không bao giờ bị chặn",
+		"sec.f2b.ignore.hint": "Mỗi dòng một IP hoặc một mạng (203.0.113.0/24). Địa chỉ của bạn lúc này (%s) luôn được thêm vào khi bật.",
+		"sec.jails":           "Các jail", "sec.jail.name": "Jail", "sec.jail.failed": "Lần sai", "sec.jail.banned": "Đang bị chặn", "sec.jail.total": "Tổng đã chặn",
+		"sec.jail.sshd": "SSH", "sec.jail.mpn-panel": "Đăng nhập panel", "sec.jail.mpn-modsec": "Bị bộ luật OWASP chặn",
+		"sec.jail.none": "Chưa có địa chỉ nào bị chặn.", "sec.unban": "Bỏ chặn",
+		"sec.f2b.nojails": "Dịch vụ chưa chạy nên chưa có số liệu.",
+		"act.sec.waf":     "Đổi chế độ tường lửa ứng dụng web", "act.sec.f2b": "Đổi cài đặt fail2ban", "act.sec.unban": "Bỏ chặn một địa chỉ",
+		"sec.fail":       "Chưa thực hiện",
+		"sec.err.mode":   "Chế độ không hợp lệ.",
+		"sec.err.ignore": "Danh sách địa chỉ không hợp lệ: %s.",
+		"sec.err.jail":   "Jail không hợp lệ.",
+		"sec.err.ip":     "Địa chỉ IP không hợp lệ.",
+		"sec.err.crs":    "Bộ luật OWASP CRS chưa có trên máy. Kiểm tra gói modsecurity-crs của hệ điều hành.",
+		"sec.err.nopkg":  "Hệ điều hành này chưa có gói ModSecurity hoặc fail2ban trong kho của nó.",
+	} {
+		vi[k] = v
+	}
+}

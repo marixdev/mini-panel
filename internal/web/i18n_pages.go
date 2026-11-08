@@ -3,8 +3,8 @@ package web
 // Vietnamese text of the pages after login, kept apart from the shell text in i18n.go.
 func init() {
 	for k, v := range map[string]string{
-		"nav.websites": "Website", "nav.databases": "Cơ sở dữ liệu", "nav.backups": "Sao lưu", "user.logout": "Đăng xuất",
-		"page.sites": "Website", "page.databases": "Cơ sở dữ liệu", "page.backups": "Sao lưu", "page.result": "Kết quả", "page.confirm": "Xác nhận",
+		"nav.websites": "Website", "user.logout": "Đăng xuất",
+		"page.sites": "Website", "page.result": "Kết quả", "page.confirm": "Xác nhận",
 
 		"sites.title": "Website", "sites.sub": "Các website đang chạy trên máy chủ này.",
 		"sites.col.name": "Tên", "sites.col.type": "Loại", "sites.col.hosts": "Tên miền", "sites.col.detail": "Chi tiết",

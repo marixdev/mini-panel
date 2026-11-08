@@ -15,6 +15,8 @@ import (
 	"mpn/internal/cron"
 	"mpn/internal/dbadmin"
 	"mpn/internal/firewall"
+	"mpn/internal/panelssl"
+	"mpn/internal/security"
 	"mpn/internal/site"
 	"mpn/internal/vhost"
 )
@@ -70,6 +72,12 @@ type Request struct {
 	FwComment string `json:"fw_comment,omitempty"`
 	RuleID    int64  `json:"rule_id,omitempty"`
 	Client    string `json:"client,omitempty"`
+	// ModSecurity with the OWASP Core Rule Set, and fail2ban.
+	SecMode   string   `json:"sec_mode,omitempty"`   // security.waf: off, detect or block
+	SecOn     bool     `json:"sec_on,omitempty"`     // security.f2b: fail2ban runs
+	SecIgnore []string `json:"sec_ignore,omitempty"` // security.f2b: addresses and networks that are never banned
+	Jail      string   `json:"jail,omitempty"`       // security.unban
+	IP        string   `json:"ip,omitempty"`         // security.unban
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -86,7 +94,7 @@ func (r Request) Stdin() string {
 			Command  string `json:"command"`
 		}{r.Schedule, r.Command})
 		return string(b)
-	case r.Op == "site.sslcustom":
+	case r.Op == "site.sslcustom", r.Op == "panel.sslcustom":
 		b, _ := json.Marshal(struct {
 			Key            string `json:"key"`
 			Cert           string `json:"cert"`
@@ -108,12 +116,14 @@ var writes = map[string]bool{
 	"site.vhostset": true, "site.vhostreset": true, "site.speed": true, // the nginx configuration of a site
 	"site.cronadd": true, "site.cronset": true, "site.crondel": true, // the scheduled jobs of a site
 	"firewall.enable": true, "firewall.disable": true, "firewall.add": true, "firewall.del": true,
+	"security.waf": true, "security.f2b": true, "security.unban": true, // ModSecurity with the OWASP rules, and fail2ban
+	"panel.ssl": true, "panel.sslcustom": true, "panel.ssloff": true, // the certificate of the panel and of the database browser
 	"db.add": true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "panel.sslinfo": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -210,6 +220,51 @@ func (r Request) Argv() ([]string, error) {
 		// "=" joins each value to its flag, so a value that starts with "-" or is empty cannot be read as another flag.
 		return []string{"firewall", "add", "-action=" + rule.Action, "-proto=" + rule.Proto, "-port=" + rule.Port, "-source=" + rule.Source,
 			"-comment=" + rule.Comment, "-client=" + r.Client, "-apply"}, nil
+	case "panel.sslinfo":
+		return []string{"panel", "ssl-info"}, nil
+	case "panel.ssloff":
+		return []string{"panel", "ssl-off", "-apply"}, nil
+	case "panel.ssl", "panel.sslcustom":
+		if err := panelssl.ValidDomain(r.Domain); err != nil {
+			return nil, err
+		}
+		if r.Op == "panel.ssl" {
+			return []string{"panel", "ssl", "-domain=" + r.Domain, "-apply"}, nil
+		}
+		for name, text := range map[string]string{"key": r.Key, "certificate": r.Cert, "chain": r.Chain} {
+			if len(text) > maxCertText {
+				return nil, fmt.Errorf("the %s is longer than %d KB", name, maxCertText>>10)
+			}
+			if strings.ContainsRune(text, 0) {
+				return nil, fmt.Errorf("the %s has a character that cannot be part of a PEM text", name)
+			}
+		}
+		if strings.TrimSpace(r.Cert) == "" || strings.TrimSpace(r.Key) == "" {
+			return nil, fmt.Errorf("the certificate and its private key are both needed")
+		}
+		return []string{"panel", "ssl-custom", "-domain=" + r.Domain, "-apply"}, nil
+	case "security.status":
+		return []string{"security", "status", "-json"}, nil
+	case "security.waf":
+		if err := security.ValidMode(r.SecMode); err != nil {
+			return nil, err
+		}
+		return []string{"security", "waf", "-mode=" + r.SecMode, "-apply"}, nil
+	case "security.f2b":
+		list, err := security.ValidIgnore(r.SecIgnore)
+		if err != nil {
+			return nil, err
+		}
+		return []string{"security", "f2b", "-on=" + strconv.FormatBool(r.SecOn), "-ignore=" + strings.Join(list, ","), "-apply"}, nil
+	case "security.unban":
+		if err := security.ValidJail(r.Jail); err != nil {
+			return nil, err
+		}
+		ip, err := security.ValidAddr(r.IP)
+		if err != nil {
+			return nil, err
+		}
+		return []string{"security", "unban", "-jail=" + r.Jail, "-ip=" + ip, "-apply"}, nil
 	case "site.cronlist", "site.cronadd", "site.cronset", "site.crondel":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err

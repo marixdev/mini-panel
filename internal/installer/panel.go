@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"mpn/internal/security"
 	"mpn/internal/site"
 )
 
@@ -16,6 +17,9 @@ const (
 	webMark   = "mpn web panel"
 	panelCert = "/etc/mpn/certs/_panel"
 )
+
+// PanelCertScript makes the self-signed certificate of the panel when none is there; mpn panel ssl-off uses it to go back.
+const PanelCertScript = panelCertScript
 
 const rootService = `[Unit]
 Description=mpn root helper for the web panel
@@ -88,6 +92,8 @@ func panelNginx(port int) string {
     client_max_body_size 1m;
     gzip on;
     gzip_types text/css text/javascript application/javascript;
+    # The panel is not a website: the rules of the web application firewall (once installed) would block saving code in the editor.
+    %[6]s
     # What the database browser and nginx ask of the panel over the loopback address is not for anybody on the Internet.
     location ^~ /_pma/ { return 404; }
     # An upload is passed on as it arrives instead of being stored by nginx first, and may be large; the panel stops it at its own limit.
@@ -110,7 +116,7 @@ func panelNginx(port int) string {
         proxy_send_timeout 60s;
     }
 }
-`, port, panelCert, PanelBackendPort, UploadLimitMB, panelProxy(PanelBackendPort))
+`, port, panelCert, PanelBackendPort, UploadLimitMB, panelProxy(PanelBackendPort), security.OffInclude)
 }
 
 // UploadLimitMB is the largest upload nginx lets through to the panel (1 GiB, the panel's own default limit).

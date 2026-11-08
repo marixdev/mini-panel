@@ -18,6 +18,10 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 - Tab vHost: sửa tay cấu hình nginx của site. Panel kiểm tra bằng `nginx -t` trước khi nạp, lỗi thì giữ nguyên cấu hình đang chạy, có nút về cấu hình mặc định. Khi site dùng cấu hình tự sửa, các thao tác ghi đè vhost (đổi tên miền, SSL, chuyển hướng) bị từ chối với thông báo rõ.
 - Tab Cron: công việc định kỳ cho từng site, chạy bằng tài khoản của site (không phải root), ghi vào `/etc/cron.d/mpn-<site>` với quyền 0600. Lịch và lệnh được kiểm tra chặt để không chèn được dòng vào tệp của root.
 - Tường lửa (nftables): bảng `inet mpn` riêng, không đụng luật của chương trình khác. Cổng SSH và cổng panel luôn mở và không xóa được, luật chặn chính người đang thao tác bị từ chối, từ chối bật khi ufw hoặc firewalld đang chạy. Nạp luật nguyên tử và tự nạp lại khi khởi động.
+- Bảo mật (tab riêng): tường lửa ứng dụng web ModSecurity với bộ luật OWASP CRS, và fail2ban. Cả hai cài khi bạn bật, không có sẵn trong bản cài mới vì ModSecurity tốn thêm RAM.
+  - ModSecurity nạp một lần ở cấp `http` của nginx cho mọi website, có ba chế độ: tắt, chỉ ghi nhận (ghi vào `/var/log/mpn/modsec_audit.log`, xoay vòng 7 ngày, không chặn) và chặn (trả 403, ghi thêm vào `error.log` của website để fail2ban đọc). Nên chạy chế độ ghi nhận vài ngày trước khi chặn. Panel và phpMyAdmin được miễn qua `/etc/mpn/modsec/off.d/`.
+  - fail2ban có ba jail do mpn quản lý: `sshd`, `mpn-panel` (đăng nhập panel sai, panel ghi dòng `login failed from <IP>` vào journal) và `mpn-modsec` (địa chỉ bị bộ luật OWASP chặn nhiều lần). Khóa 1 giờ bằng nftables trong bảng riêng của fail2ban, không đụng bảng `inet mpn`. Địa chỉ của người đang thao tác luôn được thêm vào danh sách không bao giờ bị khóa, và trang có nút bỏ chặn từng địa chỉ.
+- Chứng chỉ SSL cho chính panel (thẻ đầu tab Bảo mật): cấp bằng Let's Encrypt (kiểm tra DNS trước, tự gia hạn cùng timer với các website) hoặc dán chứng chỉ riêng, có nút quay về chứng chỉ tự ký. Panel (cổng 2610) và phpMyAdmin (cổng 2611) đọc chung `/etc/mpn/certs/_panel`, nên một chứng chỉ phủ cả hai cổng. Tên miền được ghi vào `/etc/mpn/panel-hosts` và panel đọc lại khi chạy, không cần khởi động lại. Cổng 80 chỉ mở một khối nginx cho đúng tên miền của panel để trả thử thách ACME và chuyển hướng sang cổng panel. Tên miền không được trùng với website nào.
 - Giám sát: bộ xử lý, bộ nhớ, tải, mạng, ổ đĩa và trạng thái các dịch vụ. Panel tự đo mỗi 30 giây từ `/proc`, giữ 24 giờ (lưu ra `/var/lib/mpn-web/metrics.json` để không mất khi khởi động lại), vẽ biểu đồ SVG không cần thư viện, có chú giải khi rê chuột và bảng số liệu thay thế.
 - Trình quản lý tệp qua SFTP (sửa bằng CodeMirror, nén và giải nén, đổi quyền), terminal trên web, SSH/SFTP bằng khóa riêng của panel.
 - Cơ sở dữ liệu theo site, mở phpMyAdmin bằng tài khoản tạm không lưu mật khẩu.
@@ -54,9 +58,10 @@ Panel ở `https://<IP>:2610` (chứng chỉ tự ký cho tới khi có chứng 
 ## Dòng lệnh
 
 ```
-mpn version | tune | plan | site | db | backup | cron | firewall | root | web
+mpn version | tune | plan | site | db | backup | cron | firewall | security | panel | root | web
 mpn site add|list|show|delete|apply|set|info|domain|vhost|remove|access|ssl|ssl-custom|ssl-csr|ssl-off|ssl-redirect|ssl-info|ssl-renew
 mpn db add|list|passwd|remove        mpn backup create|list|restore|prune
+mpn security status|waf|f2b|unban    mpn panel ssl-info|ssl|ssl-custom|ssl-off
 ```
 
 Thêm `-h` sau lệnh con để xem các cờ. Lệnh thay đổi máy đều mặc định xem thử và cần `-apply`.
@@ -89,6 +94,8 @@ internal/
   ctl/         thao tác root helper chấp nhận
   web/         giao diện (template, i18n tiếng Việt, tài nguyên nhúng)
   fm/          trình quản lý tệp qua SFTP
+  security/    cấu hình ModSecurity (OWASP CRS) và fail2ban, kiểm tra giá trị
+  panelssl/    chứng chỉ của chính panel: thư mục dùng chung, tên miền, khối nginx cho thử thách ACME
   dbadmin/ backup/ access/ panelkey/ panelssh/ tune/ webauth/ ...
 cmd/mpn/       dòng lệnh
 tools/editor/  dựng trình soạn mã CodeMirror thành một tệp nhúng
@@ -109,7 +116,7 @@ Các bài kiểm thử không nằm trong repo này (xem `.gitignore`).
 
 ## Còn thiếu
 
-Giám sát tài nguyên, xem log và chặn IP, chứng chỉ thật cho chính panel, nhiều người dùng và 2FA, sao lưu ra ngoài máy chủ, xoay vòng log PHP và Node.
+Xem log trong panel, nhiều người dùng và 2FA, sao lưu ra ngoài máy chủ, xoay vòng log PHP và Node.
 
 ## Giấy phép
 

@@ -3,6 +3,7 @@
 package web
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,12 +21,16 @@ import (
 )
 
 type Server struct {
-	Account    func() (webauth.Account, error) // read on every login, so a new password applies at once
-	Sessions   *webauth.Sessions
-	Throttle   *webauth.Throttle
-	Hosts      []string // names the panel answers to, besides localhost; any other Host header is refused
-	Secure     bool     // the panel is reached over HTTPS: sets the Secure cookie flag and HSTS
-	TrustProxy bool     // take the client address from X-Real-IP, which the local nginx sets
+	Account  func() (webauth.Account, error) // read on every login, so a new password applies at once
+	Sessions *webauth.Sessions
+	Throttle *webauth.Throttle
+	Hosts    []string // names the panel answers to, besides localhost; any other Host header is refused
+	// HostsFile lists more such names, one per line. It is read while the panel runs, so a name added by the SSL page is
+	// accepted at once.
+	HostsFile  string
+	hosts      hostsCache
+	Secure     bool // the panel is reached over HTTPS: sets the Secure cookie flag and HSTS
+	TrustProxy bool // take the client address from X-Real-IP, which the local nginx sets
 	// Call sends a request to the root helper. The web side has no other way to change anything.
 	Call func(ctl.Request) (ctl.Response, error)
 	// UserExists says whether the machine already has an account with that name; the system's user database when nil.
@@ -72,6 +77,7 @@ func (s *Server) Handler() http.Handler {
 	s.sitePages(mux)
 	s.dbPages(mux)
 	s.firewallPages(mux)
+	s.securityPages(mux)
 	s.monitorPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
@@ -128,6 +134,11 @@ func (s *Server) hostOK(hostport string) bool {
 	}
 	for _, x := range s.Hosts {
 		if host == strings.ToLower(x) {
+			return true
+		}
+	}
+	for _, x := range s.fileHosts() {
+		if host == x {
 			return true
 		}
 	}
@@ -198,6 +209,7 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	acct, err := s.Account()
 	if err != nil || len(user) > 64 || len(pw) > 256 || !acct.Check(user, pw) {
 		s.Throttle.Fail(key)
+		log.Printf("login failed from %s", key) // read by the mpn-panel jail of fail2ban
 		s.render(w, http.StatusUnauthorized, view{Page: "login", Error: T("login.wrong")})
 		return
 	}
@@ -247,6 +259,7 @@ type view struct {
 	VH                                          *vhostView
 	Cron                                        *cronView
 	FW                                          *fwView
+	Sec                                         *secView
 	Mon                                         *monView
 	DBs                                         []dbRow
 	Backups                                     []backupRow

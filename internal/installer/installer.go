@@ -26,6 +26,9 @@ func WriteFile(path, content string, mode uint32) Action {
 
 func Run(args ...string) Action { return Action{Args: args} }
 
+// AptInstall installs packages without questions and waits for the dpkg lock; other commands of mpn use it for optional parts.
+func AptInstall(pkgs ...string) Action { return aptInstall(pkgs...) }
+
 // nginxReloadScript reloads nginx and returns only when the old workers have stopped taking new connections.
 // "systemctl reload nginx" returns as soon as the signal is sent. For about a tenth of a second after that the old
 // workers still accept connections, and they close those when they shut down; a request that arrives then is cut off

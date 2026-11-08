@@ -25,6 +25,7 @@ import (
 	"mpn/internal/monitor"
 	"mpn/internal/panelkey"
 	"mpn/internal/panelssh"
+	"mpn/internal/panelssl"
 	"mpn/internal/unit"
 	"mpn/internal/web"
 	"mpn/internal/webauth"
@@ -92,6 +93,7 @@ func webServe(args []string) {
 		Sessions:   webauth.NewSessions(30*time.Minute, 12*time.Hour, 20),
 		Throttle:   webauth.NewThrottle(),
 		Hosts:      hosts,
+		HostsFile:  panelssl.HostsFile,
 		PMAPort:    *pmaPort,
 		PMAKey:     pmaKey,
 		Secure:     *secure,

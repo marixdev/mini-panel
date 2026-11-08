@@ -29,7 +29,7 @@ func (s *Server) list(req ctl.Request, dst any) string {
 }
 
 func (s *Server) dbPages(mux *http.ServeMux) {
-	mux.HandleFunc("GET /databases", s.auth(s.databasesPage))
+	// The list of databases is the Databases tab of each website; only the actions have addresses of their own.
 	mux.HandleFunc("POST /databases/add", s.auth(s.addDB))
 	mux.HandleFunc("GET /databases/passwd", s.auth(s.dbConfirm("passwd")))
 	mux.HandleFunc("POST /databases/passwd", s.auth(s.dbAct("passwd")))
@@ -37,23 +37,9 @@ func (s *Server) dbPages(mux *http.ServeMux) {
 	mux.HandleFunc("POST /databases/remove", s.auth(s.dbAct("remove")))
 }
 
-func (s *Server) databasesPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	v := view{Page: "databases"}
-	var sites []siteRow
-	v.PMA = s.pmaOn()
-	v.Error = s.list(ctl.Request{Op: "db.list"}, &v.DBs)
-	if e := s.list(ctl.Request{Op: "site.list"}, &sites); e != "" && v.Error == "" {
-		v.Error = e
-	}
-	for _, x := range sites {
-		v.SiteNames = append(v.SiteNames, x.Name)
-	}
-	s.show(w, 200, ss, v)
-}
-
 func (s *Server) addDB(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	site := r.PostFormValue("site")
-	back := safeBack(r.PostFormValue("back"), "/databases")
+	back := safeBack(r.PostFormValue("back"), siteTab(site, "databases"))
 	name, problem := dbNameFor(site, r.PostFormValue("name"))
 	if problem != "" {
 		// Said here, in Vietnamese, before the helper is asked: its own message is for the command line.
@@ -112,7 +98,7 @@ func (s *Server) dbConfirm(action string) func(http.ResponseWriter, *http.Reques
 			http.Error(w, T("err.baddb"), http.StatusBadRequest)
 			return
 		}
-		back := safeBack(r.URL.Query().Get("back"), "/databases")
+		back := safeBack(r.URL.Query().Get("back"), "/")
 		s.show(w, 200, ss, view{Page: "confirm", Confirm: &confirm{Title: T(a.title, name), Warning: T(a.warning), Back: back, Action: "/databases/" + action,
 			Expect: name, Button: T(a.button), Hidden: map[string]string{"name": name, "back": back}}})
 	}
@@ -122,7 +108,7 @@ func (s *Server) dbAct(action string) func(http.ResponseWriter, *http.Request, w
 	a := dbActions[action]
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 		name := r.PostFormValue("name")
-		back := safeBack(r.PostFormValue("back"), "/databases")
+		back := safeBack(r.PostFormValue("back"), "/")
 		if !dbadmin.ValidName(name) || r.PostFormValue("confirm") != name {
 			s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("err.nothing"), Error: T("err.confirm"), Back: back}})
 			return

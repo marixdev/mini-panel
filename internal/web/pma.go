@@ -99,10 +99,10 @@ func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	}
 	name := r.PostFormValue("name")
 	fail := func(msg string) {
-		s.show(w, http.StatusBadGateway, ss, view{Page: "result", Result: &result{Title: T("pma.title"), Error: msg, Back: "/databases"}})
+		s.show(w, http.StatusBadGateway, ss, view{Page: "result", Result: &result{Title: T("pma.title"), Error: msg, Back: "/"}})
 	}
 	if !dbadmin.ValidName(name) {
-		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("pma.title"), Error: T("err.baddb"), Back: "/databases"}})
+		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("pma.title"), Error: T("err.baddb"), Back: "/"}})
 		return
 	}
 	resp, err := s.ask(ctl.Request{Op: "db.pma", Name: name})
