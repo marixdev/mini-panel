@@ -40,6 +40,20 @@ document.addEventListener('input', function (e) {
   }
 });
 
+// The details of WordPress are asked only when WordPress is chosen. They are required only while shown, because a browser refuses to
+// send a form that has a required field it is hiding.
+function syncApp(sel) {
+  var form = sel.closest('form'), box = form && form.querySelector('[data-app-wp]');
+  if (!box) return;
+  var wp = sel.value === 'wordpress';
+  box.hidden = !wp;
+  box.querySelectorAll('[data-app-req]').forEach(function (f) { f.required = wp; });
+}
+document.addEventListener('change', function (e) {
+  if (e.target.matches('[data-app-select]')) syncApp(e.target);
+});
+document.querySelectorAll('[data-app-select]').forEach(syncApp);
+
 // A random password is put in the field when the form opens, and again each time the link is used.
 document.querySelectorAll('[data-password]').forEach(function (field) {
   if (!field.value) field.value = randomPassword();

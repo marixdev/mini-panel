@@ -175,6 +175,10 @@ func Plan(s site.Site, o Options) (installer.Plan, error) {
 		installer.Run("sh", "-c", createRootScript(s.User, s.Root)),
 		logDirAction(s),
 	}}}
+	// A node or python site needs its start script before the service starts, so the page comes before the services.
+	if page, ok := defaultPageStep(s); ok {
+		plan = append(plan, page)
+	}
 
 	switch s.Kind {
 	case site.PHP:

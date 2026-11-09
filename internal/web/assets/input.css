@@ -58,16 +58,16 @@
     @apply border-t border-slate-200 dark:border-slate-800;
   }
   .badge-gray {
-    @apply inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700;
+    @apply inline-flex items-center whitespace-nowrap rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200 ring-inset dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700;
   }
   .badge-teal {
-    @apply inline-flex items-center rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-800 ring-1 ring-teal-200 ring-inset dark:bg-teal-950/60 dark:text-teal-200 dark:ring-teal-900;
+    @apply inline-flex items-center whitespace-nowrap rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-800 ring-1 ring-teal-200 ring-inset dark:bg-teal-950/60 dark:text-teal-200 dark:ring-teal-900;
   }
   .badge-amber {
-    @apply inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200 ring-inset dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-900;
+    @apply inline-flex items-center whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200 ring-inset dark:bg-amber-950/60 dark:text-amber-200 dark:ring-amber-900;
   }
   .badge-rose {
-    @apply inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800 ring-1 ring-rose-200 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-900;
+    @apply inline-flex items-center whitespace-nowrap rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-800 ring-1 ring-rose-200 ring-inset dark:bg-rose-950/60 dark:text-rose-200 dark:ring-rose-900;
   }
   .link {
     @apply font-medium text-teal-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-teal-400;

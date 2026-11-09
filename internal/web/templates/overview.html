@@ -211,6 +211,52 @@
 </form>
 {{end}}
 
+{{define "appcard"}}
+{{if eq .Site.Kind "php"}}
+{{if .Site.App}}
+<section class="card mt-4 p-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "app.installed"}}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "app.installed.d"}}</p>
+    </div>
+    <span class="badge-teal">{{T (printf "app.%s" .Site.App)}}</span>
+  </div>
+  <dl class="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+    <div><dt class="text-slate-500 dark:text-slate-400">{{T "app.root"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Site.Root}}</dd></div>
+    {{if eq .Site.App "wordpress"}}<div><dt class="text-slate-500 dark:text-slate-400">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">wp-config.php</dd></div>
+    {{else if or (eq .Site.App "laravel") (eq .Site.App "codeigniter")}}<div><dt class="text-slate-500 dark:text-slate-400">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">.env</dd></div>{{end}}
+  </dl>
+  {{if eq .Site.App "wordpress"}}<div class="mt-4"><a class="btn-secondary" href="/sites/{{.Site.Name}}/wordpress">{{T "app.manage"}}</a></div>{{end}}
+</section>
+{{else}}
+<form method="post" action="/sites/{{.Site.Name}}/app/install" class="card mt-4 p-6" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <h2 class="h-section">{{T "app.card.title"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "app.card.sub"}}</p>
+  <div class="mt-4 grid gap-x-6 gap-y-4 lg:grid-cols-2">
+    <div>
+      <label for="ov-app" class="label">{{T "app.title"}}</label>
+      <select id="ov-app" name="app" class="field" data-app-select required>
+        <option value="" disabled selected>{{T "app.pick"}}</option>
+        {{range .Apps}}<option value="{{.ID}}">{{.Label}} ({{T "app.needs" .MinPHP}})</option>{{end}}
+      </select>
+    </div>
+    <div class="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:col-span-2" data-app-wp hidden>
+      <div><label for="ov-wpt" class="label">{{T "app.wp.title"}}</label><input id="ov-wpt" name="wp_title" class="field" maxlength="100" data-app-req></div>
+      <div><label for="ov-wpl" class="label">{{T "app.wp.locale"}}</label><select id="ov-wpl" name="wp_locale" class="field">{{range .Locales}}<option value="{{.}}"{{if eq . "vi"}} selected{{end}}>{{T (printf "app.locale.%s" .)}}</option>{{end}}</select></div>
+      <div><label for="ov-wpa" class="label">{{T "app.wp.admin"}}</label><input id="ov-wpa" name="wp_admin" class="field font-mono" maxlength="60" autocapitalize="none" spellcheck="false" data-app-req></div>
+      <div><label for="ov-wpe" class="label">{{T "app.wp.email"}}</label><input id="ov-wpe" name="wp_email" type="email" class="field" maxlength="254" data-app-req></div>
+      <p class="hint sm:col-span-2">{{T "app.wp.admin.hint"}} {{T "app.wp.note"}}</p>
+    </div>
+  </div>
+  <div class="mt-5"><button class="btn-primary">{{T "app.card.btn"}}</button></div>
+  <p class="hint">{{T "app.note"}}</p>
+</form>
+{{end}}
+{{end}}
+{{end}}
+
 {{define "deletecard"}}
 <section class="card mt-4 border-rose-200 p-6 dark:border-rose-900/60">
   <h2 class="h-section">{{T "ov.del.title"}}</h2>

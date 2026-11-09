@@ -15,12 +15,14 @@
   </dl>
 </section>
 {{end}}
+{{template "appcard" .}}
 {{template "sshcard" .}}
 {{template "speedcard" .}}
 {{template "deletecard" .}}
 {{else if eq .Tab "ssl"}}{{template "ssltab" .}}
 {{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "cron"}}{{template "crontab" .}}
+{{else if eq .Tab "wordpress"}}{{template "wptab" .}}
 {{else if eq .Tab "files"}}{{template "filestab" .}}
 
 {{else if eq .Tab "databases"}}

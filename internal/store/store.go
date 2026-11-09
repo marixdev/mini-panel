@@ -93,6 +93,30 @@ CREATE TABLE settings (
 );`,
 	// Compression and browser caching of static files, switched on per site.
 	`ALTER TABLE sites ADD COLUMN speed INTEGER NOT NULL DEFAULT 0;`,
+	// The application mpn installed in a PHP site (WordPress, Laravel...), empty for a site with its own code.
+	`ALTER TABLE sites ADD COLUMN app TEXT NOT NULL DEFAULT '';`,
+	// The mail server: the domains it receives for (with the private DKIM key of each), the mailboxes (with the password hash) and the
+	// aliases. Everything goes away with its domain. The database is readable by root only, which is why the keys can live here.
+	`CREATE TABLE mail_domains (
+    name       TEXT PRIMARY KEY,
+    dkim_key   TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE mailboxes (
+    address    TEXT PRIMARY KEY,
+    domain     TEXT NOT NULL REFERENCES mail_domains(name) ON DELETE CASCADE,
+    hash       TEXT NOT NULL,
+    quota_mb   INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX mailboxes_domain ON mailboxes(domain);
+CREATE TABLE mail_aliases (
+    address    TEXT PRIMARY KEY,
+    domain     TEXT NOT NULL REFERENCES mail_domains(name) ON DELETE CASCADE,
+    targets    TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX mail_aliases_domain ON mail_aliases(domain);`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.
@@ -269,8 +293,8 @@ func (s *Store) AddSite(st site.Site) error {
 	}
 	defer tx.Rollback()
 	mode := sslModeOf(st)
-	res, err := tx.Exec(`INSERT INTO sites (name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, created_at)
-		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, st.Name, string(st.Kind), st.User, st.Root, php, port, nodeVer, pyVer, entry, upstream, mode != "", mode, phpIni, mem, st.WWW, st.AllowHTTP, time.Now().Unix())
+	res, err := tx.Exec(`INSERT INTO sites (name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, app, created_at)
+		VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, st.Name, string(st.Kind), st.User, st.Root, php, port, nodeVer, pyVer, entry, upstream, mode != "", mode, phpIni, mem, st.WWW, st.AllowHTTP, st.App, time.Now().Unix())
 	if err != nil {
 		return wrap(err)
 	}
@@ -318,6 +342,21 @@ func (s *Store) SetSSL(name, mode string) error {
 		return fmt.Errorf("unknown SSL source %q", mode)
 	}
 	res, err := s.db.Exec(`UPDATE sites SET tls = ?, ssl_mode = ? WHERE name = ?`, mode != "", mode, name)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("site %q: %w", name, ErrNotFound)
+	}
+	return nil
+}
+
+// SetApp records the application installed in a PHP site, or "" for none.
+func (s *Store) SetApp(name, app string) error {
+	if app != "" && !site.ValidApp(app) {
+		return fmt.Errorf("unknown application %q", app)
+	}
+	res, err := s.db.Exec(`UPDATE sites SET app = ? WHERE name = ?`, app, name)
 	if err != nil {
 		return err
 	}
@@ -421,7 +460,7 @@ func (s *Store) AllocNodePort(lo, hi int) (int, error) {
 
 // load reads sites matching where (a fixed string from this package, never user input) and their hostnames.
 func (s *Store) load(where string, args ...any) ([]site.Site, error) {
-	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, vhost, speed
+	rows, err := s.db.Query(`SELECT id, name, kind, system_user, root_dir, php_version, app_port, node_version, py_version, entry, upstream, tls, ssl_mode, php_ini, mem_mb, www, allow_http, vhost, speed, app
 		FROM sites `+where+` ORDER BY name`, args...)
 	if err != nil {
 		return nil, err
@@ -434,7 +473,7 @@ func (s *Store) load(where string, args ...any) ([]site.Site, error) {
 		var kind string
 		var php, up, nodeVer, pyVer, entry, ini sql.NullString
 		var port sql.NullInt64
-		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP, &st.CustomVhost, &st.Speed); err != nil {
+		if err := rows.Scan(&id, &st.Name, &kind, &st.User, &st.Root, &php, &port, &nodeVer, &pyVer, &entry, &up, &st.TLS, &st.SSLMode, &ini, &st.MemMB, &st.WWW, &st.AllowHTTP, &st.CustomVhost, &st.Speed, &st.App); err != nil {
 			rows.Close()
 			return nil, err
 		}

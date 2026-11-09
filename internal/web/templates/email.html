@@ -1,0 +1,198 @@
+{{define "content"}}
+{{$m := .Mail}}
+<div class="mb-6">
+  <h1 class="h-page">{{T "mail.title"}}</h1>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "mail.sub"}}</p>
+</div>
+{{if $m.Error}}<div role="alert" class="alert-error mb-6"><span>{{$m.Error}}</span></div>{{end}}
+
+{{if not $m.On}}
+<form method="post" action="/email/enable" class="card p-6" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "mail.off.title"}}</h2>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "mail.off.desc"}}</p>
+    </div>
+    <span class="badge-gray">{{T "sec.f2b.off"}}</span>
+  </div>
+  <div class="mt-5 flex flex-wrap items-end gap-3">
+    <div class="min-w-64 max-w-md flex-1">
+      <label for="mail-host" class="label">{{T "mail.host"}}</label>
+      <input id="mail-host" name="host" class="field font-mono" value="{{$m.Host}}" maxlength="253" placeholder="mail.example.com" spellcheck="false" autocapitalize="none" required>
+    </div>
+    <button class="btn-primary">{{T "mail.enable"}}</button>
+  </div>
+  <p class="hint">{{T "mail.host.hint" (or $m.ServerIP "–")}}</p>
+  <p class="hint">{{T "mail.ports" "25, 465, 587, 993"}}</p>
+</form>
+{{else}}
+<section class="card p-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{$m.Host}}</h2>
+      <p class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600 dark:text-slate-400">
+        {{range $m.Svc}}<span>{{.Name}}: {{if .Up}}<span class="badge-teal">{{T "mail.svc.up"}}</span>{{else}}<span class="badge-amber">{{T "mail.svc.down"}}</span>{{end}}</span>{{end}}
+      </p>
+    </div>
+    <span>{{if $m.Stopped}}<span class="badge-amber">{{T "mail.svc.down"}}</span>{{else}}<span class="badge-teal">{{T "mail.on.badge"}}</span>{{end}}</span>
+  </div>
+  {{if $m.Stopped}}<p class="alert-warn mt-4">{{T "mail.stopped"}}</p>{{end}}
+  <p class="hint">{{T "mail.tls.note" $m.Host}}</p>
+  <details class="mt-4 rounded-lg border border-slate-200 dark:border-slate-800">
+    <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700 dark:text-rose-400">{{T "mail.off.title2"}}</summary>
+    <div class="border-t border-slate-200 p-4 dark:border-slate-800">
+      <p class="alert-warn">{{T "mail.off.warn"}}</p>
+      <form method="post" action="/email/disable" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "mail.disable"}}</button></form>
+    </div>
+  </details>
+</section>
+
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "mail.domains"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "mail.domain.hint"}}</p>
+  <form method="post" action="/email/domain/add" class="mt-4 flex flex-wrap items-end gap-3" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="min-w-64 max-w-md flex-1">
+      <label for="mail-domain" class="label">{{T "mail.domain"}}</label>
+      <input id="mail-domain" name="domain" class="field font-mono" maxlength="253" placeholder="example.com" spellcheck="false" autocapitalize="none" required>
+    </div>
+    <button class="btn-primary">{{T "mail.domain.add"}}</button>
+  </form>
+  {{range $m.Domains}}
+  <div class="mt-5 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div><span class="font-mono text-[13px] font-semibold">{{.Name}}</span> <span class="text-sm text-slate-500 dark:text-slate-400">{{T "mail.counts" .Mailboxes .Aliases}}</span></div>
+    </div>
+    {{if .Records}}
+    <details class="mt-3">
+      <summary class="cursor-pointer text-sm font-medium text-teal-700 dark:text-teal-400">{{T "mail.dns"}}</summary>
+      <div class="table-wrap mt-3">
+        <table class="tbl">
+          <thead><tr><th>{{T "mail.dns.type"}}</th><th>{{T "mail.dns.name"}}</th><th>{{T "mail.dns.value"}}</th></tr></thead>
+          <tbody>{{range .Records}}<tr><td class="align-top font-mono text-[13px]">{{.Type}}</td><td class="align-top font-mono text-[13px] break-all">{{.Name}}</td><td class="align-top font-mono text-[12px] break-all">{{.Value}}</td></tr>{{end}}</tbody>
+        </table>
+      </div>
+      <p class="hint">{{T "mail.dns.note" $m.Host (or $m.ServerIP "–")}}</p>
+    </details>
+    {{end}}
+    <details class="mt-3">
+      <summary class="cursor-pointer text-sm font-medium text-rose-700 dark:text-rose-400">{{T "mail.domain.del"}}</summary>
+      <form method="post" action="/email/domain/delete" class="mt-3">
+        <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="domain" value="{{.Name}}">
+        <p class="alert-warn">{{T "mail.domain.delw"}}</p>
+        <label class="mt-3 flex cursor-pointer items-start gap-3"><input type="checkbox" name="purge" value="1" class="mt-1 size-4 accent-teal-600"><span class="text-sm">{{T "mail.purge"}}</span></label>
+        <div class="mt-3"><button class="btn-secondary">{{T "mail.domain.del"}}</button></div>
+      </form>
+    </details>
+  </div>
+  {{else}}<p class="hint">{{T "mail.domain.none"}}</p>{{end}}
+</section>
+
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "mail.boxes"}}</h2>
+  {{if $m.DomainOpt}}
+  <form method="post" action="/email/box/add" class="mt-4 grid gap-4 lg:grid-cols-4" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="lg:col-span-2">
+      <label for="box-local" class="label">{{T "mail.box.local"}}</label>
+      <div class="flex items-center gap-2">
+        <input id="box-local" name="local" class="field font-mono" maxlength="64" placeholder="ten" spellcheck="false" autocapitalize="none" required>
+        <span class="text-slate-500">@</span>
+        <select name="domain" class="field font-mono" aria-label="{{T "mail.domain"}}">{{range $m.DomainOpt}}<option value="{{.}}">{{.}}</option>{{end}}</select>
+      </div>
+    </div>
+    <div>
+      <label for="box-pass" class="label">{{T "mail.box.pass"}}</label>
+      <input id="box-pass" name="password" type="password" class="field" minlength="10" maxlength="128" autocomplete="new-password" required>
+      <p class="hint">{{T "mail.box.pass.h"}}</p>
+    </div>
+    <div>
+      <label for="box-quota" class="label">{{T "mail.box.quota"}}</label>
+      <input id="box-quota" name="quota" type="number" min="0" max="102400" class="field" placeholder="0">
+      <p class="hint">{{T "mail.box.quota.h"}}</p>
+    </div>
+    <div class="lg:col-span-4"><button class="btn-primary">{{T "mail.box.add"}}</button></div>
+  </form>
+  {{else}}<p class="hint">{{T "mail.domain.first"}}</p>{{end}}
+  {{if $m.Mailboxes}}
+  <div class="table-wrap mt-5">
+    <table class="tbl">
+      <thead><tr><th>{{T "mail.box.addr"}}</th><th>{{T "mail.box.size"}}</th><th></th></tr></thead>
+      <tbody>
+      {{range $m.Mailboxes}}<tr>
+        <td class="align-top font-mono text-[13px] break-all">{{.Address}}</td>
+        <td class="align-top whitespace-nowrap tabular-nums">{{if .QuotaMB}}{{.QuotaMB}} MB{{else}}{{T "mail.box.nolimit"}}{{end}}</td>
+        <td class="align-top">
+          <div class="flex flex-wrap items-start justify-end gap-x-3 gap-y-2">
+            <details class="relative"><summary class="link cursor-pointer list-none text-sm">{{T "mail.box.change"}}</summary>
+              <form method="post" action="/email/box/passwd" class="absolute right-0 z-10 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-lg dark:border-slate-700 dark:bg-slate-900" autocomplete="off">
+                <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                <label class="label">{{T "mail.box.newpass"}}</label>
+                <input name="password" type="password" class="field" minlength="10" maxlength="128" autocomplete="new-password" required>
+                <button class="btn-secondary mt-3 w-full">{{T "mail.box.change"}}</button>
+              </form>
+            </details>
+            <details class="relative"><summary class="link cursor-pointer list-none text-sm">{{T "mail.box.setsize"}}</summary>
+              <form method="post" action="/email/box/quota" class="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                <label class="label">{{T "mail.box.quota"}}</label>
+                <input name="quota" type="number" min="0" max="102400" class="field" value="{{.QuotaMB}}">
+                <button class="btn-secondary mt-3 w-full">{{T "mail.box.setsize"}}</button>
+              </form>
+            </details>
+            <details class="relative"><summary class="link-danger cursor-pointer list-none text-sm">{{T "mail.box.del"}}</summary>
+              <form method="post" action="/email/box/delete" class="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                <label class="flex cursor-pointer items-start gap-3"><input type="checkbox" name="purge" value="1" class="mt-1 size-4 accent-teal-600"><span class="text-sm">{{T "mail.purge"}}</span></label>
+                <button class="btn-secondary mt-3 w-full">{{T "mail.box.del"}}</button>
+              </form>
+            </details>
+          </div>
+        </td>
+      </tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint">{{T "mail.box.imap" $m.Host}}</p>
+  {{else if $m.DomainOpt}}<p class="hint mt-4">{{T "mail.box.none"}}</p>{{end}}
+</section>
+
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "mail.aliases"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "mail.alias.desc"}}</p>
+  {{if $m.DomainOpt}}
+  <form method="post" action="/email/alias/set" class="mt-4 grid gap-4 lg:grid-cols-2" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div>
+      <label for="alias-local" class="label">{{T "mail.alias.name"}}</label>
+      <div class="flex items-center gap-2">
+        <input id="alias-local" name="local" class="field font-mono" maxlength="64" placeholder="info" spellcheck="false" autocapitalize="none" required>
+        <span class="text-slate-500">@</span>
+        <select name="domain" class="field font-mono" aria-label="{{T "mail.domain"}}">{{range $m.DomainOpt}}<option value="{{.}}">{{.}}</option>{{end}}</select>
+      </div>
+    </div>
+    <div>
+      <label for="alias-to" class="label">{{T "mail.alias.to"}}</label>
+      <textarea id="alias-to" name="targets" rows="3" class="field font-mono" spellcheck="false" autocapitalize="none" required></textarea>
+    </div>
+    <div class="lg:col-span-2"><button class="btn-primary">{{T "mail.alias.save"}}</button></div>
+  </form>
+  {{end}}
+  {{if $m.Aliases}}
+  <div class="table-wrap mt-5">
+    <table class="tbl">
+      <thead><tr><th>{{T "mail.alias.addr"}}</th><th>{{T "mail.alias.dest"}}</th><th></th></tr></thead>
+      <tbody>
+      {{range $m.Aliases}}<tr>
+        <td class="align-top font-mono text-[13px] break-all">{{.Address}}</td>
+        <td class="align-top font-mono text-[13px] break-all">{{range $i, $t := .Targets}}{{if $i}}<br>{{end}}{{$t}}{{end}}</td>
+        <td class="align-top text-right"><form method="post" action="/email/alias/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}"><button class="link-danger text-sm">{{T "mail.alias.del"}}</button></form></td>
+      </tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}<p class="hint mt-4">{{T "mail.alias.none"}}</p>{{end}}
+</section>
+{{end}}
+{{end}}

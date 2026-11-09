@@ -1,0 +1,103 @@
+{{define "wpitems"}}
+{{$kind := .Kind}}{{$site := .Site}}{{$csrf := .CSRF}}
+<div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>{{T "wp.col.name"}}</th><th>{{T "wp.col.version"}}</th><th>{{T "wp.col.status"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Items}}<tr>
+      <td class="align-top"><span class="font-medium">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}</span><span class="block font-mono text-[12px] text-slate-500 dark:text-slate-400">{{.Name}}</span></td>
+      <td class="align-top whitespace-nowrap tabular-nums">{{.Version}}{{if .HasUpdate}} <span class="badge-amber">{{T "wp.update.to" .UpdateVersion}}</span>{{end}}</td>
+      <td class="align-top">{{if .Active}}<span class="badge-teal">{{T "wp.active"}}</span>{{else}}<span class="badge-gray">{{T "wp.inactive"}}</span>{{end}}</td>
+      <td class="align-top">
+        <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 whitespace-nowrap">
+          {{if .HasUpdate}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="update" class="btn-sm">{{T "wp.do.update"}}</button></form>{{end}}
+          {{if .Active}}{{if eq $kind "plugin"}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="plugin"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="deactivate" class="btn-sm">{{T "wp.do.deactivate"}}</button></form>{{end}}
+          {{else}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="activate" class="btn-sm">{{T "wp.do.activate"}}</button></form>
+          <details class="relative">
+            <summary class="link-danger cursor-pointer list-none text-sm">{{T "wp.do.delete"}}</summary>
+            <form method="post" action="/sites/{{$site}}/wp/run" class="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-left shadow-lg dark:border-slate-700 dark:bg-slate-900">
+              <input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}">
+              <p class="text-sm">{{T "wp.delete.ask" .Name}}</p>
+              <button name="action" value="delete" class="btn-secondary mt-3 w-full">{{T "wp.delete.btn"}}</button>
+            </form>
+          </details>{{end}}
+        </div>
+      </td>
+    </tr>{{else}}<tr><td colspan="4" class="text-center text-slate-500 dark:text-slate-400">{{T "wp.empty"}}</td></tr>{{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+
+{{define "wptab"}}
+{{$w := .WP}}
+{{if $w.Error}}<div role="alert" class="alert-error"><span>{{$w.Error}}</span></div>
+{{else}}
+<section class="card p-6">
+  <div class="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+    <dl class="grid min-w-0 flex-1 gap-x-8 gap-y-4 text-sm sm:grid-cols-3">
+      <div><dt class="text-slate-500 dark:text-slate-400">{{T "wp.version"}}</dt><dd class="mt-0.5 font-medium">{{$w.Version}}{{if $w.CoreUpdate}} <span class="badge-amber">{{T "wp.update.to" $w.CoreUpdate}}</span>{{else}} <span class="badge-teal">{{T "wp.uptodate"}}</span>{{end}}</dd></div>
+      <div><dt class="text-slate-500 dark:text-slate-400">{{T "wp.url"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{$w.URL}}</dd></div>
+      <div><dt class="text-slate-500 dark:text-slate-400">{{T "wp.admin"}}</dt><dd class="mt-0.5 text-sm"><a class="link" href="{{$w.URL}}/wp-admin/" target="_blank" rel="noopener noreferrer">{{T "wp.admin.open"}}</a></dd></div>
+    </dl>
+    {{if $w.CoreUpdate}}<form method="post" action="/sites/{{.Site.Name}}/wp/run" class="shrink-0"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="kind" value="core"><button name="action" value="update" class="btn-primary">{{T "wp.core.update" $w.CoreUpdate}}</button></form>{{end}}
+  </div>
+  <p class="hint">{{T "wp.note"}}</p>
+</section>
+
+<section class="card mt-4 p-6">
+  <h2 class="h-section">{{T "wp.install.title"}}</h2>
+  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "wp.install.sub"}}</p>
+  <div class="mt-4 grid gap-x-8 gap-y-5 lg:grid-cols-2">
+    <form method="get" action="/sites/{{.Site.Name}}/wordpress" autocomplete="off">
+      <h3 class="text-sm font-semibold">{{T "wp.search"}}</h3>
+      <div class="mt-2 flex flex-wrap items-end gap-3">
+        <div><label for="wp-k" class="label">{{T "wp.kind"}}</label>
+          <select id="wp-k" name="k" class="field"><option value="plugin"{{if ne $w.Kind "theme"}} selected{{end}}>{{T "wp.kind.plugin"}}</option><option value="theme"{{if eq $w.Kind "theme"}} selected{{end}}>{{T "wp.kind.theme"}}</option></select></div>
+        <div class="min-w-48 flex-1"><label for="wp-q" class="label">{{T "wp.term"}}</label>
+          <input id="wp-q" name="q" class="field" value="{{$w.Term}}" maxlength="60" placeholder="seo, cache, woocommerce" required></div>
+        <button class="btn-secondary">{{T "wp.search.btn"}}</button>
+      </div>
+    </form>
+    <form method="post" action="/sites/{{.Site.Name}}/wp/run" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="install">
+      <h3 class="text-sm font-semibold">{{T "wp.slug.title"}}</h3>
+      <div class="mt-2 flex flex-wrap items-end gap-3">
+        <div><label for="wp-ik" class="label">{{T "wp.kind"}}</label>
+          <select id="wp-ik" name="kind" class="field"><option value="plugin">{{T "wp.kind.plugin"}}</option><option value="theme">{{T "wp.kind.theme"}}</option></select></div>
+        <div class="min-w-48 flex-1"><label for="wp-slug" class="label">{{T "wp.slug"}}</label>
+          <input id="wp-slug" name="slug" class="field font-mono" maxlength="64" pattern="[a-z0-9][a-z0-9-]{0,63}" placeholder="contact-form-7" spellcheck="false" autocapitalize="none" required></div>
+        <button class="btn-primary">{{T "wp.install.btn"}}</button>
+      </div>
+      <p class="hint">{{T "wp.slug.hint"}}</p>
+    </form>
+  </div>
+  {{if $w.SearchErr}}<p class="alert-error mt-4">{{$w.SearchErr}}</p>
+  {{else if $w.Term}}
+  <div class="table-wrap mt-5">
+    <table class="tbl">
+      <thead><tr><th>{{T "wp.col.name"}}</th><th>{{T "wp.col.version"}}</th><th></th></tr></thead>
+      <tbody>
+      {{range $w.Found}}<tr>
+        <td class="align-top"><span class="font-medium">{{.Name}}</span><span class="block font-mono text-[12px] text-slate-500 dark:text-slate-400">{{.Slug}}</span>{{if .Short}}<span class="mt-1 block text-sm text-slate-600 dark:text-slate-300">{{.Short}}</span>{{end}}</td>
+        <td class="align-top whitespace-nowrap tabular-nums">{{.Version}}</td>
+        <td class="align-top text-right"><form method="post" action="/sites/{{$.Site.Name}}/wp/run" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="kind" value="{{$w.Kind}}"><input type="hidden" name="slug" value="{{.Slug}}"><button name="action" value="install" class="btn-sm">{{T "wp.install.btn"}}</button></form></td>
+      </tr>{{else}}<tr><td colspan="3" class="text-center text-slate-500 dark:text-slate-400">{{T "wp.found.none"}}</td></tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+</section>
+
+<div class="mt-4 grid gap-4 xl:grid-cols-2">
+  <section>
+    <h2 class="h-section mb-3">{{T "wp.plugins"}}</h2>
+    {{template "wpitems" (dict "Items" $w.Plugins "Kind" "plugin" "Site" .Site.Name "CSRF" .CSRF)}}
+  </section>
+  <section>
+    <h2 class="h-section mb-3">{{T "wp.themes"}}</h2>
+    {{template "wpitems" (dict "Items" $w.Themes "Kind" "theme" "Site" .Site.Name "CSRF" .CSRF)}}
+  </section>
+</div>
+{{end}}
+{{end}}

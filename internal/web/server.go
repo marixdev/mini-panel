@@ -77,6 +77,7 @@ func (s *Server) Handler() http.Handler {
 	s.dbPages(mux)
 	s.firewallPages(mux)
 	s.securityPages(mux)
+	s.mailPages(mux)
 	s.monitorPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
@@ -259,8 +260,12 @@ type view struct {
 	Cron                                        *cronView
 	FW                                          *fwView
 	Sec                                         *secView
+	Mail                                        *mailView
 	Cloud                                       *cloudView
 	CloudList                                   *cloudListView
+	WP                                          *wpView
+	Apps                                        []appOption
+	Locales                                     []string
 	Mon                                         *monView
 	DBs                                         []dbRow
 	Backups                                     []backupRow

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"mpn/internal/access"
+	"mpn/internal/apps"
 	"mpn/internal/ctl"
 	"mpn/internal/dbadmin"
 	"mpn/internal/site"
@@ -14,15 +15,19 @@ import (
 type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
-func siteMenu() []siteTabLink {
-	return []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+func siteMenu(r siteRow) []siteTabLink {
+	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+	if r.App == "wordpress" { // the manager comes right after the overview: it is what a WordPress site is mostly used through
+		menu = append([]siteTabLink{menu[0], {"wordpress", "/wordpress"}}, menu[1:]...)
+	}
+	return menu
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/wordpress"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/wordpress": "wordpress"}[tab])
 		}))
 	}
 	// SSH/SFTP moved into the Overview; the old address still works for bookmarks.
@@ -47,6 +52,8 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/settings", s.auth(s.saveSettings))
 	mux.HandleFunc("POST /sites/{name}/speed", s.auth(s.saveSpeed))
 	s.cloudRoutes(mux)
+	s.appRoutes(mux)
+	s.wpRoutes(mux)
 	mux.HandleFunc("POST /sites/{name}/ssh/enable", s.auth(s.sshEnable))
 	mux.HandleFunc("GET /sites/{name}/ssh/reset", s.auth(s.sshConfirm("reset")))
 	mux.HandleFunc("POST /sites/{name}/ssh/reset", s.auth(s.sshAct("reset")))
@@ -95,6 +102,7 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 			v.Error = e
 		}
 		s.loadSSH(&v, r, row)
+		v.Apps, v.Locales = appOptions(), apps.Locales
 	case "ssl":
 		v.SSL = s.loadSSL(row, v.ServerIP)
 	case "vhost":
@@ -108,6 +116,12 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	case "backups":
 		v.Error = s.list(ctl.Request{Op: "backup.list", Site: row.Name}, &v.Backups)
 		v.Cloud = s.loadCloud(row.Name)
+	case "wordpress":
+		if row.App != "wordpress" {
+			http.NotFound(w, r)
+			return
+		}
+		v.WP = s.loadWP(row, r)
 	}
 	s.show(w, 200, ss, v)
 }

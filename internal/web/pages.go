@@ -9,6 +9,7 @@ import (
 	"strings"
 	"unicode"
 
+	"mpn/internal/apps"
 	"mpn/internal/ctl"
 	"mpn/internal/dbadmin"
 	"mpn/internal/site"
@@ -25,6 +26,7 @@ type siteRow struct {
 	WWW              string `json:"www"`
 	AllowHTTP        bool   `json:"allow_http"`
 	Speed            bool   `json:"speed"`
+	App              string `json:"app"`
 	CertExpiry       int64  `json:"cert_expiry"`
 	CustomVhost      bool   `json:"custom_vhost"`
 }
@@ -64,6 +66,14 @@ func (r siteRow) Runtime() string {
 		}
 	}
 	return T("kind." + r.Kind)
+}
+
+// PHPVersion is the PHP version of a php site, taken from its detail ("php 8.4"), or "" for another kind.
+func (r siteRow) PHPVersion() string {
+	if f := strings.Fields(r.Detail); r.Kind == "php" && len(f) >= 2 {
+		return f[1]
+	}
+	return ""
 }
 
 // result is what a finished operation shows: the helper's own words, never a guess.
@@ -181,7 +191,7 @@ func (s *Server) installedNode() []string {
 }
 
 func (s *Server) newSitePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	v := view{Page: "sitenew", Kinds: siteKinds, Reserved: reservedList(), PHPVersions: s.installedPHP(), NodeVersions: s.installedNode()}
+	v := view{Page: "sitenew", Kinds: siteKinds, Reserved: reservedList(), PHPVersions: s.installedPHP(), NodeVersions: s.installedNode(), Apps: appOptions(), Locales: apps.Locales}
 	if k := r.URL.Query().Get("kind"); k != "" {
 		if !slices.Contains(siteKinds, k) {
 			http.Error(w, T("err.kind"), http.StatusBadRequest)
@@ -257,6 +267,15 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 			return
 		}
 	}
+	// The code to download is chosen only for a PHP site, and is checked now, before anything is created.
+	var app appForm
+	if r.PostFormValue("kind") == "php" {
+		app = readAppForm(r)
+		if p := app.check(r.PostFormValue("php")); p != "" {
+			nothing(p)
+			return
+		}
+	}
 	password := r.PostFormValue("password")
 	if password == "" {
 		var err error
@@ -292,11 +311,27 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 			Node: r.PostFormValue("node"), Python: r.PostFormValue("python"), Entry: strings.TrimSpace(r.PostFormValue("entry")), Upstream: strings.TrimSpace(r.PostFormValue("upstream"))},
 		ctl.Request{Op: "site.apply", Site: name},
 		ctl.Request{Op: "site.access", Site: name, Enable: true, Password: password})
-	if res.OK {
-		res.Output += "\n\n" + T("res.access", hostOnly(r.Host), user, password)
-		res.Back = siteTab(name, "") // to the page of the website that was just made
-	} else {
+	if !res.OK {
 		res.Back = "/sites/new"
+		s.finish(w, r, res)
+		return
+	}
+	res.Output += "\n\n" + T("res.access", hostOnly(r.Host), user, password)
+	res.Back = siteTab(name, "") // to the page of the website that was just made
+	if app.App != "" {
+		// The website exists and its login is in the output above. The application is installed as a second step, so that a failure
+		// of the download leaves a website the person can use and try again on.
+		ar := s.run(T("act.app.install", appLabel(app.App), name), app.request(name))
+		if ar.Output != "" {
+			res.Output += "\n\n" + ar.Output
+		}
+		if !ar.OK {
+			reason := ar.Error
+			if e := appError(ar.Output); e != "" {
+				reason = e
+			}
+			res.OK, res.Error = false, T("app.err.after", reason)
+		}
 	}
 	s.finish(w, r, res)
 }

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Website đã sẵn sàng</title>
+<!-- mpn-default-page: trang tạm do Mini Panel tạo. Cứ xóa hoặc ghi đè tệp này bằng website của bạn. -->
+<style>
+:root{color-scheme:light dark;--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--acc:#0d9488;--acc2:#14b8a6;--soft:#f0fdfa}
+@media (prefers-color-scheme:dark){:root{--bg:#020617;--card:#0f172a;--ink:#f1f5f9;--mut:#94a3b8;--line:#1e293b;--acc:#2dd4bf;--acc2:#5eead4;--soft:#042f2e}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(1100px 520px at 50% -10%,color-mix(in srgb,var(--acc) 16%,transparent),transparent),var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+main{width:100%;max-width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 36px;box-shadow:0 20px 50px -24px rgb(15 23 42/.35)}
+.ok{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:var(--soft);color:var(--acc);font-size:13px;font-weight:600}
+.ok i{width:8px;height:8px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc2) 25%,transparent)}
+h1{margin:18px 0 6px;font-size:30px;line-height:1.2;letter-spacing:-.02em}
+.host{margin:0 0 4px;font:600 15px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--acc);word-break:break-all}
+.lead{margin:12px 0 0;color:var(--mut)}
+ol{margin:26px 0 0;padding:0;list-style:none;counter-reset:s}
+li{counter-increment:s;display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+li::before{content:counter(s);flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--acc);font-size:13px;font-weight:700}
+li b{display:block;font-size:15px}
+li span{color:var(--mut);font-size:14px}
+code{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+@media (max-width:480px){main{padding:28px 22px}h1{font-size:25px}}
+</style>
+</head>
+<body>
+<main>
+  <span class="ok"><i></i>Đang hoạt động</span>
+  <h1>Website của bạn đã sẵn sàng</h1>
+  <p class="host" id="host">{{HOST}}</p>
+  <p class="lead">Đây là trang tạm do Mini Panel tạo ngay sau khi tạo website. Khi bạn đưa mã nguồn lên, trang này sẽ được thay thế.</p>
+  <ol>
+    <li><div><b>Đưa mã nguồn lên</b><span>Dùng tab <em>Tệp</em> trong panel hoặc kết nối SFTP bằng tài khoản của website, rồi chép mã nguồn vào thư mục gốc.</span></div></li>
+    <li><div><b>Thay tệp này</b><span>Ghi đè hoặc xóa <code>{{FILE}}</code> khi website của bạn đã có nội dung.</span></div></li>
+    <li><div><b>Bật HTTPS</b><span>Vào tab <em>SSL</em> để cấp chứng chỉ Let's Encrypt miễn phí khi tên miền đã trỏ về máy chủ.</span></div></li>
+  </ol>
+  <div class="meta"><span>{{RUNTIME}}</span><span>Quản lý bởi Mini Panel</span></div>
+</main>
+<script>var h=document.getElementById('host');if(h&&!h.textContent.trim())h.textContent=location.hostname;</script>
+</body>
+</html>

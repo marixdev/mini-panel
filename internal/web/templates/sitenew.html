@@ -29,6 +29,22 @@
         {{if .PHPVersions}}<select id="f-php" name="php" class="field">{{range .PHPVersions}}<option{{if eq . "8.4"}} selected{{end}}>{{.}}</option>{{end}}</select>
         {{else}}<p class="alert-warn mt-1">{{T "new.nophp"}}</p>{{end}}
       </div>
+      <div class="sm:col-span-2">
+        <label for="f-app" class="label">{{T "app.title"}}</label>
+        <select id="f-app" name="app" class="field" data-app-select>
+          <option value="">{{T "app.none"}}</option>
+          {{range .Apps}}<option value="{{.ID}}">{{.Label}} ({{T "app.needs" .MinPHP}})</option>{{end}}
+        </select>
+        <p class="hint">{{T "app.hint"}}</p>
+        <div class="mt-4 grid gap-x-5 gap-y-4 sm:grid-cols-2" data-app-wp>
+          <div><label for="f-wpt" class="label">{{T "app.wp.title"}}</label><input id="f-wpt" name="wp_title" class="field" maxlength="100" data-app-req></div>
+          <div><label for="f-wpl" class="label">{{T "app.wp.locale"}}</label><select id="f-wpl" name="wp_locale" class="field">{{range .Locales}}<option value="{{.}}"{{if eq . "vi"}} selected{{end}}>{{T (printf "app.locale.%s" .)}}</option>{{end}}</select></div>
+          <div><label for="f-wpa" class="label">{{T "app.wp.admin"}}</label><input id="f-wpa" name="wp_admin" class="field font-mono" maxlength="60" autocapitalize="none" spellcheck="false" data-app-req></div>
+          <div><label for="f-wpe" class="label">{{T "app.wp.email"}}</label><input id="f-wpe" name="wp_email" type="email" class="field" maxlength="254" data-app-req></div>
+          <p class="hint sm:col-span-2">{{T "app.wp.admin.hint"}} {{T "app.wp.note"}}</p>
+        </div>
+        <p class="hint">{{T "app.note"}}</p>
+      </div>
       {{else if eq .Kind "node"}}
       <div>
         <label for="f-node" class="label">{{T "f.node"}}</label>

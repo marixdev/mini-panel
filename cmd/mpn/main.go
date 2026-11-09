@@ -11,7 +11,7 @@ import (
 const version = "0.0.1-dev"
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|security|panel|cloud|root|web> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|security|panel|cloud|app|wp|mail|root|web> [flags]")
 	os.Exit(2)
 }
 
@@ -42,6 +42,12 @@ func main() {
 		runPanel(os.Args[2:])
 	case "cloud":
 		runCloud(os.Args[2:])
+	case "app":
+		runApp(os.Args[2:])
+	case "wp":
+		runWP(os.Args[2:])
+	case "mail":
+		runMail(os.Args[2:])
 	case "root":
 		runRoot(os.Args[2:])
 	case "web":

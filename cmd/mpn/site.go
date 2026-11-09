@@ -189,7 +189,7 @@ func siteList(args []string) {
 			detail = s.Upstream
 		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", s.Name, s.Kind, s.User, strings.Join(s.Hostnames, ","), detail)
-		rows = append(rows, siteRow{Name: s.Name, Kind: string(s.Kind), User: s.User, Hostnames: append([]string{}, s.Hostnames...), Detail: detail, TLS: s.TLS, Root: s.Root, WWW: s.WWW, AllowHTTP: s.AllowHTTP, Speed: s.Speed, CertExpiry: expiryOf(s), CustomVhost: s.CustomVhost != ""})
+		rows = append(rows, siteRow{Name: s.Name, Kind: string(s.Kind), User: s.User, Hostnames: append([]string{}, s.Hostnames...), Detail: detail, TLS: s.TLS, Root: s.Root, WWW: s.WWW, AllowHTTP: s.AllowHTTP, Speed: s.Speed, App: s.App, CertExpiry: expiryOf(s), CustomVhost: s.CustomVhost != ""})
 	}
 	if *asJSON {
 		printJSON(rows)

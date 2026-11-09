@@ -18,6 +18,7 @@ type siteRow struct {
 	WWW         string   `json:"www"`
 	AllowHTTP   bool     `json:"allow_http"`
 	Speed       bool     `json:"speed"`
+	App         string   `json:"app,omitempty"`         // the application mpn installed in a PHP site
 	CertExpiry  int64    `json:"cert_expiry,omitempty"` // when the certificate ends, for a site with HTTPS
 	CustomVhost bool     `json:"custom_vhost"`          // the nginx configuration was written by hand
 }

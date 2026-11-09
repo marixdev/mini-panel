@@ -72,7 +72,16 @@ type Site struct {
 	CustomVhost string
 	// Speed turns on compression and long browser caching of static files (see vhost.go).
 	Speed bool
+	// App is the application mpn installed in a PHP site, one of Apps, or "" for a site whose code the person brought. It decides
+	// which tabs and cards the site has (WordPress has a manager) and is set only once the installation has finished.
+	App string
 }
+
+// Apps are the applications mpn can download and set up in a PHP site.
+var Apps = []string{"wordpress", "laravel", "codeigniter", "cakephp", "yii"}
+
+// ValidApp reports whether id names an application of Apps.
+func ValidApp(id string) bool { return slices.Contains(Apps, id) }
 
 // reservedUsers are accounts that exist on a stock Debian or Ubuntu server or that the software installed by mpn runs
 // as. A site's account must be created for it, never one of these. Any other existing account is refused when the site
@@ -140,6 +149,9 @@ func (s Site) Validate() error {
 		}
 		if err := ValidatePHPIni(s.PHPIni); err != nil {
 			add("php settings: %v", err)
+		}
+		if s.App != "" && !ValidApp(s.App) {
+			add("application %q is not one mpn installs", s.App)
 		}
 	case Node:
 		if !ValidAppPort(s.NodePort) {

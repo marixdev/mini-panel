@@ -104,6 +104,9 @@ func (o *OS) Rollback() error {
 			err = atomicWrite(u.path, u.old, u.mode)
 		} else {
 			err = os.Remove(u.path)
+			if os.IsNotExist(err) {
+				err = nil // a file the plan wrote and later deleted itself (a staged secret) is gone already, which is what rollback wants
+			}
 		}
 		if err != nil && first == nil {
 			first = err

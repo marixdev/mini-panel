@@ -83,6 +83,25 @@ type Request struct {
 	CloudClientID string `json:"cloud_client_id,omitempty"` // cloud.connect
 	CloudSecret   string `json:"cloud_secret,omitempty"`    // cloud.connect
 	CloudOn       bool   `json:"cloud_on,omitempty"`        // cloud.enable: the site is copied
+	// app.install: the application to download and set up in a PHP site, and for WordPress the details of the first administrator.
+	// The password of the administrator is made by mpn and shown once; it is never sent here.
+	App       string `json:"app,omitempty"`
+	AppTitle  string `json:"app_title,omitempty"`
+	AppAdmin  string `json:"app_admin,omitempty"`
+	AppEmail  string `json:"app_email,omitempty"`
+	AppLocale string `json:"app_locale,omitempty"`
+	// The WordPress manager: wp.run does one thing to a plugin, a theme or WordPress itself; wp.search looks on wordpress.org.
+	WPKind   string `json:"wp_kind,omitempty"`   // plugin, theme or core
+	WPAction string `json:"wp_action,omitempty"` // install, activate, deactivate, update or delete
+	WPSlug   string `json:"wp_slug,omitempty"`
+	WPTerm   string `json:"wp_term,omitempty"`
+	// The mail server. The password of a mailbox reaches mpn on standard input only; Purge (above) also deletes the stored mail.
+	MailHost     string   `json:"mail_host,omitempty"`     // mail.enable: the name of this machine as a mail server
+	MailDomain   string   `json:"mail_domain,omitempty"`   // the domain mail is received for
+	MailAddress  string   `json:"mail_address,omitempty"`  // a mailbox or an alias
+	MailTargets  []string `json:"mail_targets,omitempty"`  // mail.aliasset: where the mail of the alias goes
+	MailQuota    int      `json:"mail_quota,omitempty"`    // size limit of a mailbox in MB, 0 for none
+	MailPassword string   `json:"mail_password,omitempty"` // mail.boxadd and mail.boxpasswd; stdin only
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -91,6 +110,8 @@ func (r Request) Stdin() string {
 	switch {
 	case r.Op == "site.access" && r.Enable:
 		return r.Password + "\n"
+	case r.Op == "mail.boxadd", r.Op == "mail.boxpasswd":
+		return r.MailPassword + "\n"
 	case r.Op == "site.vhostset":
 		return r.Vhost
 	case r.Op == "site.cronadd":
@@ -130,12 +151,17 @@ var writes = map[string]bool{
 	"security.waf": true, "security.f2b": true, "security.unban": true, // ModSecurity with the OWASP rules, and fail2ban
 	"panel.ssl": true, "panel.sslcustom": true, "panel.ssloff": true, // the certificate of the panel and of the database browser
 	"cloud.connect": true, "cloud.finish": true, "cloud.disconnect": true, "cloud.enable": true, "cloud.sync": true, "cloud.fetch": true, // the copy of backups to Google Drive
-	"db.add": true, "db.passwd": true, "db.remove": true,
+	"mail.enable": true, "mail.disable": true, "mail.domainadd": true, "mail.domaindel": true, // the mail server and its domains
+	"mail.boxadd": true, "mail.boxdel": true, "mail.boxpasswd": true, "mail.boxquota": true, // mailboxes
+	"mail.aliasset": true, "mail.aliasdel": true, // aliases
+	"app.install": true, // download and set up WordPress or a framework in a PHP site
+	"wp.run":      true, // an action of the WordPress manager
+	"db.add":      true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -260,6 +286,13 @@ func (r Request) Argv() ([]string, error) {
 			return nil, err
 		}
 		return []string{"cloud", "sync", "-site=" + r.Site, "-detach", "-apply"}, nil
+	case "app.install":
+		return r.installApp()
+	case "mail.status", "mail.records", "mail.enable", "mail.disable", "mail.domainadd", "mail.domaindel",
+		"mail.boxadd", "mail.boxdel", "mail.boxpasswd", "mail.boxquota", "mail.aliasset", "mail.aliasdel":
+		return r.mailArgv()
+	case "wp.status", "wp.run", "wp.search":
+		return r.wpArgv()
 	case "cloud.list":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err
