@@ -16,12 +16,65 @@ import (
 )
 
 func mailUsage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn mail <status|enable|disable|records|domain-add|domain-del|box-add|box-del|box-passwd|box-quota|alias-set|alias-del> [flags]   (add -h for the flags)")
+	fmt.Fprintln(os.Stderr, "usage: mpn mail <status|enable|disable|ssl|webmail|records|domain-add|domain-del|box-add|box-del|box-passwd|box-quota|alias-set|alias-del> [flags]   (add -h for the flags)")
 	os.Exit(2)
 }
 
-// mailFirewallComment marks the firewall rules that belong to the mail server, so turning mail off removes exactly those.
-const mailFirewallComment = "mpn-mail"
+// mailFirewallComment marks the firewall rules that belong to the mail server, so turning mail off removes exactly those. The web mail
+// has a comment of its own, because it can be turned off while the mail server stays on.
+const (
+	mailFirewallComment = "mpn-mail"
+	webmailFirewallTag  = "mpn-mail-web"
+	settingWebmail      = "mail_webmail" // "on" or "off"
+)
+
+// mailWebInfo is the part of the status that is about the web mail.
+type mailWebInfo struct {
+	On        bool `json:"on"`        // a person turned it on
+	Installed bool `json:"installed"` // the program is on the machine
+	Active    bool `json:"active"`    // the socket that starts it is open
+	Port      int  `json:"port"`      // where it is reached; 0 when the panel's port is unknown
+}
+
+func panelPortOf() int {
+	if p := listenPorts(panelNginx); len(p) > 0 {
+		return p[0]
+	}
+	return 0
+}
+
+func currentWebmail(st *store.Store) mailWebInfo {
+	v, _ := st.Setting(settingWebmail, "off")
+	w := mailWebInfo{On: v == "on", Installed: fileExists(mail.WebmailBinary)}
+	if pp := panelPortOf(); pp > 0 {
+		w.Port = mail.WebmailPort(pp)
+	}
+	w.Active = out(3*time.Second, "systemctl", "is-active", "mpn-mail.socket") == "active"
+	return w
+}
+
+// webmailFirewall opens or closes the port of the web mail, the way mailFirewallOpen does for the mail ports. The panel's own ports
+// are always open; this one is not, so with the firewall on it needs a rule.
+func webmailFirewall(st *store.Store, open bool, port int) error {
+	rules, err := st.FirewallRules()
+	if err != nil {
+		return err
+	}
+	for _, r := range rules {
+		if r.Comment == webmailFirewallTag {
+			if err := st.DeleteFirewallRule(r.ID); err != nil {
+				return err
+			}
+		}
+	}
+	if open && port > 0 {
+		r := firewall.Rule{Action: firewall.Allow, Proto: "tcp", Port: fmt.Sprint(port), Comment: webmailFirewallTag}
+		if _, err := st.AddFirewallRule(r); err != nil && !errors.Is(err, store.ErrExists) {
+			return err
+		}
+	}
+	return mailFirewallReload(st)
+}
 
 type mailDomainInfo struct {
 	Name      string        `json:"name"`
@@ -48,6 +101,8 @@ type mailStatus struct {
 	Installed bool             `json:"installed"`
 	Services  map[string]bool  `json:"services"` // name -> running
 	Ports     []int            `json:"ports"`
+	Cert      mailCertInfo     `json:"cert"`
+	Webmail   mailWebInfo      `json:"webmail"`
 	Domains   []mailDomainInfo `json:"domains"`
 	Mailboxes []mailBoxInfo    `json:"mailboxes"`
 	Aliases   []mailAliasInfo  `json:"aliases"`
@@ -62,7 +117,9 @@ func currentMail(st *store.Store) mailStatus {
 	host, _ := st.MailHost()
 	s := mailStatus{On: on, Host: host, Installed: mailInstalled(), Services: map[string]bool{}, Ports: mail.PublicPorts,
 		Domains: []mailDomainInfo{}, Mailboxes: []mailBoxInfo{}, Aliases: []mailAliasInfo{}}
+	s.Webmail = currentWebmail(st)
 	if s.Installed {
+		s.Cert = currentMailCert(st, host)
 		for _, svc := range []string{"postfix", "dovecot", "opendkim"} {
 			s.Services[svc] = out(3*time.Second, "systemctl", "is-active", svc) == "active"
 		}
@@ -177,6 +234,10 @@ func runMail(args []string) {
 	domain := fs.String("domain", "", "the mail domain")
 	address := fs.String("address", "", "the mailbox or alias address")
 	targets := fs.String("targets", "", "alias-set: the addresses its mail goes to, separated by commas")
+	webOn := fs.Bool("on", true, "webmail: turn the web mail on (false turns it off)")
+	binary := fs.String("binary", "", "webmail: install the program from this file on the machine instead of downloading it (the checksum is still checked)")
+	email := fs.String("email", "", "ssl: contact address for Let's Encrypt (optional)")
+	staging := fs.Bool("staging", false, "ssl: use the Let's Encrypt test CA (for trials; mail clients do not trust the result)")
 	quota := fs.Int("quota", 0, "box-add, box-quota: size limit in MB, 0 for none")
 	purge := fs.Bool("purge", false, "domain-del, box-del: also delete the stored mail")
 	apply := fs.Bool("apply", false, "change this machine (Linux, root); otherwise only check")
@@ -251,6 +312,43 @@ func runMail(args []string) {
 		fail(mailFirewallOpen(st))
 		fmt.Printf("mail is on for %s\n", h)
 
+	case "ssl":
+		mailSSL(st, *email, *staging, *apply)
+
+	case "webmail":
+		if on, _ := st.MailOn(); !on {
+			fail(errors.New("mail-off: turn mail on first; the web mail reads the mailboxes of this server"))
+		}
+		pp := panelPortOf()
+		if pp == 0 {
+			fail(errors.New("webmail-nopanel: the web mail is served on a port next to the panel's, and the panel is not installed on this machine"))
+		}
+		if !*webOn {
+			if !*apply {
+				printPlans(mail.WebmailOffPlan())
+				fmt.Println("# checked only. Add -apply to turn the web mail off.")
+				return
+			}
+			requireLinuxRoot()
+			fail(runPlanQuiet(mail.WebmailOffPlan()))
+			fail(st.SetSetting(settingWebmail, "off"))
+			fail(webmailFirewall(st, false, 0))
+			fmt.Println("the web mail is off; its settings are kept")
+			return
+		}
+		plan, err := mail.WebmailPlan(pp, *binary)
+		fail(err)
+		if !*apply {
+			printPlans(plan)
+			fmt.Printf("# checked only. The web mail would be at port %d. Add -apply to install it.\n", mail.WebmailPort(pp))
+			return
+		}
+		requireLinuxRoot()
+		fail(runPlanQuiet(plan))
+		fail(st.SetSetting(settingWebmail, "on"))
+		fail(webmailFirewall(st, true, mail.WebmailPort(pp)))
+		fmt.Printf("the web mail is on, at port %d of this server\n", mail.WebmailPort(pp))
+
 	case "disable":
 		if !*apply {
 			printPlans(mail.OffPlan())
@@ -261,6 +359,12 @@ func runMail(args []string) {
 		fail(runPlanQuiet(mail.OffPlan()))
 		fail(st.SetMailOn(false))
 		fail(mailFirewallClose(st))
+		// The web mail has nothing to read once the servers stop, so it goes too. Its settings stay.
+		if v, _ := st.Setting(settingWebmail, "off"); v == "on" {
+			fail(runPlanQuiet(mail.WebmailOffPlan()))
+			fail(st.SetSetting(settingWebmail, "off"))
+			fail(webmailFirewall(st, false, 0))
+		}
 		fmt.Println("mail is off; mailboxes, keys and lists are kept")
 
 	case "domain-add":

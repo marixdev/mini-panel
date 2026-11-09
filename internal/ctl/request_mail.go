@@ -29,6 +29,11 @@ func (r Request) mailArgv() ([]string, error) {
 		return []string{"mail", "enable", "-host=" + r.MailHost, "-apply"}, nil
 	case "mail.disable":
 		return []string{"mail", "disable", "-apply"}, nil
+	case "mail.ssl":
+		return []string{"mail", "ssl", "-apply"}, nil
+	case "mail.webmail":
+		// No -binary here: a request from the web side can only ask for the program of the release, never name a file.
+		return []string{"mail", "webmail", "-on=" + strconv.FormatBool(r.Enable), "-apply"}, nil
 	case "mail.domainadd", "mail.domaindel":
 		if err := mail.ValidDomain(r.MailDomain); err != nil {
 			return nil, err

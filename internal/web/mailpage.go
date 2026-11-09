@@ -1,6 +1,7 @@
 package web
 
 import (
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -28,6 +29,22 @@ type mailAliasRow struct {
 	Targets []string `json:"targets"`
 }
 
+// mailWebRow is the web mail: the program that reads the mailboxes in a browser.
+type mailWebRow struct {
+	On        bool `json:"on"`
+	Installed bool `json:"installed"`
+	Active    bool `json:"active"`
+	Port      int  `json:"port"`
+}
+
+// mailCertRow is the certificate the mail servers use: self-signed until Let's Encrypt issues one for the mail host.
+type mailCertRow struct {
+	Mode   string `json:"mode"`
+	Days   int    `json:"days"`
+	Issuer string `json:"issuer"`
+	Covers bool   `json:"covers"`
+}
+
 type mailSvc struct {
 	Name string
 	Up   bool
@@ -40,6 +57,8 @@ type mailView struct {
 	Installed bool            `json:"installed"`
 	Services  map[string]bool `json:"services"`
 	Ports     []int           `json:"ports"`
+	Cert      mailCertRow     `json:"cert"`
+	Webmail   mailWebRow      `json:"webmail"`
 	Domains   []mailDomainRow `json:"domains"`
 	Mailboxes []mailBoxRow    `json:"mailboxes"`
 	Aliases   []mailAliasRow  `json:"aliases"`
@@ -48,12 +67,15 @@ type mailView struct {
 	Svc       []mailSvc       `json:"-"`
 	Stopped   bool            `json:"-"` // turned on, but a server is not running
 	DomainOpt []string        `json:"-"`
+	WebURL    string          `json:"-"` // where the web mail is reached, on the name this page was opened with
 }
 
 func (s *Server) mailPages(mux *http.ServeMux) {
 	mux.HandleFunc("GET /email", s.auth(s.mailPage))
 	mux.HandleFunc("POST /email/enable", s.auth(s.mailEnable))
 	mux.HandleFunc("POST /email/disable", s.auth(s.mailDisable))
+	mux.HandleFunc("POST /email/ssl", s.auth(s.mailSSL))
+	mux.HandleFunc("POST /email/webmail", s.auth(s.mailWebmail))
 	mux.HandleFunc("POST /email/domain/add", s.auth(s.mailDomainAdd))
 	mux.HandleFunc("POST /email/domain/delete", s.auth(s.mailDomainDel))
 	mux.HandleFunc("POST /email/box/add", s.auth(s.mailBoxAdd))
@@ -77,6 +99,13 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 	for _, d := range v.Domains {
 		v.DomainOpt = append(v.DomainOpt, d.Name)
 	}
+	if v.Webmail.On && v.Webmail.Port > 0 {
+		h := r.Host
+		if hh, _, err := net.SplitHostPort(r.Host); err == nil {
+			h = hh
+		}
+		v.WebURL = "https://" + h + ":" + strconv.Itoa(v.Webmail.Port)
+	}
 	s.show(w, 200, ss, view{Page: "email", Mail: v})
 }
 
@@ -88,6 +117,14 @@ func (s *Server) mailAction(w http.ResponseWriter, r *http.Request, title string
 		switch {
 		case strings.Contains(res.Output, "mail-conflict"):
 			res.Error = T("mail.err.conflict")
+		case strings.Contains(res.Output, "webmail-download"):
+			res.Error = T("mail.err.webdl")
+		case strings.Contains(res.Output, "webmail-checksum"):
+			res.Error = T("mail.err.websum")
+		case strings.Contains(res.Output, "webmail-nopanel"):
+			res.Error = T("mail.err.webpanel")
+		case strings.Contains(res.Output, "mail-nonginx"):
+			res.Error = T("mail.err.nonginx")
 		case strings.Contains(res.Output, "already taken"):
 			res.Error = T("mail.err.exists")
 		case strings.Contains(res.Output, "Unable to locate package"), strings.Contains(res.Output, "has no installation candidate"):
@@ -108,6 +145,14 @@ func (s *Server) mailEnable(w http.ResponseWriter, r *http.Request, ss webauth.S
 		return
 	}
 	s.mailAction(w, r, "act.mail.enable", ctl.Request{Op: "mail.enable", MailHost: host})
+}
+
+func (s *Server) mailWebmail(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	s.mailAction(w, r, "act.mail.webmail", ctl.Request{Op: "mail.webmail", Enable: r.PostFormValue("on") == "1"})
+}
+
+func (s *Server) mailSSL(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	s.mailAction(w, r, "act.mail.ssl", ctl.Request{Op: "mail.ssl"})
 }
 
 func (s *Server) mailDisable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {

@@ -151,7 +151,7 @@ var writes = map[string]bool{
 	"security.waf": true, "security.f2b": true, "security.unban": true, // ModSecurity with the OWASP rules, and fail2ban
 	"panel.ssl": true, "panel.sslcustom": true, "panel.ssloff": true, // the certificate of the panel and of the database browser
 	"cloud.connect": true, "cloud.finish": true, "cloud.disconnect": true, "cloud.enable": true, "cloud.sync": true, "cloud.fetch": true, // the copy of backups to Google Drive
-	"mail.enable": true, "mail.disable": true, "mail.domainadd": true, "mail.domaindel": true, // the mail server and its domains
+	"mail.enable": true, "mail.disable": true, "mail.ssl": true, "mail.webmail": true, "mail.domainadd": true, "mail.domaindel": true, // the mail server and its domains
 	"mail.boxadd": true, "mail.boxdel": true, "mail.boxpasswd": true, "mail.boxquota": true, // mailboxes
 	"mail.aliasset": true, "mail.aliasdel": true, // aliases
 	"app.install": true, // download and set up WordPress or a framework in a PHP site
@@ -288,7 +288,7 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"cloud", "sync", "-site=" + r.Site, "-detach", "-apply"}, nil
 	case "app.install":
 		return r.installApp()
-	case "mail.status", "mail.records", "mail.enable", "mail.disable", "mail.domainadd", "mail.domaindel",
+	case "mail.status", "mail.records", "mail.enable", "mail.disable", "mail.ssl", "mail.webmail", "mail.domainadd", "mail.domaindel",
 		"mail.boxadd", "mail.boxdel", "mail.boxpasswd", "mail.boxquota", "mail.aliasset", "mail.aliasdel":
 		return r.mailArgv()
 	case "wp.status", "wp.run", "wp.search":

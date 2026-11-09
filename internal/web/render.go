@@ -13,7 +13,7 @@ import (
 //go:embed templates/*.html
 var templateFS embed.FS
 
-//go:embed assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/monitor.js assets/editor assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
+//go:embed assets/logo.svg assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/monitor.js assets/editor assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
 var assetFS embed.FS
 
 // page is a page drawn from the files in templates/: a shell (the frame around the page) and the page's own content.
@@ -49,6 +49,7 @@ func (s *Server) execute(w io.Writer, v view) {
 
 // assetFiles maps the name a page uses to the embedded file and its type.
 var assetFiles = map[string]struct{ path, ctype string }{
+	"logo.svg":       {"assets/logo.svg", "image/svg+xml"},
 	"app.css":        {"assets/app.css", "text/css; charset=utf-8"},
 	"app.js":         {"assets/app.js", "text/javascript; charset=utf-8"},
 	"theme.js":       {"assets/theme.js", "text/javascript; charset=utf-8"},
