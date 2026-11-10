@@ -3,7 +3,7 @@
 <div class="mb-6">
   <a class="link text-sm" href="/sites/{{.Site.Name}}/backups">&larr; {{T "cld.list.back"}}</a>
   <h1 class="h-page mt-2">{{T "cld.list.title" .Site.Name}}</h1>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cld.list.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "cld.list.sub"}}</p>
 </div>
 {{if $l.Error}}<div role="alert" class="alert-error mb-6"><span>{{$l.Error}}</span></div>{{end}}
 

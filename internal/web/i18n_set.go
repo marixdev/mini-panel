@@ -30,7 +30,7 @@ func init() {
 		"ph.session.gc_maxlifetime": "Số giây giữ phiên đăng nhập, từ 60 đến 864000",
 		"ph.max_file_uploads":       "Số tệp tối đa trong một lần tải lên, từ 1 đến 1000",
 		"ph.short_open_tag":         "Cho phép viết <? thay cho <?php: On hoặc Off",
-		"hd.user":                   "Tài khoản", "hd.open": "Mở website", "hd.others": "+%d tên miền khác", "hd.sections": "Các mục của website",
+		"hd.user":                   "Tài khoản", "hd.open": "Mở website", "hd.copy": "Chép %s", "hd.copied": "Đã chép", "hd.others": "+%d tên miền khác", "hd.sections": "Các mục của website",
 		"hd.https.on": "SSL đang bật", "hd.https.off": "Chưa bật SSL",
 		"ov.python.title": "Python", "ov.python.version": "Phiên bản Python", "ov.python.entry": "Tệp khởi động", "ov.python.entry.hint": "Đường dẫn từ thư mục gốc, ví dụ app.py, hoặc -m và tên module, ví dụ -m myapp. Ứng dụng chạy bằng môi trường ảo ~/venv của website.",
 		"ov.python.notinstalled": "Chỉ hiện các phiên bản đã cài trên máy này (gói python3.x và python3.x-venv).",

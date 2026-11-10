@@ -2,7 +2,7 @@
 <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
   <div>
     <h1 class="h-page">{{T "sites.title"}}</h1>
-    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "sites.sub"}}</p>
+    <p class="mt-1 text-sm text-muted-foreground">{{T "sites.sub"}}</p>
   </div>
   <a class="btn-primary" href="/sites/new">
     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -24,8 +24,8 @@
       <tr>
         <td class="font-medium"><a class="link" href="/sites/{{.Name}}">{{.Name}}</a></td>
         <td><span class="badge-gray">{{T (printf "kind.%s" .Kind)}}</span>{{if .TLS}} <span class="badge-teal">{{T "sites.https"}}</span>{{end}}</td>
-        <td class="text-slate-600 dark:text-slate-300">{{range .Hostnames}}<div>{{.}}</div>{{end}}</td>
-        <td class="text-slate-600 dark:text-slate-300">{{.Detail}}</td>
+        <td class="text-muted-foreground">{{range .Hostnames}}<div>{{.}}</div>{{end}}</td>
+        <td class="text-muted-foreground">{{.Detail}}</td>
         <td>
           <div class="flex items-center justify-end">
             <a class="btn-secondary px-3 py-1.5" href="/sites/{{.Name}}">{{T "sites.manage"}}

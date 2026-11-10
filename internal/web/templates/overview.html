@@ -4,24 +4,24 @@
 
 <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="{{T "ov.status"}}">
   <div class="card p-4">
-    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">{{T "ov.status"}}</p>
+    <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "ov.status"}}</p>
     <p class="mt-2">{{if $o.Running}}<span class="badge-teal">{{T "ov.running"}}</span>{{else}}<span class="badge-rose">{{T "ov.stopped"}}</span>{{end}}</p>
     {{if $o.RunDetail}}<p class="hint">{{T "ov.run.of" $o.RunDetail}}</p>{{end}}
   </div>
   <div class="card p-4">
-    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">{{T "ov.disk"}}</p>
+    <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "ov.disk"}}</p>
     <p class="mt-2 text-lg font-semibold tabular-nums">{{$o.DiskText}}</p>
     <p class="hint">{{T "ov.disk.note"}}</p>
   </div>
   <div class="card p-4">
-    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">{{T "ov.cert"}}</p>
+    <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "ov.cert"}}</p>
     {{if $o.CertText}}<p class="mt-2 text-sm font-medium">{{$o.CertText}}</p>{{if $o.CertSoon}}<p class="mt-1"><span class="badge-amber">{{T "ov.cert.soon"}}</span></p>{{end}}
     {{else if $o.TLS}}<p class="mt-2 text-sm font-medium">{{T "ov.https.on"}}</p>
-    {{else}}<p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{T "ov.cert.none"}}</p>{{end}}
+    {{else}}<p class="mt-2 text-sm text-muted-foreground">{{T "ov.cert.none"}}</p>{{end}}
   </div>
   <div class="card p-4">
-    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">{{T "ov.backup"}}</p>
-    <p class="mt-2 text-sm font-medium">{{if $o.BackupText}}{{$o.BackupText}}{{else}}<span class="text-slate-600 dark:text-slate-300">{{T "ov.nobackup"}}</span>{{end}}</p>
+    <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "ov.backup"}}</p>
+    <p class="mt-2 text-sm font-medium">{{if $o.BackupText}}{{$o.BackupText}}{{else}}<span class="text-muted-foreground">{{T "ov.nobackup"}}</span>{{end}}</p>
   </div>
 </section>
 
@@ -29,7 +29,7 @@
 <form method="post" action="/sites/{{$.Site.Name}}/domain" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{$.CSRF}}">
   <h2 class="h-section">{{T "dm.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "dm.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "dm.sub"}}</p>
   <div class="mt-4 grid gap-x-10 gap-y-6 lg:grid-cols-2">
   <div>
     <label for="d-domain" class="label">{{T "dm.domain"}}</label>
@@ -40,16 +40,16 @@
     <legend class="text-sm font-semibold">{{T "dm.www.title"}}</legend>
     <p class="hint mt-1">{{T "dm.www.hint"}}</p>
     <div class="mt-3 grid gap-2">
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="www" value="" class="mt-1 accent-teal-600"{{if eq .WWW ""}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="www" value="" class="mt-1 accent-primary"{{if eq .WWW ""}} checked{{end}}>
         <span><span class="block text-sm font-medium">{{T "dm.www.off"}}</span><span class="hint mt-0">{{T "dm.www.off.d"}}</span></span>
       </label>
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="www" value="bare" class="mt-1 accent-teal-600"{{if eq .WWW "bare"}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="www" value="bare" class="mt-1 accent-primary"{{if eq .WWW "bare"}} checked{{end}}>
         <span><span class="block font-mono text-[13px] font-medium">{{T "dm.www.bare" .Bare}}</span><span class="hint mt-0">{{T "dm.www.bare.d" .With .Bare}}</span></span>
       </label>
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="www" value="www" class="mt-1 accent-teal-600"{{if eq .WWW "www"}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="www" value="www" class="mt-1 accent-primary"{{if eq .WWW "www"}} checked{{end}}>
         <span><span class="block font-mono text-[13px] font-medium">{{T "dm.www.www" .With}}</span><span class="hint mt-0">{{T "dm.www.www.d" .Bare .With}}</span></span>
       </label>
     </div>
@@ -63,7 +63,7 @@
 <form method="post" action="/sites/{{.Site.Name}}/settings" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "ov.settings"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ov.settings.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "ov.settings.sub"}}</p>
 
   {{if ne $o.Kind "proxy"}}
   <fieldset class="mt-6">
@@ -73,7 +73,7 @@
     {{else}}
     <label for="s-root" class="label mt-3">{{T "ov.root.sub"}}</label>
     <div class="mt-1 flex max-w-xl">
-      <span class="inline-flex shrink-0 items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 font-mono text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{$o.Home}}</span>
+      <span class="inline-flex shrink-0 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 font-mono text-sm text-muted-foreground">{{$o.Home}}</span>
       <input id="s-root" name="root_sub" class="field !mt-0 min-w-0 rounded-l-none font-mono" value="{{$o.RootSub}}" maxlength="200" placeholder="{{T "ov.root.ph"}}" spellcheck="false">
     </div>
     <p class="hint">{{T "ov.root.hint"}}</p>
@@ -88,20 +88,20 @@
     <select id="s-php" name="php" class="field max-w-xs">{{range $v := $o.PHPVersions}}<option{{if eq $v $o.PHPVersion}} selected{{end}}>{{$v}}</option>{{end}}</select>
     <p class="hint">{{T "ov.php.notinstalled"}}</p>
 
-    <h3 class="mt-6 text-sm font-medium text-slate-700 dark:text-slate-300">{{T "ov.php.common"}}</h3>
+    <h3 class="mt-6 text-sm font-medium text-foreground">{{T "ov.php.common"}}</h3>
     <div class="mt-3 grid gap-4 sm:grid-cols-2">
       {{range $o.Fields}}
       <div>
         <label for="i-{{.Name}}" class="label flex min-h-6 items-center gap-2 font-mono text-[13px]">{{.Name}}{{if .Changed}}<span class="badge-teal font-sans">{{T "ov.php.changed"}}</span>{{end}}</label>
         <input id="i-{{.Name}}" name="ini_{{.Name}}" class="field font-mono" value="{{.Value}}" spellcheck="false" maxlength="40">
-        <p class="hint">{{.Hint}} · {{T "ov.php.default" .Default}}</p>
+        <p class="hint">{{.Hint}} Â· {{T "ov.php.default" .Default}}</p>
       </div>
       {{end}}
     </div>
 
-    <details class="mt-6 rounded-lg border border-slate-200 dark:border-slate-800">
+    <details class="mt-6 rounded-lg border border-border">
       <summary class="cursor-pointer px-4 py-2.5 text-sm font-medium">{{T "ov.php.more"}}</summary>
-      <div class="grid gap-4 border-t border-slate-200 p-4 sm:grid-cols-2 dark:border-slate-800">
+      <div class="grid gap-4 border-t border-border p-4 sm:grid-cols-2">
         {{range $o.More}}
         <div>
           <label for="i-{{.Name}}" class="label flex min-h-6 items-center gap-2 font-mono text-[13px]">{{.Name}}{{if .Changed}}<span class="badge-teal font-sans">{{T "ov.php.changed"}}</span>{{end}}</label>
@@ -110,7 +110,7 @@
           {{else}}
           <input id="i-{{.Name}}" name="ini_{{.Name}}" class="field font-mono" value="{{.Value}}" spellcheck="false" maxlength="40">
           {{end}}
-          <p class="hint">{{.Hint}} · {{T "ov.php.default" .Default}}</p>
+          <p class="hint">{{.Hint}} Â· {{T "ov.php.default" .Default}}</p>
         </div>
         {{end}}
       </div>
@@ -194,11 +194,11 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "ps.title"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ps.sub"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "ps.sub"}}</p>
     </div>
     <span>{{if .Site.Speed}}<span class="badge-teal">{{T "ps.on"}}</span>{{else}}<span class="badge-gray">{{T "ps.off"}}</span>{{end}}</span>
   </div>
-  <ul class="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 dark:text-slate-300">
+  <ul class="mt-4 grid gap-2 text-sm text-foreground sm:grid-cols-2">
     <li>{{T "ps.gzip"}}</li>
     <li>{{T "ps.cache"}}</li>
   </ul>
@@ -218,14 +218,14 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "app.installed"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "app.installed.d"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "app.installed.d"}}</p>
     </div>
     <span class="badge-teal">{{T (printf "app.%s" .Site.App)}}</span>
   </div>
   <dl class="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "app.root"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Site.Root}}</dd></div>
-    {{if eq .Site.App "wordpress"}}<div><dt class="text-slate-500 dark:text-slate-400">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">wp-config.php</dd></div>
-    {{else if or (eq .Site.App "laravel") (eq .Site.App "codeigniter")}}<div><dt class="text-slate-500 dark:text-slate-400">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">.env</dd></div>{{end}}
+    <div><dt class="text-muted-foreground">{{T "app.root"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Site.Root}}</dd></div>
+    {{if eq .Site.App "wordpress"}}<div><dt class="text-muted-foreground">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">wp-config.php</dd></div>
+    {{else if or (eq .Site.App "laravel") (eq .Site.App "codeigniter")}}<div><dt class="text-muted-foreground">{{T "app.cfg.label"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">.env</dd></div>{{end}}
   </dl>
   {{if eq .Site.App "wordpress"}}<div class="mt-4"><a class="btn-secondary" href="/sites/{{.Site.Name}}/wordpress">{{T "app.manage"}}</a></div>{{end}}
 </section>
@@ -233,7 +233,7 @@
 <form method="post" action="/sites/{{.Site.Name}}/app/install" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "app.card.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "app.card.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "app.card.sub"}}</p>
   <div class="mt-4 grid gap-x-6 gap-y-4 lg:grid-cols-2">
     <div>
       <label for="ov-app" class="label">{{T "app.title"}}</label>
@@ -260,7 +260,7 @@
 {{define "deletecard"}}
 <section class="card mt-4 border-rose-200 p-6 dark:border-rose-900/60">
   <h2 class="h-section">{{T "ov.del.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ov.del.d"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "ov.del.d"}}</p>
   <div class="mt-4"><a class="btn-danger" href="/sites/remove?site={{.Site.Name}}">{{T "ov.del.btn"}}</a></div>
 </section>
 {{end}}
@@ -268,17 +268,17 @@
 {{define "sshcard"}}
 <section class="card mt-4 p-6">
   <h2 class="h-section">{{T "ssh.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "ssh.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "ssh.sub"}}</p>
   <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.state"}}</dt><dd class="mt-0.5">{{if .SSHEnabled}}<span class="badge-teal">{{T "ssh.on"}}</span>{{else}}<span class="badge-amber">{{T "ssh.off"}}</span>{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssh.state"}}</dt><dd class="mt-0.5">{{if .SSHEnabled}}<span class="badge-teal">{{T "ssh.on"}}</span>{{else}}<span class="badge-amber">{{T "ssh.off"}}</span>{{end}}</dd></div>
     {{if .SSHEnabled}}
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.key"}}</dt><dd class="mt-0.5">{{if eq .KeyStatus "ok"}}<span class="badge-teal">{{T "ssh.key.ok"}}</span>{{else if eq .KeyStatus "broken"}}<span class="badge-rose">{{T "ssh.key.broken"}}</span>{{else}}<span class="badge-gray">{{T "ssh.key.unknown"}}</span>{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.host"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.SSHHost}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.port"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">22</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssh.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssh.key"}}</dt><dd class="mt-0.5">{{if eq .KeyStatus "ok"}}<span class="badge-teal">{{T "ssh.key.ok"}}</span>{{else if eq .KeyStatus "broken"}}<span class="badge-rose">{{T "ssh.key.broken"}}</span>{{else}}<span class="badge-gray">{{T "ssh.key.unknown"}}</span>{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssh.host"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.SSHHost}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssh.port"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">22</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssh.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
     {{end}}
   </dl>
-  <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5 dark:border-slate-800">
+  <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
     {{if .SSHEnabled}}
     <a class="btn-secondary" href="/sites/{{.Site.Name}}/ssh/reset">{{T "ssh.reset"}}</a>
     {{if eq .KeyStatus "broken"}}<form method="post" action="/sites/{{.Site.Name}}/ssh/panelkey"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "ssh.restore"}}</button></form>{{end}}

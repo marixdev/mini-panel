@@ -61,6 +61,14 @@ type Server struct {
 	// FMRoot finds the home directory the file manager works in; the SFTP session's start directory when nil.
 	FMRoot func(*sftp.Client) (string, error)
 
+	// SaveAccount writes the administrator's account (a changed password, the secret of the two-step sign-in). The account file
+	// belongs to the panel's own account, so no help from the root helper is needed; nil switches those settings off.
+	SaveAccount func(webauth.Account) error
+	twofa       twoFactor
+	// PanelDomainFile is the nginx file of the panel's name on port 443. When it exists and a request came to that plain address, the
+	// database browser is opened under /pma/ of the name and not on its own port.
+	PanelDomainFile string
+
 	flashMu sync.Mutex
 	flash   map[string]*result
 }
@@ -71,6 +79,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) { s.render(w, 200, view{Page: "login"}) })
 	mux.HandleFunc("POST /login", s.login)
+	s.settingsPages(mux)
 	mux.HandleFunc("POST /logout", s.auth(s.logout))
 	mux.HandleFunc("GET /{$}", s.auth(s.sitesPage))
 	s.sitePages(mux)
@@ -79,6 +88,7 @@ func (s *Server) Handler() http.Handler {
 	s.securityPages(mux)
 	s.mailPages(mux)
 	s.monitorPages(mux)
+	s.servicesPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
 	s.sitePagesOfOne(mux)
@@ -213,11 +223,20 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusUnauthorized, view{Page: "login", Error: T("login.wrong")})
 		return
 	}
+	if acct.TOTP != "" { // the password is right; the code of the app is still to come
+		s.render(w, http.StatusOK, view{Page: "login", Need2FA: true, Pending: s.twofa.newLogin(acct.User)})
+		return
+	}
 	s.Throttle.Reset(key)
+	s.startSession(w, r, acct.User)
+}
+
+// startSession signs the browser in: a new session, and its cookie.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, user string) {
 	if c, err := r.Cookie(s.cookieName()); err == nil {
 		s.Sessions.Delete(c.Value) // a login never reuses an older session
 	}
-	tok, _ := s.Sessions.Create(acct.User)
+	tok, _ := s.Sessions.Create(user)
 	http.SetCookie(w, &http.Cookie{Name: s.cookieName(), Value: tok, Path: "/", HttpOnly: true, Secure: s.Secure, SameSite: http.SameSiteStrictMode})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -258,6 +277,11 @@ type view struct {
 	SSL                                         *sslView
 	VH                                          *vhostView
 	Cron                                        *cronView
+	Log                                         *logView
+	Svc                                         *svcView
+	Settings                                    *settingsView
+	Need2FA                                     bool   // the sign-in page asks for the code of the app
+	Pending                                     string // the sign-in that waits for it
 	FW                                          *fwView
 	Sec                                         *secView
 	Mail                                        *mailView

@@ -206,6 +206,8 @@ func (s Site) ProxyTarget() string {
 var reservedPorts = map[int]bool{
 	22: true, 25: true, 80: true, 443: true, 465: true, 587: true, 993: true, 995: true, 3306: true, 33060: true, 5432: true,
 	6379: true, 8780: true, 2610: true, 2611: true, 9000: true, 11211: true,
+	// The web mail: its public port (the panel's plus two) and the port its program listens on behind nginx.
+	2612: true, 8781: true,
 }
 
 // ValidAppPort reports whether an app may listen on p.

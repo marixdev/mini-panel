@@ -16,7 +16,7 @@ type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
 func siteMenu(r siteRow) []siteTabLink {
-	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"logs", "/logs"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
 	if r.App == "wordpress" { // the manager comes right after the overview: it is what a WordPress site is mostly used through
 		menu = append([]siteTabLink{menu[0], {"wordpress", "/wordpress"}}, menu[1:]...)
 	}
@@ -24,10 +24,10 @@ func siteMenu(r siteRow) []siteTabLink {
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/wordpress"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/logs", "/wordpress"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/wordpress": "wordpress"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/logs": "logs", "/wordpress": "wordpress"}[tab])
 		}))
 	}
 	// SSH/SFTP moved into the Overview; the old address still works for bookmarks.
@@ -109,6 +109,8 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.VH = s.loadVhost(row)
 	case "cron":
 		v.Cron = s.loadCron(row)
+	case "logs":
+		v.Log = s.loadLogs(r, row)
 	case "databases":
 		v.DBBase = dbadmin.BaseName(row.Name)
 		v.PMA = s.pmaOn()

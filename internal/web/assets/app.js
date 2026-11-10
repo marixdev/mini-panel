@@ -59,6 +59,54 @@ document.querySelectorAll('[data-password]').forEach(function (field) {
   if (!field.value) field.value = randomPassword();
 });
 
+// Copies text to the clipboard. The panel is served over HTTPS, where the clipboard API works; a page opened in a way that
+// hides it falls back to selecting a hidden box and asking the browser to copy.
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  return new Promise(function (ok, fail) {
+    var box = document.createElement('textarea');
+    box.value = text;
+    box.setAttribute('readonly', '');
+    box.className = 'sr-only';
+    document.body.appendChild(box);
+    box.select();
+    var done = false;
+    try { done = document.execCommand('copy'); } catch (_) {}
+    document.body.removeChild(box);
+    if (done) ok(); else fail();
+  });
+}
+
+// The menu under the name of the signed-in person: the button opens it, a press anywhere else or Escape closes it, and the
+// arrow keys move between its entries.
+function setMenu(menu, open) {
+  var panel = menu.querySelector('[data-menu-panel]'), button = menu.querySelector('[data-menu-button]');
+  panel.hidden = !open;
+  button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) { var first = panel.querySelector('[role=menuitem]'); if (first) first.focus(); }
+}
+document.addEventListener('click', function (e) {
+  var button = e.target.closest('[data-menu-button]');
+  document.querySelectorAll('[data-menu]').forEach(function (menu) {
+    if (button && menu.contains(button)) setMenu(menu, menu.querySelector('[data-menu-panel]').hidden);
+    else if (!menu.contains(e.target)) setMenu(menu, false);
+  });
+});
+document.addEventListener('keydown', function (e) {
+  var menu = e.target.closest && e.target.closest('[data-menu]');
+  if (!menu) return;
+  var panel = menu.querySelector('[data-menu-panel]');
+  if (e.key === 'Escape' && !panel.hidden) {
+    setMenu(menu, false);
+    menu.querySelector('[data-menu-button]').focus();
+  } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !panel.hidden) {
+    var items = Array.prototype.slice.call(panel.querySelectorAll('[role=menuitem]'));
+    var at = items.indexOf(document.activeElement);
+    items[(at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+    e.preventDefault();
+  }
+});
+
 document.addEventListener('click', function (e) {
   var gen = e.target.closest('[data-gen-password]');
   if (gen) {
@@ -73,12 +121,19 @@ document.addEventListener('click', function (e) {
     return;
   }
   var copy = e.target.closest('[data-copy]');
-  if (copy && navigator.clipboard) {
-    navigator.clipboard.writeText(copy.getAttribute('data-copy')).then(function () {
-      var before = copy.textContent;
+  if (copy) {
+    copyText(copy.getAttribute('data-copy')).then(function () {
+      var status = copy.querySelector('[data-copy-status]');
+      if (status) { // a chip: the check mark shows for a moment, and a screen reader hears the words
+        copy.classList.add('is-copied');
+        status.textContent = copy.getAttribute('data-copied') || 'OK';
+        setTimeout(function () { copy.classList.remove('is-copied'); status.textContent = ''; }, 1500);
+        return;
+      }
+      var before = copy.textContent; // a plain button: its own words change for a moment
       copy.textContent = copy.getAttribute('data-copied') || 'OK';
       setTimeout(function () { copy.textContent = before; }, 1500);
-    });
+    }, function () {});
   }
 });
 

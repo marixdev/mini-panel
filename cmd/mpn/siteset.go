@@ -112,6 +112,9 @@ func siteSet(args []string) {
 	}
 	if given["port"] {
 		cur.NodePort = *port
+		if f := mpnPortHolder(*port); f != "" {
+			fail(fmt.Errorf("port %d is used by the panel (%s); an app needs another port", *port, f))
+		}
 		if other, err := portHolder(st, cur.Name, *port); err != nil {
 			fail(err)
 		} else if other != "" {

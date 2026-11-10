@@ -23,6 +23,8 @@ type pSSLView struct {
 	Trusted   bool     `json:"trusted"`
 	PanelPort int      `json:"panel_port"`
 	PMAPort   int      `json:"pma_port"`
+	Plain     bool     `json:"plain"`    // the panel's name is served on port 443, with no port in the address
+	PMAPath   bool     `json:"pma_path"` // and the database browser is under /pma/ of that name
 
 	Error     string `json:"-"`
 	Own       bool   `json:"-"` // a certificate for a name, not the self-signed one

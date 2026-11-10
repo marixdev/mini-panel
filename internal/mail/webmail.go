@@ -159,6 +159,29 @@ func WebmailNginx(panelPort int) (string, error) {
 	return b.String(), nil
 }
 
+// WebmailDomainFile is the server block that serves the web mail on the name of the mail host, on port 443, so its address needs no
+// port. mpn panel sync writes it only while the web mail is on and the mail host has a certificate that covers its name.
+const WebmailDomainFile = "/etc/nginx/conf.d/07-mpn-webmail-domain.conf"
+
+// WebmailDomainNginx is that block. The program links to itself with absolute paths, so it cannot live under a path such as /mail
+// of the panel's name; it gets the name of the mail host, which already has a certificate of its own (CertFile, KeyFile).
+func WebmailDomainNginx(host string) (string, error) {
+	if err := ValidDomain(host); err != nil {
+		return "", fmt.Errorf("mail host: %w", err)
+	}
+	var b strings.Builder
+	b.WriteString("# Written by mpn: the web mail on the name of the mail host. Do not edit.\n")
+	b.WriteString("server {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name " + host + ";\n    " + security.OffInclude + "\n")
+	b.WriteString("    ssl_certificate " + CertFile + ";\n    ssl_certificate_key " + KeyFile + ";\n")
+	b.WriteString("    client_max_body_size 30m;\n    server_tokens off;\n")
+	b.WriteString("    add_header X-Content-Type-Options nosniff always;\n    add_header Strict-Transport-Security \"max-age=31536000\" always;\n")
+	b.WriteString("    location / {\n        proxy_pass http://127.0.0.1:" + fmt.Sprint(WebmailBackendPort) + ";\n")
+	b.WriteString("        proxy_http_version 1.1;\n        # $http_host is what the program compares with the Referer of a form.\n        proxy_set_header Host $http_host;\n        proxy_set_header X-Real-IP $remote_addr;\n")
+	b.WriteString("        proxy_set_header X-Forwarded-For $remote_addr;\n        proxy_set_header X-Forwarded-Proto https;\n")
+	b.WriteString("        proxy_buffering off;\n        proxy_read_timeout 3600s;\n        proxy_connect_timeout 60s;\n    }\n}\n")
+	return b.String(), nil
+}
+
 // WebmailPlan installs the web mail. panelPort is the port of the panel, which the web mail's port follows. It needs the panel (for
 // its nginx and its certificate); the caller checks that.
 func WebmailPlan(panelPort int, localBinary string) (installer.Plan, error) {

@@ -22,6 +22,7 @@ import (
 
 	"mpn/internal/ctl"
 	"mpn/internal/dbadmin"
+	"mpn/internal/installer"
 	"mpn/internal/monitor"
 	"mpn/internal/panelkey"
 	"mpn/internal/panelssh"
@@ -43,6 +44,10 @@ func runWeb(args []string) {
 	}
 	if len(args) > 0 && args[0] == "passwd" {
 		webPasswd(args[1:])
+		return
+	}
+	if len(args) > 0 && args[0] == "2fa-off" {
+		webTwoFAOff(args[1:])
 		return
 	}
 	webServe(args)
@@ -88,19 +93,24 @@ func webServe(args []string) {
 	// The measurements are kept next to the account file: the one place the panel is allowed to write.
 	collector := monitor.New(monitor.ProcSource, filepath.Join(filepath.Dir(*account), "metrics.json"))
 	srv := &web.Server{
-		Mon:        collector,
-		Account:    func() (webauth.Account, error) { return webauth.LoadAccount(*account) },
-		Sessions:   webauth.NewSessions(30*time.Minute, 12*time.Hour, 20),
-		Throttle:   webauth.NewThrottle(),
-		Hosts:      hosts,
-		HostsFile:  panelssl.HostsFile,
-		PMAPort:    *pmaPort,
-		PMAKey:     pmaKey,
-		Secure:     *secure,
-		TrustProxy: *trustProxy,
-		Dialer:     panelssh.Client{Addr: *sshAddr, KeyPath: panelkey.Default.Private, HostKeyGlob: "/etc/ssh/ssh_host_*_key.pub", Timeout: 8 * time.Second},
-		PHPDir:     "/usr/sbin",
-		NodeRoot:   unit.NodeRoot,
+		Mon:     collector,
+		Account: func() (webauth.Account, error) { return webauth.LoadAccount(*account) },
+		// The account file is in the one folder the panel may write to and belongs to the panel's own account, so a new password or
+		// the secret of the two-step sign-in is saved by the panel itself.
+		SaveAccount: func(a webauth.Account) error { return webauth.SaveAccount(*account, a, -1, -1) },
+		// The file of the panel's own name on port 443; when it is there, the database browser is opened under /pma/ of that name.
+		PanelDomainFile: installer.PanelDomainFile,
+		Sessions:        webauth.NewSessions(30*time.Minute, 12*time.Hour, 20),
+		Throttle:        webauth.NewThrottle(),
+		Hosts:           hosts,
+		HostsFile:       panelssl.HostsFile,
+		PMAPort:         *pmaPort,
+		PMAKey:          pmaKey,
+		Secure:          *secure,
+		TrustProxy:      *trustProxy,
+		Dialer:          panelssh.Client{Addr: *sshAddr, KeyPath: panelkey.Default.Private, HostKeyGlob: "/etc/ssh/ssh_host_*_key.pub", Timeout: 8 * time.Second},
+		PHPDir:          "/usr/sbin",
+		NodeRoot:        unit.NodeRoot,
 		TermLog: func(event, site string, err error) {
 			if err != nil {
 				log.Printf("terminal %s: site %s: %v", event, site, err)
@@ -180,13 +190,48 @@ func webPasswd(args []string) {
 	fail(os.MkdirAll(dir, 0o750))
 	fail(os.Chown(dir, uid, gid))
 	fail(os.Chmod(dir, 0o750))
-	fail(webauth.SaveAccount(*account, webauth.Account{User: *name, Hash: hash}, uid, gid))
+	acct := webauth.Account{User: *name, Hash: hash}
+	if old, err := webauth.LoadAccount(*account); err == nil && old.User == *name {
+		acct.TOTP, acct.TOTPStep = old.TOTP, old.TOTPStep // a new password does not switch the second step off: "mpn web 2fa-off" does
+	}
+	fail(webauth.SaveAccount(*account, acct, uid, gid))
 	if *stdin {
 		fmt.Printf("password of %q set\n", *name)
 	} else {
 		fmt.Printf("panel login\n\n  user:     %s\n  password: %s\n\nSave it now: only a hash is stored. Set a new one with:  mpn web passwd\n", *name, pw)
 	}
 	fmt.Println("A running panel keeps its signed-in sessions until they expire; restart it to end them: systemctl restart mpn-web")
+}
+
+// webTwoFAOff switches the two-step sign-in off, for somebody who has lost the app. It runs as root on the machine, which is
+// what makes it safe to offer: a person who can run it already controls the panel. The panel reads the account on each sign-in,
+// so it takes effect at once.
+func webTwoFAOff(args []string) {
+	fs := flag.NewFlagSet("web 2fa-off", flag.ExitOnError)
+	account := fs.String("account", defaultAccount, "file with the administrator account")
+	webUser := fs.String("web-user", "mpn-web", "account the panel runs as; it will own the file")
+	_ = fs.Parse(args)
+	if runtime.GOOS != "linux" || os.Geteuid() != 0 {
+		fail(errors.New("switching the two-step sign-in off needs Linux and root"))
+	}
+	acct, err := webauth.LoadAccount(*account)
+	fail(err)
+	if acct.TOTP == "" {
+		fmt.Println("the two-step sign-in is already off")
+		return
+	}
+	u, err := user.Lookup(*webUser)
+	fail(err)
+	uid, err := strconv.Atoi(u.Uid)
+	fail(err)
+	gid, err := strconv.Atoi(u.Gid)
+	fail(err)
+	if uid == 0 {
+		fail(errors.New("the web account must not be root"))
+	}
+	acct.TOTP, acct.TOTPStep = "", 0
+	fail(webauth.SaveAccount(*account, acct, uid, gid))
+	fmt.Printf("the two-step sign-in of %q is off; sign in with the password, then turn it on again in Settings if you want it\n", acct.User)
 }
 
 func lastElem(p string) string {

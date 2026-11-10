@@ -44,18 +44,23 @@ func ValidDomain(d string) error {
 	return nil
 }
 
-// ACMEConfig is the nginx block for the name of the panel. port is where visitors who come to port 80 are sent.
+// ACMEConfig is the nginx block for the name of the panel. port is where visitors who come to port 80 are sent; 0 sends them to the
+// plain https address (port 443), which is what they get once the name has a server block of its own (installer.PanelDomainFile).
 func ACMEConfig(domain string, port int) (string, error) {
 	if err := ValidDomain(domain); err != nil {
 		return "", err
 	}
-	if port < 1024 || port > 65535 {
-		return "", fmt.Errorf("panel port %d is out of range", port)
+	target := "https://$host"
+	if port != 0 {
+		if port < 1024 || port > 65535 {
+			return "", fmt.Errorf("panel port %d is out of range", port)
+		}
+		target += ":" + strconv.Itoa(port)
 	}
 	return "# Written by mpn: lets Let's Encrypt check the name of the panel and sends visitors of port 80 to the panel.\n" +
 		"server {\n    listen 80;\n    listen [::]:80;\n    server_name " + domain + ";\n    " + security.OffInclude + "\n" +
 		"    location /.well-known/acme-challenge/ { root /var/lib/mpn/acme; }\n" +
-		"    location / { return 301 https://$host:" + strconv.Itoa(port) + "$request_uri; }\n}\n", nil
+		"    location / { return 301 " + target + "$request_uri; }\n}\n", nil
 }
 
 // HostsText is the content of HostsFile for one name.

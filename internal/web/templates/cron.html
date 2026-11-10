@@ -9,7 +9,7 @@
     <thead><tr><th>{{T "cr.col.when"}}</th><th>{{T "cr.col.command"}}</th><th>{{T "cr.col.state"}}</th><th></th></tr></thead>
     <tbody>
     {{range $c.Jobs}}<tr>
-      <td class="whitespace-nowrap"><div class="font-medium">{{.Human}}</div>{{if ne .Human .Schedule}}<div class="font-mono text-xs text-slate-500 dark:text-slate-400">{{.Schedule}}</div>{{end}}</td>
+      <td class="whitespace-nowrap"><div class="font-medium">{{.Human}}</div>{{if ne .Human .Schedule}}<div class="font-mono text-xs text-muted-foreground">{{.Schedule}}</div>{{end}}</td>
       <td class="max-w-md"><code class="block overflow-x-auto font-mono text-[13px] whitespace-pre">{{.Command}}</code></td>
       <td>{{if .Enabled}}<span class="badge-teal">{{T "cr.on"}}</span>{{else}}<span class="badge-gray">{{T "cr.off"}}</span>{{end}}</td>
       <td><div class="flex items-center justify-end gap-3">
@@ -25,7 +25,7 @@
 <form method="post" action="/sites/{{.Site.Name}}/cron" class="card mt-6 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "cr.add.title"}}</h2>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "cr.add.sub" .Site.User}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "cr.add.sub" .Site.User}}</p>
   <div class="mt-5 grid gap-5 sm:grid-cols-2">
     <div>
       <label for="cr-preset" class="label">{{T "cr.when"}}</label>

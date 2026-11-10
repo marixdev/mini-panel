@@ -2,7 +2,7 @@
 {{$s := .Sec}}
 <div class="mb-6">
   <h1 class="h-page">{{T "sec.title"}}</h1>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "sec.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "sec.sub"}}</p>
 </div>
 {{if $s.Error}}<div role="alert" class="alert-error mb-6"><span>{{$s.Error}}</span></div>{{end}}
 
@@ -11,19 +11,22 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "psl.title"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "psl.sub"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "psl.sub"}}</p>
     </div>
     <span>{{if eq .Mode "letsencrypt"}}<span class="badge-teal">{{T "psl.mode.letsencrypt"}}</span>{{else if eq .Mode "custom"}}<span class="badge-teal">{{T "psl.mode.custom"}}</span>{{else}}<span class="badge-amber">{{T "psl.mode.selfsigned"}}</span>{{end}}</span>
   </div>
   {{if .Error}}<p class="alert-error mt-4">{{.Error}}</p>{{end}}
   {{if .Own}}
   <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "psl.domain"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Domain}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if .Issuer}}{{.Issuer}}{{else}}–{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "psl.urls"}}</dt><dd class="mt-0.5 grid gap-1 font-mono text-[13px] font-medium break-all">
+    <div><dt class="text-muted-foreground">{{T "psl.domain"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Domain}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if .Issuer}}{{.Issuer}}{{else}}â€“{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "psl.urls"}}</dt><dd class="mt-0.5 grid gap-1 font-mono text-[13px] font-medium break-all">
+      {{if .Plain}}<span>{{T "psl.panel"}}: https://{{.Domain}}</span>
+      {{if .PMAPath}}<span>{{T "psl.pma"}}: https://{{.Domain}}/pma/</span>{{end}}
+      {{else}}
       {{if .PanelPort}}<span>{{T "psl.panel"}}: https://{{.Domain}}:{{.PanelPort}}</span>{{end}}
-      {{if .PMAPort}}<span>{{T "psl.pma"}}: https://{{.Domain}}:{{.PMAPort}}</span>{{end}}</dd></div>
-    {{if .UntilText}}<div><dt class="text-slate-500 dark:text-slate-400">{{T "ssl.until" .UntilText .Days}}</dt><dd class="mt-1">{{if .Soon}}<span class="badge-amber">{{T "ssl.soon"}}</span>{{end}}</dd></div>{{end}}
+      {{if .PMAPort}}<span>{{T "psl.pma"}}: https://{{.Domain}}:{{.PMAPort}}</span>{{end}}{{end}}</dd></div>
+    {{if .UntilText}}<div><dt class="text-muted-foreground">{{T "ssl.until" .UntilText .Days}}</dt><dd class="mt-1">{{if .Soon}}<span class="badge-amber">{{T "ssl.soon"}}</span>{{end}}</dd></div>{{end}}
   </dl>
   <p class="hint">{{if eq .Mode "letsencrypt"}}{{T "psl.auto"}}{{else}}{{T "psl.manual"}}{{end}}</p>
   {{if not .Covers}}<p class="alert-warn mt-4">{{T "psl.notcover"}}</p>{{end}}
@@ -34,10 +37,10 @@
   {{end}}
 
   <div class="mt-5 grid gap-4">
-    <form method="post" action="/security/panel-ssl/letsencrypt" class="rounded-lg border border-slate-200 p-4 dark:border-slate-800" autocomplete="off">
+    <form method="post" action="/security/panel-ssl/letsencrypt" class="rounded-lg border border-border p-4" autocomplete="off">
       <input type="hidden" name="csrf" value="{{$.CSRF}}">
       <h3 class="text-sm font-semibold">{{T "psl.le.title"}}</h3>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "psl.le.desc"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "psl.le.desc"}}</p>
       <div class="mt-4 flex flex-wrap items-end gap-3">
         <div class="min-w-64 max-w-md flex-1">
           <label for="psl-le-domain" class="label">{{T "psl.domain"}}</label>
@@ -45,13 +48,13 @@
         </div>
         <button class="btn-primary">{{if eq .Mode "letsencrypt"}}{{T "psl.le.replace"}}{{else}}{{T "psl.le.btn"}}{{end}}</button>
       </div>
-      <p class="hint">{{T "psl.le.hint" (or .ServerIP "–")}}</p>
+      <p class="hint">{{T "psl.le.hint" (or .ServerIP "â€“")}}</p>
     </form>
 
-    <form method="post" action="/security/panel-ssl/custom" class="rounded-lg border border-slate-200 p-4 dark:border-slate-800" autocomplete="off">
+    <form method="post" action="/security/panel-ssl/custom" class="rounded-lg border border-border p-4" autocomplete="off">
       <input type="hidden" name="csrf" value="{{$.CSRF}}">
       <h3 class="text-sm font-semibold">{{T "psl.own.title"}}</h3>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "psl.own.desc"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "psl.own.desc"}}</p>
       <div class="mt-4 max-w-md">
         <label for="psl-c-domain" class="label">{{T "psl.domain"}}</label>
         <input id="psl-c-domain" name="domain" class="field font-mono" value="{{.Domain}}" maxlength="253" placeholder="panel.example.com" spellcheck="false" autocapitalize="none" required>
@@ -74,7 +77,7 @@
         </div>
       </div>
       <label class="mt-4 flex cursor-pointer items-start gap-3">
-        <input type="checkbox" name="allow_untrusted" value="1" class="mt-1 size-4 accent-teal-600">
+        <input type="checkbox" name="allow_untrusted" value="1" class="mt-1 size-4 accent-primary">
         <span class="text-sm">{{T "ssl.untrusted.allow"}}</span>
       </label>
       <div class="mt-4"><button class="btn-primary">{{T "psl.own.btn"}}</button></div>
@@ -82,9 +85,9 @@
   </div>
 
   {{if .Own}}
-  <details class="mt-4 rounded-lg border border-slate-200 dark:border-slate-800">
+  <details class="mt-4 rounded-lg border border-border">
     <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700 dark:text-rose-400">{{T "psl.off.title"}}</summary>
-    <div class="border-t border-slate-200 p-4 dark:border-slate-800">
+    <div class="border-t border-border p-4">
       <p class="alert-warn">{{T "psl.off.warn"}}</p>
       <form method="post" action="/security/panel-ssl/off" class="mt-4"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-secondary">{{T "psl.off.btn"}}</button></form>
     </div>
@@ -98,23 +101,23 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "sec.waf.title"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "sec.waf.sub"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "sec.waf.sub"}}</p>
     </div>
     <span>{{if eq $s.WAFMode "block"}}<span class="badge-teal">{{T "sec.waf.mode.block"}}</span>{{else if eq $s.WAFMode "detect"}}<span class="badge-amber">{{T "sec.waf.mode.detect"}}</span>{{else}}<span class="badge-gray">{{T "sec.waf.mode.off"}}</span>{{end}}</span>
   </div>
   <fieldset class="mt-5">
     <legend class="text-sm font-semibold">{{T "sec.waf.cur"}}</legend>
     <div class="mt-3 grid gap-2 lg:grid-cols-3">
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="mode" value="off" class="mt-1 accent-teal-600"{{if or (eq $s.WAFMode "off") (eq $s.WAFMode "")}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="mode" value="off" class="mt-1 accent-primary"{{if or (eq $s.WAFMode "off") (eq $s.WAFMode "")}} checked{{end}}>
         <span><span class="block text-sm font-medium">{{T "sec.waf.mode.off"}}</span><span class="hint mt-0">{{T "sec.waf.d.off"}}</span></span>
       </label>
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="mode" value="detect" class="mt-1 accent-teal-600"{{if eq $s.WAFMode "detect"}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="mode" value="detect" class="mt-1 accent-primary"{{if eq $s.WAFMode "detect"}} checked{{end}}>
         <span><span class="block text-sm font-medium">{{T "sec.waf.mode.detect"}}</span><span class="hint mt-0">{{T "sec.waf.d.detect"}}</span></span>
       </label>
-      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50/60 dark:border-slate-800 dark:has-[:checked]:bg-teal-950/30">
-        <input type="radio" name="mode" value="block" class="mt-1 accent-teal-600"{{if eq $s.WAFMode "block"}} checked{{end}}>
+      <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+        <input type="radio" name="mode" value="block" class="mt-1 accent-primary"{{if eq $s.WAFMode "block"}} checked{{end}}>
         <span><span class="block text-sm font-medium">{{T "sec.waf.mode.block"}}</span><span class="hint mt-0">{{T "sec.waf.d.block"}}</span></span>
       </label>
     </div>
@@ -128,7 +131,7 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "sec.f2b.title"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "sec.f2b.sub"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "sec.f2b.sub"}}</p>
     </div>
     <span>{{if and $s.F2BOn $s.F2BActive}}<span class="badge-teal">{{T "sec.f2b.on"}}</span>{{else}}<span class="badge-gray">{{T "sec.f2b.off"}}</span>{{end}}</span>
   </div>
@@ -152,11 +155,11 @@
     <thead><tr><th>{{T "sec.jail.name"}}</th><th>{{T "sec.jail.failed"}}</th><th>{{T "sec.jail.banned"}}</th><th>{{T "sec.jail.total"}}</th></tr></thead>
     <tbody>
     {{range $s.Jails}}<tr>
-      <td class="align-top"><span class="font-medium">{{T (printf "sec.jail.%s" .Name)}}</span><span class="block font-mono text-[12px] text-slate-500 dark:text-slate-400">{{.Name}}</span></td>
+      <td class="align-top"><span class="font-medium">{{T (printf "sec.jail.%s" .Name)}}</span><span class="block font-mono text-[12px] text-muted-foreground">{{.Name}}</span></td>
       <td class="align-top tabular-nums">{{.Failed}}</td>
       <td class="align-top">
         {{if .IPs}}<ul class="grid gap-1.5">{{$jail := .Name}}{{range .IPs}}<li class="flex items-center gap-3"><span class="font-mono text-[13px]">{{.}}</span><form method="post" action="/security/unban"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="jail" value="{{$jail}}"><input type="hidden" name="ip" value="{{.}}"><button class="link text-sm">{{T "sec.unban"}}</button></form></li>{{end}}</ul>
-        {{else}}<span class="text-sm text-slate-500 dark:text-slate-400">{{T "sec.jail.none"}}</span>{{end}}
+        {{else}}<span class="text-sm text-muted-foreground">{{T "sec.jail.none"}}</span>{{end}}
       </td>
       <td class="align-top tabular-nums">{{.TotalBanned}}</td>
     </tr>{{end}}

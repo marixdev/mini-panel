@@ -18,7 +18,9 @@ import (
 	"mpn/internal/firewall"
 	"mpn/internal/panelssl"
 	"mpn/internal/security"
+	"mpn/internal/services"
 	"mpn/internal/site"
+	"mpn/internal/sitelog"
 	"mpn/internal/vhost"
 )
 
@@ -102,6 +104,13 @@ type Request struct {
 	MailTargets  []string `json:"mail_targets,omitempty"`  // mail.aliasset: where the mail of the alias goes
 	MailQuota    int      `json:"mail_quota,omitempty"`    // size limit of a mailbox in MB, 0 for none
 	MailPassword string   `json:"mail_password,omitempty"` // mail.boxadd and mail.boxpasswd; stdin only
+	// site.log: which log of the site to read, how many of its last lines, and a plain text the lines must contain.
+	LogKind string `json:"log_kind,omitempty"`
+	Lines   int    `json:"lines,omitempty"`
+	Query   string `json:"query,omitempty"`
+	// services.control and services.install: a service of the fixed list in internal/services, and what to do to it.
+	SvcKey    string `json:"svc_key,omitempty"`
+	SvcAction string `json:"svc_action,omitempty"`
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -159,9 +168,10 @@ var writes = map[string]bool{
 	"db.add":      true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
+	"services.control": true, "services.install": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -218,6 +228,34 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"site", "info", "-name", r.Site}, nil
 	case "site.set":
 		return r.setSite()
+	case "site.log":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		if err := sitelog.ValidKind(r.LogKind); err != nil {
+			return nil, err
+		}
+		n, err := sitelog.ValidLines(r.Lines)
+		if err != nil {
+			return nil, err
+		}
+		if err := sitelog.ValidQuery(r.Query); err != nil {
+			return nil, err
+		}
+		// "=" joins each value to its flag, so a search text that starts with "-" cannot be read as another flag.
+		return []string{"site", "log", "-name", r.Site, "-kind=" + r.LogKind, "-lines=" + strconv.Itoa(n), "-query=" + r.Query}, nil
+	case "services.status":
+		return []string{"services", "status", "-json"}, nil
+	case "services.control":
+		if err := services.ValidAction(r.SvcKey, r.SvcAction); err != nil {
+			return nil, err
+		}
+		return []string{"services", "control", "-key=" + r.SvcKey, "-action=" + r.SvcAction, "-apply"}, nil
+	case "services.install":
+		if err := services.ValidInstall(r.SvcKey); err != nil {
+			return nil, err
+		}
+		return []string{"services", "install", "-key=" + r.SvcKey, "-apply"}, nil
 	case "site.domain":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err

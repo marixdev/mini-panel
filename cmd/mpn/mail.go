@@ -30,10 +30,11 @@ const (
 
 // mailWebInfo is the part of the status that is about the web mail.
 type mailWebInfo struct {
-	On        bool `json:"on"`        // a person turned it on
-	Installed bool `json:"installed"` // the program is on the machine
-	Active    bool `json:"active"`    // the socket that starts it is open
-	Port      int  `json:"port"`      // where it is reached; 0 when the panel's port is unknown
+	On        bool   `json:"on"`        // a person turned it on
+	Installed bool   `json:"installed"` // the program is on the machine
+	Active    bool   `json:"active"`    // the socket that starts it is open
+	Port      int    `json:"port"`      // where it is reached; 0 when the panel's port is unknown
+	URL       string `json:"url"`       // its address without a port, on the name of the mail host, when nginx serves it there
 }
 
 func panelPortOf() int {
@@ -48,6 +49,9 @@ func currentWebmail(st *store.Store) mailWebInfo {
 	w := mailWebInfo{On: v == "on", Installed: fileExists(mail.WebmailBinary)}
 	if pp := panelPortOf(); pp > 0 {
 		w.Port = mail.WebmailPort(pp)
+	}
+	if host, _ := st.MailHost(); host != "" && fileExists(mail.WebmailDomainFile) {
+		w.URL = "https://" + host
 	}
 	w.Active = out(3*time.Second, "systemctl", "is-active", "mpn-mail.socket") == "active"
 	return w
@@ -333,6 +337,7 @@ func runMail(args []string) {
 			fail(runPlanQuiet(mail.WebmailOffPlan()))
 			fail(st.SetSetting(settingWebmail, "off"))
 			fail(webmailFirewall(st, false, 0))
+			fail(syncFront(st))
 			fmt.Println("the web mail is off; its settings are kept")
 			return
 		}
@@ -346,6 +351,7 @@ func runMail(args []string) {
 		requireLinuxRoot()
 		fail(runPlanQuiet(plan))
 		fail(st.SetSetting(settingWebmail, "on"))
+		fail(syncFront(st))
 		fail(webmailFirewall(st, true, mail.WebmailPort(pp)))
 		fmt.Printf("the web mail is on, at port %d of this server\n", mail.WebmailPort(pp))
 
@@ -365,6 +371,7 @@ func runMail(args []string) {
 			fail(st.SetSetting(settingWebmail, "off"))
 			fail(webmailFirewall(st, false, 0))
 		}
+		fail(syncFront(st))
 		fmt.Println("mail is off; mailboxes, keys and lists are kept")
 
 	case "domain-add":

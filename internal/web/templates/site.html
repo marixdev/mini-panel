@@ -6,12 +6,12 @@
 {{if .Over}}{{template "overview" .}}{{else}}
 <section class="card p-6">
   <dl class="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.type"}}</dt><dd class="mt-0.5 font-medium">{{T (printf "kind.%s" .Site.Kind)}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.detail"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.Detail}}{{.Site.Detail}}{{else}}–{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.hosts"}}</dt><dd class="mt-0.5 font-medium">{{range .Site.Hostnames}}<div>{{.}}</div>{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.https"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.TLS}}{{T "ov.https.on"}}{{else}}{{T "ov.https.off"}}{{end}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
-    <div><dt class="text-slate-500 dark:text-slate-400">{{T "ov.root"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.Root}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.type"}}</dt><dd class="mt-0.5 font-medium">{{T (printf "kind.%s" .Site.Kind)}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.detail"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.Detail}}{{.Site.Detail}}{{else}}â€“{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.hosts"}}</dt><dd class="mt-0.5 font-medium">{{range .Site.Hostnames}}<div>{{.}}</div>{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.https"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.TLS}}{{T "ov.https.on"}}{{else}}{{T "ov.https.off"}}{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.root"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.Root}}</dd></div>
   </dl>
 </section>
 {{end}}
@@ -22,6 +22,7 @@
 {{else if eq .Tab "ssl"}}{{template "ssltab" .}}
 {{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "cron"}}{{template "crontab" .}}
+{{else if eq .Tab "logs"}}{{template "logstab" .}}
 {{else if eq .Tab "wordpress"}}{{template "wptab" .}}
 {{else if eq .Tab "files"}}{{template "filestab" .}}
 
@@ -46,7 +47,7 @@
     <label for="d-name" class="label">{{T "db.name"}}</label>
     <div class="mt-1 flex flex-col gap-2 sm:flex-row">
       <div class="flex min-w-0 flex-1">
-        <span class="inline-flex shrink-0 items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 font-mono text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">{{.DBBase}}_</span>
+        <span class="inline-flex shrink-0 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 font-mono text-sm text-muted-foreground">{{.DBBase}}_</span>
         <input id="d-name" name="name" class="field !mt-0 min-w-0 rounded-l-none font-mono" maxlength="32" placeholder="{{T "db.name.ph"}}" autocomplete="off" spellcheck="false">
       </div>
       <button class="btn-primary shrink-0">{{T "db.add"}}</button>
@@ -60,7 +61,7 @@
 {{if .SSHEnabled}}
 <link rel="stylesheet" href="{{asset "xterm.css"}}">
 <div class="mb-2 flex flex-wrap items-center justify-between gap-2"><span id="terminal-state" class="badge-gray"></span><span class="hint mt-0">{{T "term.hint"}}</span></div>
-<div id="terminal" class="h-[30rem] overflow-hidden rounded-xl border border-slate-700 bg-[#0b1220] p-2"
+<div id="terminal" class="h-[30rem] overflow-hidden rounded-xl border border-border bg-[#0b1220] p-2"
   data-ws="/sites/{{.Site.Name}}/terminal/ws" data-csrf="{{.CSRF}}" data-nonce="{{.Nonce}}"
   data-t-connecting="{{T "term.connecting"}}" data-t-connected="{{T "term.connected"}}" data-t-closed="{{T "term.closed"}}" data-t-failed="{{T "term.failed"}}"></div>
 <script src="{{asset "xterm.js"}}"></script>

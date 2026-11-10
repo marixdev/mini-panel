@@ -1,0 +1,56 @@
+{{define "content"}}
+{{$v := .Svc}}
+<div class="mb-6">
+  <h1 class="h-page">{{T "svc.title"}}</h1>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "svc.sub"}}</p>
+</div>
+{{if $v.Error}}<div role="alert" class="alert-error mb-4"><span>{{$v.Error}}</span></div>{{end}}
+
+{{range $g := $v.Groups}}
+<section class="mb-8" aria-labelledby="g-{{$g.Key}}">
+  <h2 id="g-{{$g.Key}}" class="h-section">{{T (printf "svc.group.%s" $g.Key)}}</h2>
+  <p class="hint mb-3">{{T (printf "svc.group.%s.d" $g.Key)}}</p>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>{{T "svc.col.name"}}</th><th>{{T "svc.col.state"}}</th><th class="text-right">{{T "svc.col.actions"}}</th></tr></thead>
+      <tbody>
+      {{range $g.Items}}<tr>
+        <td>
+          <div class="font-medium">{{.Label}}</div>
+          {{if .Unit}}<div class="mt-0.5 font-mono text-xs text-muted-foreground">{{.Unit}}</div>{{end}}
+          {{if .Version}}<div class="mt-0.5 font-mono text-xs text-muted-foreground">{{.Version}}</div>{{end}}
+        </td>
+        <td>
+          {{if not .Installed}}<span class="badge-gray">{{T "svc.state.none"}}</span>
+          {{else if not .Unit}}<span class="badge-teal">{{T "svc.state.installed"}}</span>
+          {{else if .Active}}<span class="badge-teal">{{T "svc.state.active"}}</span>
+          {{else if eq .State "failed"}}<span class="badge-rose">{{T "svc.state.failed"}}</span>
+          {{else}}<span class="badge-gray">{{T "svc.state.stopped"}}</span>{{end}}
+        </td>
+        <td>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            {{if .Installed}}
+              {{if eq .Key "phpmyadmin"}}<span class="text-xs text-muted-foreground">{{T "svc.pma.where"}}</span>{{end}}
+              {{$key := .Key}}{{$active := .Active}}
+              {{range .Actions}}
+                {{if eq . "stop"}}{{if $active}}<a class="btn-sm" href="/services/{{$key}}/stop">{{T "svc.btn.stop"}}</a>{{end}}
+                {{else if eq . "start"}}{{if not $active}}<form method="post" action="/services/{{$key}}/start" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-sm">{{T "svc.btn.start"}}</button></form>{{end}}
+                {{else}}<form method="post" action="/services/{{$key}}/{{.}}" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-sm">{{T (printf "svc.btn.%s" .)}}</button></form>{{end}}
+              {{end}}
+            {{else if .Installable}}
+              <form method="post" action="/services/{{.Key}}/install" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-primary px-3 py-1.5">{{T "svc.btn.install"}}</button></form>
+            {{else if .Link}}
+              <a class="btn-sm" href="{{.Link}}">{{T "svc.btn.setup"}}</a>
+            {{else if .Needs}}
+              <span class="text-xs text-muted-foreground">{{T (printf "svc.needs.%s" .Needs)}}</span>
+            {{end}}
+          </div>
+        </td>
+      </tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{end}}
+<p class="hint">{{T "svc.hint"}}</p>
+{{end}}

@@ -8,6 +8,8 @@ import "fmt"
 var vi = map[string]string{
 	"app.name":     "Mini Panel",
 	"theme.toggle": "Đổi giao diện sáng/tối",
+	"nav.main":     "Điều hướng chính",
+	"nav.skip":     "Bỏ qua, vào nội dung",
 	"login.title":  "Đăng nhập",
 	"login.sub":    "Quản lý máy chủ web của bạn",
 	"login.user":   "Tên đăng nhập",

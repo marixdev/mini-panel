@@ -107,6 +107,7 @@ func mailSSL(st *store.Store, email string, staging, apply bool) {
 	requireLinuxRoot()
 	fail(issueMailCert(acmeConfig(email, staging), host, true))
 	fail(st.SetSetting(mail.SettingSSL, mail.SSLLetsEncrypt))
+	fail(syncFront(st))
 	fmt.Printf("the mail host %s now has a Let's Encrypt certificate; mpn renews it\n", host)
 }
 
@@ -140,6 +141,7 @@ func renewMailCert(st *store.Store, within int, apply bool, email string) int {
 		fmt.Printf("mail (%s): FAILED: %v\n", host, err)
 		return 1
 	}
+	reloadFront() // nginx reads the renewed certificate of the web mail only when it is reloaded
 	fmt.Printf("mail (%s): renewed\n", host)
 	return 0
 }

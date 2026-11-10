@@ -13,7 +13,7 @@ import (
 //go:embed templates/*.html
 var templateFS embed.FS
 
-//go:embed assets/logo.svg assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/monitor.js assets/editor assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
+//go:embed assets/logo.svg assets/app.css assets/app.js assets/theme.js assets/terminal.js assets/fileeditor.js assets/filemanager.js assets/monitor.js assets/editor assets/fonts assets/vendor/xterm.js assets/vendor/xterm.css assets/vendor/addon-fit.js
 var assetFS embed.FS
 
 // page is a page drawn from the files in templates/: a shell (the frame around the page) and the page's own content.
@@ -26,7 +26,7 @@ type page struct {
 var pages = map[string]page{}
 
 func init() {
-	for name, shell := range map[string]string{"login": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base"} {
+	for name, shell := range map[string]string{"login": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base", "services": "base", "settings": "base"} {
 		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict}).
 			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
@@ -49,17 +49,22 @@ func (s *Server) execute(w io.Writer, v view) {
 
 // assetFiles maps the name a page uses to the embedded file and its type.
 var assetFiles = map[string]struct{ path, ctype string }{
-	"logo.svg":       {"assets/logo.svg", "image/svg+xml"},
-	"app.css":        {"assets/app.css", "text/css; charset=utf-8"},
-	"app.js":         {"assets/app.js", "text/javascript; charset=utf-8"},
-	"theme.js":       {"assets/theme.js", "text/javascript; charset=utf-8"},
-	"terminal.js":    {"assets/terminal.js", "text/javascript; charset=utf-8"},
-	"fileeditor.js":  {"assets/fileeditor.js", "text/javascript; charset=utf-8"},
-	"filemanager.js": {"assets/filemanager.js", "text/javascript; charset=utf-8"},
-	"monitor.js":     {"assets/monitor.js", "text/javascript; charset=utf-8"},
-	"xterm.js":       {"assets/vendor/xterm.js", "text/javascript; charset=utf-8"},
-	"xterm.css":      {"assets/vendor/xterm.css", "text/css; charset=utf-8"},
-	"addon-fit.js":   {"assets/vendor/addon-fit.js", "text/javascript; charset=utf-8"},
+	"logo.svg": {"assets/logo.svg", "image/svg+xml"},
+	"app.css":  {"assets/app.css", "text/css; charset=utf-8"},
+	// JetBrains Mono, the one typeface of the interface, as a variable font in three subsets. The browser fetches only
+	// the subsets a page actually needs, and the Vietnamese one carries the letters with diacritics.
+	"jbmono-latin.woff2":     {"assets/fonts/jbmono-latin.woff2", "font/woff2"},
+	"jbmono-latin-ext.woff2": {"assets/fonts/jbmono-latin-ext.woff2", "font/woff2"},
+	"jbmono-vi.woff2":        {"assets/fonts/jbmono-vi.woff2", "font/woff2"},
+	"app.js":                 {"assets/app.js", "text/javascript; charset=utf-8"},
+	"theme.js":               {"assets/theme.js", "text/javascript; charset=utf-8"},
+	"terminal.js":            {"assets/terminal.js", "text/javascript; charset=utf-8"},
+	"fileeditor.js":          {"assets/fileeditor.js", "text/javascript; charset=utf-8"},
+	"filemanager.js":         {"assets/filemanager.js", "text/javascript; charset=utf-8"},
+	"monitor.js":             {"assets/monitor.js", "text/javascript; charset=utf-8"},
+	"xterm.js":               {"assets/vendor/xterm.js", "text/javascript; charset=utf-8"},
+	"xterm.css":              {"assets/vendor/xterm.css", "text/css; charset=utf-8"},
+	"addon-fit.js":           {"assets/vendor/addon-fit.js", "text/javascript; charset=utf-8"},
 }
 
 // assetVersion is a short hash of each static file's content. It goes into the file's URL, so a browser that holds an
@@ -104,4 +109,4 @@ func (s *Server) assetRoutes(mux *http.ServeMux) {
 }
 
 // extraTemplates are files parsed together with a page, for parts of it that are too long to keep in one file.
-var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html", "templates/cloud.html", "templates/wordpress.html"}, "fileedit": {"templates/fileicons.html"}}
+var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html", "templates/logs.html", "templates/cloud.html", "templates/wordpress.html"}, "fileedit": {"templates/fileicons.html"}}

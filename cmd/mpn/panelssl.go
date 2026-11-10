@@ -10,11 +10,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"mpn/internal/acme"
 	"mpn/internal/certs"
 	"mpn/internal/dnscheck"
+	"mpn/internal/front"
 	"mpn/internal/installer"
 	"mpn/internal/panelssl"
 	"mpn/internal/store"
@@ -57,6 +59,8 @@ type panelSSLInfo struct {
 	Trusted   bool     `json:"trusted"`
 	PanelPort int      `json:"panel_port"`
 	PMAPort   int      `json:"pma_port"`
+	Plain     bool     `json:"plain"`    // the panel's name is served on port 443, with no port in the address
+	PMAPath   bool     `json:"pma_path"` // and the database browser is under /pma/ of that name
 }
 
 func currentPanelSSL(st *store.Store) panelSSLInfo {
@@ -75,6 +79,10 @@ func currentPanelSSL(st *store.Store) panelSSLInfo {
 			out.Covers = domain != "" && certs.Covers(b, []string{domain})
 		}
 		out.Trusted = chainTrusted(b)
+	}
+	if b, err := os.ReadFile(installer.PanelDomainFile); err == nil {
+		out.Plain = true
+		out.PMAPath = strings.Contains(string(b), "location ^~ "+installer.PMAPrefix+" {")
 	}
 	return out
 }
@@ -146,6 +154,14 @@ mv "$t/privkey.pem" "$d/privkey.pem"; mv "$t/fullchain.pem" "$d/fullchain.pem"
 rmdir "$t"`
 
 func printPanelURLs(domain string) {
+	if fileExists(installer.PanelDomainFile) { // the name has an address of its own on port 443
+		fmt.Printf("panel:       https://%s\n", domain)
+		if fileExists(installer.PMAVersionFile) {
+			fmt.Printf("phpMyAdmin:  https://%s%s\n", domain, installer.PMAPrefix)
+		}
+		fmt.Println("Open the new address and sign in again: a session belongs to the address it was made on.")
+		return
+	}
 	info := panelSSLInfo{}
 	if p := listenPorts(panelNginx); len(p) > 0 {
 		info.PanelPort = p[0]
@@ -195,6 +211,7 @@ func runPanel(args []string) {
 		fail(issuePanelCert(acmeConfig(*email, *staging), *domain, ports[0], true))
 		fail(st.SetSetting(panelssl.SettingMode, panelssl.ModeLetsEncrypt))
 		fail(st.SetSetting(panelssl.SettingDomain, *domain))
+		fail(syncFront(st))
 		fmt.Println("the panel now has a Let's Encrypt certificate; mpn renews it")
 		printPanelURLs(*domain)
 	case "ssl-custom":
@@ -226,6 +243,7 @@ func runPanel(args []string) {
 		fail(installPanelCert(*domain, res.Fullchain, res.Key, true))
 		fail(st.SetSetting(panelssl.SettingMode, panelssl.ModeCustom))
 		fail(st.SetSetting(panelssl.SettingDomain, *domain))
+		fail(syncFront(st))
 		fmt.Println("the panel now uses your certificate")
 		printPanelURLs(*domain)
 	case "ssl-off":
@@ -242,7 +260,25 @@ func runPanel(args []string) {
 		}}}))
 		fail(st.SetSetting(panelssl.SettingMode, panelssl.ModeSelfSigned))
 		fail(st.SetSetting(panelssl.SettingDomain, ""))
+		fail(syncFront(st))
 		fmt.Println("the panel uses its self-signed certificate again")
+	case "sync":
+		// Writes or removes the server blocks that give the panel, the database browser and the web mail an address without a port,
+		// to match what is true now. Every command that changes one of the things they depend on does this by itself; this is for
+		// a person who changed a file by hand, or who wants to see what would exist.
+		want, err := front.Files(frontInput(st))
+		fail(err)
+		if !*apply {
+			for _, p := range front.Managed {
+				_, ok := want[p]
+				fmt.Printf("%s: %s\n", p, map[bool]string{true: "would exist", false: "would not exist"}[ok])
+			}
+			fmt.Println("# checked only. Add -apply to write them.")
+			return
+		}
+		requireLinuxRoot()
+		fail(syncFront(st))
+		printFront(st)
 	default:
 		panelUsage()
 	}
@@ -298,6 +334,10 @@ func renewPanelCert(st *store.Store, within int, apply bool, email string) int {
 	if err := issuePanelCert(acmeConfig(email, false), domain, ports[0], false); err != nil {
 		fmt.Printf("panel (%s): FAILED: %v\n", domain, err)
 		return 1
+	}
+	// The renewal wrote the block of port 80 the way a first issue does, which sends visitors to the panel's port.
+	if err := syncFront(st); err != nil {
+		fmt.Printf("panel (%s): the addresses without a port could not be updated: %v\n", domain, err)
 	}
 	fmt.Printf("panel (%s): renewed\n", domain)
 	return 0

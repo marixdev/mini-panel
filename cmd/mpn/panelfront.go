@@ -1,0 +1,116 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"slices"
+
+	"mpn/internal/certs"
+	"mpn/internal/front"
+	"mpn/internal/installer"
+	"mpn/internal/mail"
+	"mpn/internal/panelssl"
+	"mpn/internal/store"
+)
+
+// frontInput reads the machine to find out which names are served on port 443. A name is served there only when its certificate
+// covers it: a certificate for something else would give every visitor a warning.
+func frontInput(st *store.Store) front.Input {
+	var in front.Input
+	mode, _ := st.Setting(panelssl.SettingMode, panelssl.ModeSelfSigned)
+	domain, _ := st.Setting(panelssl.SettingDomain, "")
+	if mode != panelssl.ModeSelfSigned && panelssl.ValidDomain(domain) == nil {
+		if b, err := os.ReadFile(panelssl.Dir + "/fullchain.pem"); err == nil && certs.Covers(b, []string{domain}) {
+			in.Domain = domain
+		}
+	}
+	in.PMA = fileExists(installer.PMAVersionFile)
+	in.PanelACME = fileExists(panelssl.ACMEConf)
+	if on, _ := st.Setting(settingWebmail, "off"); on == "on" {
+		host, _ := st.MailHost()
+		if m, _ := st.Setting(mail.SettingSSL, mail.SSLSelfSigned); m == mail.SSLLetsEncrypt && host != "" {
+			if b, err := os.ReadFile(mail.CertFile); err == nil && certs.Covers(b, []string{host}) {
+				in.MailHost = host
+			}
+		}
+	}
+	return in
+}
+
+// syncFront makes the blocks of nginx that give the panel, the database browser and the web mail an address without a port match
+// what is true now: it writes the ones that should exist, removes the ones that should not, and reloads nginx once, after nginx -t.
+// It does nothing when the files are already right. Every command that changes one of the things the blocks depend on ends with it.
+func syncFront(st *store.Store) error {
+	want, err := front.Files(frontInput(st))
+	if err != nil {
+		return err
+	}
+	var acts []installer.Action
+	for path, content := range want {
+		if b, err := os.ReadFile(path); err != nil || string(b) != content {
+			acts = append(acts, installer.WriteFile(path, content, 0o644))
+		}
+	}
+	// The pages of the database browser decide where its cookies belong and where signing out leads, which differs under /pma/. A browser
+	// that was installed before that existed has the old pages, so they are written again when they differ.
+	phpReload := false
+	if in := frontInput(st); in.PMA {
+		if pp := panelPortOf(); pp > 0 {
+			for path, content := range installer.PMAFiles(pp) {
+				if b, err := os.ReadFile(path); err != nil || string(b) != content {
+					acts = append(acts, installer.WriteFile(path, content, 0o644))
+					phpReload = true
+				}
+			}
+		}
+	}
+	for _, path := range front.Managed {
+		if _, ok := want[path]; !ok && fileExists(path) {
+			acts = append(acts, installer.Run("rm", "-f", path))
+		}
+	}
+	if len(acts) == 0 {
+		return nil
+	}
+	// A sorted order keeps the plan the same from one run to the next.
+	slices.SortStableFunc(acts, func(a, b installer.Action) int {
+		if a.Path < b.Path {
+			return -1
+		}
+		if a.Path > b.Path {
+			return 1
+		}
+		return 0
+	})
+	acts = append(acts, installer.Run("nginx", "-t"), installer.ReloadNginx())
+	if phpReload {
+		acts = append(acts, installer.Run("systemctl", "reload", installer.PMAPHPService))
+	}
+	return runPlanQuiet(installer.Plan{{Name: "addresses of the panel without a port", Actions: acts}})
+}
+
+// reloadFront makes nginx read the certificate of the mail host again when the web mail is served on that name. The renewal writes new
+// files in place, and a running nginx keeps the old certificate until it is reloaded.
+func reloadFront() {
+	if !fileExists(mail.WebmailDomainFile) {
+		return
+	}
+	if err := runPlanQuiet(installer.Plan{{Name: "nginx reads the renewed certificate", Actions: []installer.Action{installer.Run("nginx", "-t"), installer.ReloadNginx()}}}); err != nil {
+		fmt.Printf("nginx could not be reloaded after the renewal: %v\n", err)
+	}
+}
+
+// printFront says where the panel, the database browser and the web mail are reached now.
+func printFront(st *store.Store) {
+	in := frontInput(st)
+	if in.Domain == "" {
+		return
+	}
+	fmt.Printf("panel:       https://%s\n", in.Domain)
+	if in.PMA {
+		fmt.Printf("phpMyAdmin:  https://%s%s\n", in.Domain, installer.PMAPrefix)
+	}
+	if in.MailHost != "" && in.MailHost != in.Domain {
+		fmt.Printf("web mail:    https://%s\n", in.MailHost)
+	}
+}

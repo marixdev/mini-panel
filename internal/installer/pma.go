@@ -29,6 +29,9 @@ const (
 	pmaMark    = "mpn phpmyadmin"
 )
 
+// PMAVersionFile holds the version of the database browser that is installed; it is there only when the install finished.
+const PMAVersionFile = pmaDir + "/.mpn-version"
+
 // PMAPort is the port of the database browser: the one after the panel's.
 func PMAPort(panelPort int) int { return panelPort + 1 }
 
@@ -102,7 +105,9 @@ $cfg['blowfish_secret'] = substr(trim((string) @file_get_contents('` + pmaConf +
 $i = 1;
 $cfg['Servers'][$i]['auth_type'] = 'signon';
 $cfg['Servers'][$i]['SignonSession'] = 'MpnPmaSignon';
-$cfg['Servers'][$i]['SignonCookieParams'] = ['lifetime' => 0, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
+// Under /pma/ of the panel's own name the cookies belong to that path only; on the port of its own they belong to the whole name.
+$mpnBase = str_starts_with((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '/pma/') ? '/pma/' : '/';
+$cfg['Servers'][$i]['SignonCookieParams'] = ['lifetime' => 0, 'path' => $mpnBase, 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
 $cfg['Servers'][$i]['SignonURL'] = 'signon.php';
 $cfg['Servers'][$i]['LogoutURL'] = 'logout.php';
 $cfg['Servers'][$i]['host'] = 'localhost';
@@ -158,7 +163,8 @@ if (!is_array($d) || !preg_match('/^pma_[0-9a-z]{6,8}_[0-9a-z]{8}$/', (string) (
     || !is_string($d['password'] ?? null) || !preg_match('/^[a-z0-9_]{1,32}$/', (string) ($d['database'] ?? ''))) {
     stop('Bảng điều khiển trả lời không đúng.', 502);
 }
-$params = ['lifetime' => 0, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
+$base = str_starts_with((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '/pma/') ? '/pma/' : '/';
+$params = ['lifetime' => 0, 'path' => $base, 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
 session_name('MpnPmaSignon');
 session_set_cookie_params($params);
 session_start();
@@ -169,7 +175,7 @@ $_SESSION['PMA_single_signon_host'] = 'localhost';
 session_write_close();
 // So that signing out can drop the user even if phpMyAdmin has already cleared its session. (setcookie takes "expires",
 // not the "lifetime" of the session parameters; PHP 8 refuses an array with a key it does not know.)
-setcookie('MpnPmaUser', $d['user'], ['expires' => 0, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+setcookie('MpnPmaUser', $d['user'], ['expires' => 0, 'path' => $base, 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
 header('Location: index.php?route=/database/structure&db=' . rawurlencode($d['database']));
 `
 
@@ -185,18 +191,22 @@ if (is_string($u) && preg_match('/^pma_[0-9a-z]{6,8}_[0-9a-z]{8}$/', $u) && strl
     curl_exec($ch);
     curl_close($ch);
 }
-$params = ['lifetime' => 0, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
+$base = str_starts_with((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '/pma/') ? '/pma/' : '/';
+$params = ['lifetime' => 0, 'path' => $base, 'secure' => true, 'httponly' => true, 'samesite' => 'Lax'];
 session_name('MpnPmaSignon');
 session_set_cookie_params($params);
 session_start();
 $_SESSION = [];
 session_destroy();
-setcookie('MpnPmaUser', '', ['expires' => 1, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
-$host = (string) ($_SERVER['SERVER_NAME'] ?? 'localhost');
+setcookie('MpnPmaUser', '', ['expires' => 1, 'path' => $base, 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+// Back to the panel: on its plain address when this was reached under /pma/, with its port otherwise. The name is the one the visitor
+// used (the name of the server block here is "_", which is no address).
+$host = preg_replace('/:\d+$/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 if (!preg_match('/^[A-Za-z0-9.\-]{1,253}$/', $host)) {
     $host = 'localhost';
 }
-header('Location: https://' . $host . ':@PANELPORT@/databases');
+$port = $base === '/pma/' ? '' : ':@PANELPORT@';
+header('Location: https://' . $host . $port . '/databases');
 `
 
 // pmaNginx is the server of the browser. Every request is checked with the panel first (auth_request), PHP is run only

@@ -5,8 +5,10 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -84,6 +86,20 @@ func (s *Server) pmaRoutes(mux *http.ServeMux) {
 
 func (s *Server) pmaOn() bool { return s.PMAPort > 0 && len(s.PMAKey) >= 32 }
 
+// pmaOnPath says whether the browser is reached under /pma/ of the name this request came to. That is so when the request came to the
+// panel's plain address (no port in the Host header: only the server block of the panel's own name answers there) and that block has
+// the /pma/ part. A visit by IP address and port gets the port form.
+func (s *Server) pmaOnPath(r *http.Request) bool {
+	if s.PanelDomainFile == "" {
+		return false
+	}
+	if _, port, err := net.SplitHostPort(r.Host); err == nil && port != "443" {
+		return false
+	}
+	b, err := os.ReadFile(s.PanelDomainFile)
+	return err == nil && strings.Contains(string(b), "location ^~ /pma/ {")
+}
+
 func newTicketID() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -130,6 +146,9 @@ func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		return
 	}
 	target := url.URL{Scheme: "https", Host: hostOnly(r.Host) + ":" + strconv.Itoa(s.PMAPort), Path: "/signon.php", RawQuery: url.Values{"t": {id}}.Encode()}
+	if s.pmaOnPath(r) { // the panel was reached on its plain address, where the browser lives under /pma/ and needs no port
+		target.Host, target.Path = hostOnly(r.Host), "/pma/signon.php"
+	}
 	// A page with a link, not a redirect: the panel's policy lets a form post only to the panel, and a browser applies that
 	// to where the post is sent on to. A link that the page's script follows is not a form post.
 	s.show(w, 200, ss, view{Page: "pmaopen", PMALink: target.String(), PMAName: name})

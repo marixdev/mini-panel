@@ -31,10 +31,11 @@ type mailAliasRow struct {
 
 // mailWebRow is the web mail: the program that reads the mailboxes in a browser.
 type mailWebRow struct {
-	On        bool `json:"on"`
-	Installed bool `json:"installed"`
-	Active    bool `json:"active"`
-	Port      int  `json:"port"`
+	On        bool   `json:"on"`
+	Installed bool   `json:"installed"`
+	Active    bool   `json:"active"`
+	Port      int    `json:"port"`
+	URL       string `json:"url"` // set when the web mail has an address without a port, on the name of the mail host
 }
 
 // mailCertRow is the certificate the mail servers use: self-signed until Let's Encrypt issues one for the mail host.
@@ -105,6 +106,9 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 			h = hh
 		}
 		v.WebURL = "https://" + h + ":" + strconv.Itoa(v.Webmail.Port)
+		if v.Webmail.URL != "" {
+			v.WebURL = v.Webmail.URL
+		}
 	}
 	s.show(w, 200, ss, view{Page: "email", Mail: v})
 }

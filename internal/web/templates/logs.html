@@ -1,0 +1,49 @@
+{{define "logstab"}}
+{{$v := .Log}}
+{{if $v.Error}}<div role="alert" class="alert-error mb-4"><span>{{$v.Error}}</span></div>{{end}}
+
+<section class="card p-6">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "log.title"}}</h2>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "log.sub"}}</p>
+    </div>
+    <nav class="flex gap-1" aria-label="{{T "log.kinds"}}">
+      {{range $v.Kinds}}<a class="btn-sm{{if .Active}} !border-primary !text-primary{{end}}" href="/sites/{{$.Site.Name}}/logs?kind={{.Key}}&amp;lines={{$v.Lines}}"{{if .Active}} aria-current="page"{{end}}>{{T (printf "log.kind.%s" .Key)}}</a>{{end}}
+    </nav>
+  </div>
+
+  <form method="get" action="/sites/{{.Site.Name}}/logs" class="mt-5 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="kind" value="{{$v.Kind}}">
+    <div class="min-w-0 flex-1 basis-64">
+      <label for="log-q" class="label">{{T "log.search"}}</label>
+      <input id="log-q" name="q" value="{{$v.Query}}" class="field font-mono" maxlength="100" placeholder="{{T "log.search.ph"}}" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="log-n" class="label">{{T "log.lines"}}</label>
+      <select id="log-n" name="lines" class="field">
+        {{range $v.Choices}}<option value="{{.}}"{{if eq . $v.Lines}} selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </div>
+    <button class="btn-primary">{{T "log.show"}}</button>
+  </form>
+
+  {{if not $v.Res.Exists}}
+  <p class="alert-warn mt-5">{{T "log.missing" $v.Res.Path}}</p>
+  {{else}}
+  <p class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted-foreground">
+    <span class="font-mono text-foreground">{{$v.Res.Path}}</span>
+    {{if $v.Size}}{{if gt $v.Res.Size 0}}<span>{{T "log.size"}} <span class="font-mono text-foreground">{{$v.Size}}</span></span>{{end}}{{end}}
+    <span>{{T "log.matched"}} <span class="font-mono text-foreground">{{$v.Res.Matched}}</span></span>
+    {{if $v.Res.Truncated}}<span class="badge-amber">{{T "log.truncated"}}</span>{{end}}
+  </p>
+  {{if $v.Res.Lines}}
+  <pre class="mt-2 max-h-[32rem] overflow-auto rounded-lg border border-border bg-muted p-3 text-xs leading-relaxed break-all whitespace-pre-wrap" tabindex="0" aria-label="{{T "log.view"}}">{{range $v.Res.Lines}}{{.}}
+{{end}}</pre>
+  {{else}}
+  <p class="mt-3 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{{if $v.Query}}{{T "log.nomatch"}}{{else}}{{T "log.empty"}}{{end}}</p>
+  {{end}}
+  {{end}}
+  <p class="hint">{{T "log.hint"}}</p>
+</section>
+{{end}}

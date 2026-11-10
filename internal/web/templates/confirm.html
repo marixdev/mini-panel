@@ -9,12 +9,12 @@
     <input type="hidden" name="csrf" value="{{.CSRF}}">
     {{range $k, $v := .Confirm.Hidden}}<input type="hidden" name="{{$k}}" value="{{$v}}">{{end}}
     {{range .Confirm.Checks}}
-    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" name="{{.Name}}" value="{{.Value}}"{{if .On}} checked{{end}}><span>{{.Label}}</span></label>
+    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-input text-primary focus:ring-ring" name="{{.Name}}" value="{{.Value}}"{{if .On}} checked{{end}}><span>{{.Label}}</span></label>
     {{end}}
     {{if .Confirm.Purge}}
-    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500" name="purge"><span>{{T "c.purge"}}</span></label>
+    <label class="flex items-start gap-2 text-sm"><input type="checkbox" class="mt-0.5 size-4 rounded border-input text-rose-600 focus:ring-rose-500" name="purge"><span>{{T "c.purge"}}</span></label>
     {{end}}
-    {{if .Confirm.Lines}}<ul class="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-3 font-mono text-[13px] dark:border-slate-800">{{range .Confirm.Lines}}<li class="break-all">{{.}}</li>{{end}}</ul>{{end}}
+    {{if .Confirm.Lines}}<ul class="max-h-60 overflow-y-auto rounded-lg border border-border p-3 font-mono text-[13px]">{{range .Confirm.Lines}}<li class="break-all">{{.}}</li>{{end}}</ul>{{end}}
     {{if not .Confirm.NoType}}
     <div>
       <label for="confirm" class="label">{{T "c.type.pre"}} <b>{{.Confirm.Expect}}</b> {{T "c.type.post"}}</label>

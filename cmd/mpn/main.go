@@ -11,7 +11,7 @@ import (
 const version = "0.0.1-dev"
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|security|panel|cloud|app|wp|mail|root|web> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|security|panel|cloud|app|wp|mail|services|root|web> [flags]")
 	os.Exit(2)
 }
 
@@ -48,6 +48,8 @@ func main() {
 		runWP(os.Args[2:])
 	case "mail":
 		runMail(os.Args[2:])
+	case "services":
+		runServices(os.Args[2:])
 	case "root":
 		runRoot(os.Args[2:])
 	case "web":

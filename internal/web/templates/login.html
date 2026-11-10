@@ -1,13 +1,25 @@
 {{define "content"}}
 <section class="card p-6 sm:p-8">
   <h1 class="text-xl font-semibold tracking-tight">{{T "login.title"}}</h1>
-  <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "login.sub"}}</p>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "login.sub"}}</p>
   {{if .Error}}
   <div role="alert" class="alert-error mt-5">
     <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
     <span>{{.Error}}</span>
   </div>
   {{end}}
+  {{if .Need2FA}}
+  <form method="post" action="/login/2fa" class="mt-6 space-y-4">
+    <input type="hidden" name="pending" value="{{.Pending}}">
+    <p class="text-muted-foreground text-sm">{{T "login.2fa.sub"}}</p>
+    <div>
+      <label for="code" class="label">{{T "login.2fa.code"}}</label>
+      <input id="code" name="code" class="field text-center font-mono text-lg tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required autofocus>
+    </div>
+    <button class="btn-primary w-full py-2.5">{{T "login.2fa.submit"}}</button>
+    <p class="hint text-center"><a class="link" href="/login">{{T "login.2fa.back"}}</a></p>
+  </form>
+  {{else}}
   <form method="post" action="/login" class="mt-6 space-y-4">
     <div>
       <label for="user" class="label">{{T "login.user"}}</label>
@@ -19,5 +31,6 @@
     </div>
     <button class="btn-primary w-full py-2.5">{{T "login.submit"}}</button>
   </form>
+  {{end}}
 </section>
 {{end}}

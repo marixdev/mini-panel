@@ -62,6 +62,8 @@ func runSite(args []string) {
 		siteSet(args[1:])
 	case "info":
 		siteInfoCmd(args[1:])
+	case "log":
+		siteLogCmd(args[1:])
 	case "remove":
 		siteRemove(args[1:])
 	case "access":
@@ -148,6 +150,11 @@ func siteAdd(args []string) {
 		p, err := st.AllocNodePort(nodePortLo, nodePortHi)
 		fail(err)
 		s.NodePort = p
+	}
+	if s.NodePort != 0 {
+		if f := mpnPortHolder(s.NodePort); f != "" {
+			fail(fmt.Errorf("port %d is used by the panel (%s); an app needs another port", s.NodePort, f))
+		}
 	}
 	fail(st.AddSite(s))
 	saved, err := st.GetSite(s.Name)

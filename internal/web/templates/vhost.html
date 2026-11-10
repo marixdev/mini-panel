@@ -8,7 +8,7 @@
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
       <h2 class="h-section">{{T "vh.title"}}</h2>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{T "vh.sub"}}</p>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "vh.sub"}}</p>
     </div>
     {{if $v.Custom}}<span class="badge-amber">{{T "vh.custom.badge"}}</span>{{else}}<span class="badge-gray">{{T "vh.default.badge"}}</span>{{end}}
   </div>
@@ -23,7 +23,7 @@
 {{if $v.Custom}}
 <details class="card mt-4">
   <summary class="cursor-pointer px-6 py-4 text-sm font-semibold">{{T "vh.reset.title"}}</summary>
-  <div class="border-t border-slate-200 px-6 pb-6 dark:border-slate-800">
+  <div class="border-t border-border px-6 pb-6">
     <p class="alert-warn mt-4">{{T "vh.reset.warn"}}</p>
     <form method="post" action="/sites/{{.Site.Name}}/vhost/reset" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "vh.reset.btn"}}</button></form>
   </div>

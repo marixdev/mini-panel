@@ -99,6 +99,19 @@ func (s *Sessions) Delete(token string) {
 	delete(s.m, keyOf(token))
 }
 
+// DeleteExcept ends every session but the one that token names. A changed password calls it, so a browser that was signed in with the
+// old password does not stay signed in.
+func (s *Sessions) DeleteExcept(token string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	keep := keyOf(token)
+	for k := range s.m {
+		if k != keep {
+			delete(s.m, k)
+		}
+	}
+}
+
 // CheckCSRF reports whether got is the CSRF token of the session that token names.
 func (s *Sessions) CheckCSRF(token, got string) bool {
 	x, ok := s.Get(token)

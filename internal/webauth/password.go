@@ -73,6 +73,10 @@ func Verify(pw, enc string) bool {
 type Account struct {
 	User string `json:"user"`
 	Hash string `json:"hash"`
+	// TOTP is the secret of the two-step sign-in, empty when it is off. TOTPStep is the last step whose code was used: a code is
+	// accepted once. "mpn web 2fa-off" on the machine clears both, for somebody who has lost the app.
+	TOTP     string `json:"totp,omitempty"`
+	TOTPStep int64  `json:"totp_step,omitempty"`
 }
 
 var (
