@@ -4,7 +4,6 @@ package front
 
 import (
 	"mpn/internal/installer"
-	"mpn/internal/mail"
 	"mpn/internal/panelssl"
 )
 
@@ -15,36 +14,29 @@ type Input struct {
 	Domain string
 	// PMA says the database browser is installed.
 	PMA bool
-	// MailHost is the name the web mail is served on, or "" when the web mail is off, or the certificate of the mail host does not
-	// cover its name.
-	MailHost string
+	// Webmail says the web mail is on and its program is a version that knows the /webmail/ prefix; the panel's name then serves it
+	// under /webmail/ next to /pma/.
+	Webmail bool
 	// PanelACME says the block that answers Let's Encrypt on port 80 for the panel's name exists. While the name has a block of its own
 	// on port 443, that block sends visitors of port 80 there; otherwise it is left as it is (it sends them to the panel's port).
 	PanelACME bool
 }
 
-// Managed is every file Files can return. A caller removes the ones that Files does not return.
-var Managed = []string{installer.PanelDomainFile, mail.WebmailDomainFile}
+// Managed is every file Files can return, except the block of port 80, which belongs to the certificate. A caller removes the ones
+// that Files does not return.
+var Managed = []string{installer.PanelDomainFile}
 
 // Files returns the content of each file that should exist, by path.
 func Files(in Input) (map[string]string, error) {
 	out := map[string]string{}
-	if in.Domain != "" {
-		if err := panelssl.ValidDomain(in.Domain); err != nil {
-			return nil, err
-		}
-		out[installer.PanelDomainFile] = installer.PanelDomainNginx(in.Domain, in.PMA)
+	if in.Domain == "" {
+		return out, nil
 	}
-	// Two blocks for one name on port 443 would leave the second unreachable, so a mail host that is also the panel's name keeps the web
-	// mail on its port.
-	if in.MailHost != "" && in.MailHost != in.Domain {
-		conf, err := mail.WebmailDomainNginx(in.MailHost)
-		if err != nil {
-			return nil, err
-		}
-		out[mail.WebmailDomainFile] = conf
+	if err := panelssl.ValidDomain(in.Domain); err != nil {
+		return nil, err
 	}
-	if in.PanelACME && in.Domain != "" {
+	out[installer.PanelDomainFile] = installer.PanelDomainNginx(in.Domain, in.PMA, in.Webmail)
+	if in.PanelACME {
 		conf, err := panelssl.ACMEConfig(in.Domain, 0) // the name has its own block on 443, so port 80 sends visitors there
 		if err != nil {
 			return nil, err

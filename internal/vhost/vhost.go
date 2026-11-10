@@ -31,6 +31,7 @@ type data struct {
 	CertDir   string
 	BodyMax   string // client_max_body_size of a PHP site: what PHP accepts, so the two agree
 	Timeout   int    // how long nginx waits for PHP, in seconds
+	Webmail   string // the locations of the web mail, when the site has it and serves over SSL
 }
 
 // What a site serves. It appears once for HTTP and once for HTTPS when both serve it.
@@ -43,6 +44,9 @@ var tpl = template.Must(template.New("vhost").Parse(`{{define "body"}}
 {{- if .Site.Speed}}
     pagespeed on;
     pagespeed FileCachePath /var/cache/ngx_pagespeed;
+{{- end}}
+{{- if .Webmail}}
+{{.Webmail}}
 {{- end}}
 {{- if eq .Site.Kind "static"}}
     index index.html;
@@ -165,6 +169,9 @@ func Render(s site.Site, o Options) (string, error) {
 	}
 	if s.Kind == site.PHP {
 		d.BodyMax, d.Timeout = s.BodyLimit(), s.RequestSeconds()
+	}
+	if s.Webmail && o.TLS {
+		d.Webmail = strings.TrimRight(WebmailLocations(), "\n")
 	}
 	if err := tpl.Execute(&b, d); err != nil {
 		return "", err

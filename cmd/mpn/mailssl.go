@@ -141,7 +141,6 @@ func renewMailCert(st *store.Store, within int, apply bool, email string) int {
 		fmt.Printf("mail (%s): FAILED: %v\n", host, err)
 		return 1
 	}
-	reloadFront() // nginx reads the renewed certificate of the web mail only when it is reloaded
 	fmt.Printf("mail (%s): renewed\n", host)
 	return 0
 }

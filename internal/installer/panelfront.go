@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"mpn/internal/security"
+	"mpn/internal/vhost"
 )
 
 // The panel on a plain https address. Once the panel has a name and a certificate for it (Let's Encrypt or the person's own), nginx
@@ -71,8 +72,9 @@ func pmaDomainLocations() string {
 	return b.String()
 }
 
-// PanelDomainNginx is the server block of the panel's name on port 443. pma says whether the database browser is installed.
-func PanelDomainNginx(domain string, pma bool) string {
+// PanelDomainNginx is the server block of the panel's name on port 443. pma says whether the database browser is installed; webmail
+// whether the web mail is served under /webmail/ of this name, next to /pma/.
+func PanelDomainNginx(domain string, pma, webmail bool) string {
 	var b strings.Builder
 	b.WriteString("# Written by mpn: the panel on the plain https address of its name. Do not edit.\n")
 	b.WriteString("server {\n    listen 443 ssl http2;\n    listen [::]:443 ssl http2;\n    server_name " + domain + ";\n")
@@ -83,6 +85,9 @@ func PanelDomainNginx(domain string, pma bool) string {
 	b.WriteString("    location ^~ /_pma/ { return 404; }\n")
 	if pma {
 		b.WriteString(pmaDomainLocations())
+	}
+	if webmail {
+		b.WriteString(vhost.WebmailLocations())
 	}
 	b.WriteString(fmt.Sprintf(`    # An upload is passed on as it arrives instead of being stored by nginx first, and may be large; the panel stops it at its own limit.
     location ~ ^/sites/[^/]+/files/upload$ {

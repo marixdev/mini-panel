@@ -211,6 +211,27 @@
 </form>
 {{end}}
 
+{{define "webmailcard"}}
+<form method="post" action="/sites/{{.Site.Name}}/webmail" class="card mt-4 p-6">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="h-section">{{T "wm.title"}}</h2>
+      <p class="mt-1 text-sm text-muted-foreground">{{T "wm.sub"}}</p>
+    </div>
+    <span>{{if .Site.Webmail}}<span class="badge-teal">{{T "wm.on"}}</span>{{else}}<span class="badge-gray">{{T "wm.off"}}</span>{{end}}</span>
+  </div>
+  {{if .Site.Webmail}}<p class="mt-4 text-sm"><a class="link font-mono" href="https://{{.Site.Primary}}/webmail/" target="_blank" rel="noopener noreferrer">https://{{.Site.Primary}}/webmail/</a></p>{{end}}
+  {{if .Site.CustomVhost}}<p class="alert-warn mt-4">{{T "wm.custom"}}</p>
+  {{else if not .Site.TLS}}<p class="alert-warn mt-4">{{T "wm.needs.ssl"}} <a class="link" href="/sites/{{.Site.Name}}/ssl">{{T "tab.ssl"}}</a></p>
+  {{else}}
+  <input type="hidden" name="webmail" value="{{if .Site.Webmail}}0{{else}}1{{end}}">
+  <div class="mt-5"><button class="{{if .Site.Webmail}}btn-secondary{{else}}btn-primary{{end}}">{{if .Site.Webmail}}{{T "wm.btn.off"}}{{else}}{{T "wm.btn.on"}}{{end}}</button></div>
+  <p class="hint">{{T "wm.note"}}</p>
+  {{end}}
+</form>
+{{end}}
+
 {{define "appcard"}}
 {{if eq .Site.Kind "php"}}
 {{if .Site.App}}

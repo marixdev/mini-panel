@@ -250,6 +250,45 @@ func siteSpeed(args []string) {
 	fmt.Printf("site %q: speed is %s\n", s.Name, map[bool]string{true: "on", false: "off"}[*on])
 }
 
+// siteWebmail serves the web mail under /webmail/ of the names of a site, or stops doing so. The program is one for the whole machine
+// (installed by "mpn mail webmail"); the site only gets the location that passes requests to it. It needs SSL on the site, because a
+// password must not be typed on a plain connection.
+func siteWebmail(args []string) {
+	fs := flag.NewFlagSet("site webmail", flag.ExitOnError)
+	db := fs.String("db", defaultDB, "database path")
+	name := fs.String("name", "", "site name")
+	on := fs.Bool("on", true, "serve the web mail under /webmail/ of this site")
+	apply := fs.Bool("apply", false, "change this machine (Linux, root)")
+	_ = fs.Parse(args)
+	st := openStore(*db)
+	defer st.Close()
+	s, err := st.GetSite(*name)
+	fail(err)
+	refuseCustomVhost(s, "the web mail")
+	if *on {
+		if !s.TLS {
+			fail(errors.New("webmail-needs-ssl: turn SSL on for this website first; the web mail is only served over https"))
+		}
+		if v, _ := st.Setting(settingWebmail, "off"); v != "on" {
+			fail(errors.New("webmail-off: turn the web mail on first, on the Email page"))
+		}
+		if !webmailPrefixReady() {
+			fail(errors.New("webmail-old: the web mail program on this machine is an older version that cannot live under /webmail/; turn the web mail off and on again on the Email page to update it"))
+		}
+	}
+	s.Webmail = *on
+	if !*apply {
+		fmt.Printf("would set: webmail = %v\n", *on)
+		return
+	}
+	requireLinuxRoot()
+	plan, err := provision.VhostPlan(s, "")
+	fail(err)
+	fail(runPlanQuiet(plan))
+	fail(st.SetDomain(s))
+	fmt.Printf("site %q: the web mail is %s under /webmail/\n", s.Name, map[bool]string{true: "on", false: "off"}[*on])
+}
+
 // certInfo is the answer of "site ssl-info": what the SSL tab shows.
 type certInfo struct {
 	Mode       string   `json:"mode"`

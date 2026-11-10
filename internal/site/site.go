@@ -72,6 +72,9 @@ type Site struct {
 	CustomVhost string
 	// Speed turns on compression and long browser caching of static files (see vhost.go).
 	Speed bool
+	// Webmail serves the web mail under /webmail/ of the site's own names. It needs SSL on the site: a password must not cross the
+	// Internet in the clear (see vhost.WebmailLocations).
+	Webmail bool
 	// App is the application mpn installed in a PHP site, one of Apps, or "" for a site whose code the person brought. It decides
 	// which tabs and cards the site has (WordPress has a manager) and is set only once the installation has finished.
 	App string

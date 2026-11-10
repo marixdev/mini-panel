@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"slices"
@@ -27,14 +29,24 @@ func frontInput(st *store.Store) front.Input {
 	in.PMA = fileExists(installer.PMAVersionFile)
 	in.PanelACME = fileExists(panelssl.ACMEConf)
 	if on, _ := st.Setting(settingWebmail, "off"); on == "on" {
-		host, _ := st.MailHost()
-		if m, _ := st.Setting(mail.SettingSSL, mail.SSLSelfSigned); m == mail.SSLLetsEncrypt && host != "" {
-			if b, err := os.ReadFile(mail.CertFile); err == nil && certs.Covers(b, []string{host}) {
-				in.MailHost = host
-			}
-		}
+		in.Webmail = webmailPrefixReady()
 	}
 	return in
+}
+
+// webmailPrefixReady says the web mail program on this machine is the pinned version, which knows the /webmail/ prefix. An older one
+// would write links that lead out of /webmail/, so nothing is served under that path until the program has been updated (turning the
+// web mail off and on again installs the pinned one).
+func webmailPrefixReady() bool {
+	if !mail.WebmailKnowsPrefix {
+		return false
+	}
+	b, err := os.ReadFile(mail.WebmailBinary)
+	if err != nil {
+		return false
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:]) == mail.WebmailSHA256
 }
 
 // syncFront makes the blocks of nginx that give the panel, the database browser and the web mail an address without a port match
@@ -89,17 +101,6 @@ func syncFront(st *store.Store) error {
 	return runPlanQuiet(installer.Plan{{Name: "addresses of the panel without a port", Actions: acts}})
 }
 
-// reloadFront makes nginx read the certificate of the mail host again when the web mail is served on that name. The renewal writes new
-// files in place, and a running nginx keeps the old certificate until it is reloaded.
-func reloadFront() {
-	if !fileExists(mail.WebmailDomainFile) {
-		return
-	}
-	if err := runPlanQuiet(installer.Plan{{Name: "nginx reads the renewed certificate", Actions: []installer.Action{installer.Run("nginx", "-t"), installer.ReloadNginx()}}}); err != nil {
-		fmt.Printf("nginx could not be reloaded after the renewal: %v\n", err)
-	}
-}
-
 // printFront says where the panel, the database browser and the web mail are reached now.
 func printFront(st *store.Store) {
 	in := frontInput(st)
@@ -110,7 +111,7 @@ func printFront(st *store.Store) {
 	if in.PMA {
 		fmt.Printf("phpMyAdmin:  https://%s%s\n", in.Domain, installer.PMAPrefix)
 	}
-	if in.MailHost != "" && in.MailHost != in.Domain {
-		fmt.Printf("web mail:    https://%s\n", in.MailHost)
+	if in.Webmail {
+		fmt.Printf("web mail:    https://%s/webmail/\n", in.Domain)
 	}
 }

@@ -50,8 +50,8 @@ func currentWebmail(st *store.Store) mailWebInfo {
 	if pp := panelPortOf(); pp > 0 {
 		w.Port = mail.WebmailPort(pp)
 	}
-	if host, _ := st.MailHost(); host != "" && fileExists(mail.WebmailDomainFile) {
-		w.URL = "https://" + host
+	if in := frontInput(st); in.Domain != "" && in.Webmail { // the panel's name serves it under /webmail/, with no port
+		w.URL = "https://" + in.Domain + "/webmail/"
 	}
 	w.Active = out(3*time.Second, "systemctl", "is-active", "mpn-mail.socket") == "active"
 	return w
@@ -278,6 +278,20 @@ func runMail(args []string) {
 			}
 		}
 		fail(fmt.Errorf("the domain %s is not set up for mail", *domain))
+
+	case "cf-detect":
+		fail(mail.ValidDomain(*domain))
+		d, err := cfDetect(*domain)
+		fail(err)
+		if *asJSON {
+			printJSON(d)
+			return
+		}
+		fmt.Printf("cloudflare: %v (zone %q)\n", d.Cloudflare, d.Zone)
+
+	case "cf-add":
+		fail(mail.ValidDomain(*domain))
+		cfAdd(st, *domain, *apply, *asJSON)
 
 	case "enable":
 		h := *host

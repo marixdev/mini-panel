@@ -51,6 +51,7 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/ssl/redirect", s.auth(s.sslRedirect))
 	mux.HandleFunc("POST /sites/{name}/settings", s.auth(s.saveSettings))
 	mux.HandleFunc("POST /sites/{name}/speed", s.auth(s.saveSpeed))
+	mux.HandleFunc("POST /sites/{name}/webmail", s.auth(s.saveWebmail))
 	s.cloudRoutes(mux)
 	s.appRoutes(mux)
 	s.wpRoutes(mux)

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"mpn/internal/cfdns"
 	"mpn/internal/mail"
 )
 
@@ -27,6 +28,19 @@ func (r Request) mailArgv() ([]string, error) {
 			return nil, fmt.Errorf("mail host: %w", err)
 		}
 		return []string{"mail", "enable", "-host=" + r.MailHost, "-apply"}, nil
+	case "mail.cfdetect":
+		if err := mail.ValidDomain(r.MailDomain); err != nil {
+			return nil, err
+		}
+		return []string{"mail", "cf-detect", "-domain=" + r.MailDomain, "-json"}, nil
+	case "mail.cfadd":
+		if err := mail.ValidDomain(r.MailDomain); err != nil {
+			return nil, err
+		}
+		if !cfdns.ValidToken(r.CFToken) {
+			return nil, fmt.Errorf("cf-badtoken: the API token must be 20 to 128 letters, digits, \"_\" or \"-\"")
+		}
+		return []string{"mail", "cf-add", "-domain=" + r.MailDomain, "-json", "-apply"}, nil
 	case "mail.disable":
 		return []string{"mail", "disable", "-apply"}, nil
 	case "mail.ssl":

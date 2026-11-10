@@ -1,0 +1,44 @@
+{{define "content"}}
+{{$c := .CF}}
+<div class="mx-auto max-w-3xl">
+  <a class="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-primary" href="/email">&larr; {{T "mail.cf.back"}}</a>
+  <h1 class="h-page mt-3">{{T "mail.cf.title"}}</h1>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "mail.cf.sub" $c.Domain}}</p>
+  {{if $c.Error}}<div role="alert" class="alert-error mt-5"><span>{{$c.Error}}</span></div>{{end}}
+
+  <section class="card mt-6 p-6">
+    <h2 class="h-section">{{T "mail.cf.recs"}}</h2>
+    <div class="table-wrap mt-3">
+      <table class="tbl">
+        <thead><tr><th>{{T "mail.dns.type"}}</th><th>{{T "mail.dns.name"}}</th><th>{{T "mail.dns.value"}}</th></tr></thead>
+        <tbody>
+          {{range $c.Records}}<tr><td class="align-top font-mono text-[13px]">{{.Type}}</td><td class="align-top font-mono text-[13px] break-all">{{.Name}}</td><td class="align-top font-mono text-[12px] break-all">{{.Value}}</td></tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">{{T "mail.cf.hostnote" $c.Host}}</p>
+  </section>
+
+  <section class="card mt-4 p-6">
+    <h2 class="h-section">{{T "mail.cf.token.title"}}</h2>
+    <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm">
+      <li>{{T "mail.cf.step1.a"}} <a class="link" href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer">dash.cloudflare.com/profile/api-tokens</a>.</li>
+      <li>{{T "mail.cf.step2"}}</li>
+      <li>{{T "mail.cf.step3" $c.Domain}}</li>
+      <li>{{T "mail.cf.step4"}}</li>
+    </ol>
+    <form method="post" action="/email/cf" class="mt-5 space-y-4" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="domain" value="{{$c.Domain}}">
+      <div>
+        <label for="cf-token" class="label">{{T "mail.cf.token"}}</label>
+        <input id="cf-token" name="token" type="password" class="field font-mono" autocomplete="off" spellcheck="false" autocapitalize="none" maxlength="128" required>
+        <p class="hint">{{T "mail.cf.token.hint"}}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="btn-primary">{{T "mail.cf.add"}}</button>
+        <a class="btn-secondary" href="/email">{{T "c.cancel"}}</a>
+      </div>
+    </form>
+  </section>
+</div>
+{{end}}

@@ -68,6 +68,7 @@ type Server struct {
 	// PanelDomainFile is the nginx file of the panel's name on port 443. When it exists and a request came to that plain address, the
 	// database browser is opened under /pma/ of the name and not on its own port.
 	PanelDomainFile string
+	cf              cfCache // what the name servers of mail domains said, for ten minutes
 
 	flashMu sync.Mutex
 	flash   map[string]*result
@@ -87,6 +88,7 @@ func (s *Server) Handler() http.Handler {
 	s.firewallPages(mux)
 	s.securityPages(mux)
 	s.mailPages(mux)
+	s.mailCFPages(mux)
 	s.monitorPages(mux)
 	s.servicesPages(mux)
 	s.pmaRoutes(mux)
@@ -279,6 +281,7 @@ type view struct {
 	Cron                                        *cronView
 	Log                                         *logView
 	Svc                                         *svcView
+	CF                                          *cfView
 	Settings                                    *settingsView
 	Need2FA                                     bool   // the sign-in page asks for the code of the app
 	Pending                                     string // the sign-in that waits for it

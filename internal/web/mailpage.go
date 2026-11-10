@@ -17,6 +17,8 @@ type mailDomainRow struct {
 	Mailboxes int           `json:"mailboxes"`
 	Aliases   int           `json:"aliases"`
 	Records   []mail.Record `json:"records"`
+	// Cloudflare says the name servers of the domain are Cloudflare's, so the records can be added there by the panel.
+	Cloudflare bool `json:"-"`
 }
 
 type mailBoxRow struct {
@@ -100,6 +102,7 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 	for _, d := range v.Domains {
 		v.DomainOpt = append(v.DomainOpt, d.Name)
 	}
+	s.markCloudflare(v)
 	if v.Webmail.On && v.Webmail.Port > 0 {
 		h := r.Host
 		if hh, _, err := net.SplitHostPort(r.Host); err == nil {

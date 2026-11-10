@@ -111,6 +111,8 @@ type Request struct {
 	// services.control and services.install: a service of the fixed list in internal/services, and what to do to it.
 	SvcKey    string `json:"svc_key,omitempty"`
 	SvcAction string `json:"svc_action,omitempty"`
+	// mail.cfadd: the API token of Cloudflare, made for the zone of MailDomain. It reaches mpn on standard input only and is not stored.
+	CFToken string `json:"cf_token,omitempty"`
 }
 
 // Stdin returns what the request sends to mpn on standard input: the password of site.access, the certificate and key of
@@ -121,6 +123,8 @@ func (r Request) Stdin() string {
 		return r.Password + "\n"
 	case r.Op == "mail.boxadd", r.Op == "mail.boxpasswd":
 		return r.MailPassword + "\n"
+	case r.Op == "mail.cfadd":
+		return r.CFToken + "\n"
 	case r.Op == "site.vhostset":
 		return r.Vhost
 	case r.Op == "site.cronadd":
@@ -161,6 +165,7 @@ var writes = map[string]bool{
 	"panel.ssl": true, "panel.sslcustom": true, "panel.ssloff": true, // the certificate of the panel and of the database browser
 	"cloud.connect": true, "cloud.finish": true, "cloud.disconnect": true, "cloud.enable": true, "cloud.sync": true, "cloud.fetch": true, // the copy of backups to Google Drive
 	"mail.enable": true, "mail.disable": true, "mail.ssl": true, "mail.webmail": true, "mail.domainadd": true, "mail.domaindel": true, // the mail server and its domains
+	"mail.cfadd":  true,                                                                     // adds the DNS records of a mail domain to Cloudflare; it changes nothing on this machine but acts on an account, so one at a time
 	"mail.boxadd": true, "mail.boxdel": true, "mail.boxpasswd": true, "mail.boxquota": true, // mailboxes
 	"mail.aliasset": true, "mail.aliasdel": true, // aliases
 	"app.install": true, // download and set up WordPress or a framework in a PHP site
@@ -168,10 +173,10 @@ var writes = map[string]bool{
 	"db.add":      true, "db.passwd": true, "db.remove": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
-	"services.control": true, "services.install": true,
+	"services.control": true, "services.install": true, "site.webmail": true,
 }
 
-var reads = map[string]bool{"site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true}
+var reads = map[string]bool{"mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true}
 
 // Known reports whether op is an operation at all.
 func Known(op string) bool { return writes[op] || reads[op] }
@@ -272,6 +277,11 @@ func (r Request) Argv() ([]string, error) {
 			return nil, err
 		}
 		return []string{"site", "speed", "-name", r.Site, "-on=" + strconv.FormatBool(r.Speed), "-apply"}, nil
+	case "site.webmail":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"site", "webmail", "-name", r.Site, "-on=" + strconv.FormatBool(r.Enable), "-apply"}, nil
 	case "site.ssl", "site.ssloff", "site.sslinfo", "site.sslcustom", "site.csr", "site.sslredirect":
 		return r.sslArgv()
 	case "firewall.status":
@@ -326,7 +336,7 @@ func (r Request) Argv() ([]string, error) {
 		return []string{"cloud", "sync", "-site=" + r.Site, "-detach", "-apply"}, nil
 	case "app.install":
 		return r.installApp()
-	case "mail.status", "mail.records", "mail.enable", "mail.disable", "mail.ssl", "mail.webmail", "mail.domainadd", "mail.domaindel",
+	case "mail.status", "mail.records", "mail.cfdetect", "mail.cfadd", "mail.enable", "mail.disable", "mail.ssl", "mail.webmail", "mail.domainadd", "mail.domaindel",
 		"mail.boxadd", "mail.boxdel", "mail.boxpasswd", "mail.boxquota", "mail.aliasset", "mail.aliasdel":
 		return r.mailArgv()
 	case "wp.status", "wp.run", "wp.search":

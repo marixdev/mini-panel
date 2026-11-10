@@ -91,6 +91,7 @@
   <div class="mt-5 rounded-lg border border-border p-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div><span class="font-mono text-[13px] font-semibold">{{.Name}}</span> <span class="text-sm text-muted-foreground">{{T "mail.counts" .Mailboxes .Aliases}}</span></div>
+      {{if .Cloudflare}}<a class="btn-sm gap-1.5" href="/email/cf?domain={{.Name}}"><svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.6 11 4 4 0 0 0 6 19z"/></svg>{{T "mail.cf.btn"}}</a>{{end}}
     </div>
     {{if .Records}}
     <details class="mt-3">
