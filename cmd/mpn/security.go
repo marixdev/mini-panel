@@ -4,12 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"mpn/internal/installer"
+	"mpn/internal/osinfo"
 	"mpn/internal/security"
 	"mpn/internal/store"
 )
@@ -102,11 +104,20 @@ func currentSecurity(st *store.Store) secStatus {
 	return s
 }
 
-func wafPackagesPlan() installer.Plan {
-	return installer.Plan{{Name: "ModSecurity packages", Actions: []installer.Action{
-		installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
-		installer.AptInstall("libnginx-mod-http-modsecurity", "modsecurity-crs"),
-	}}}
+// wafPackagesPlan installs ModSecurity for the nginx this machine runs: the module built for nginx 1.28.3 from nginx.org on a system
+// that uses it, and the package of the distribution on the others (see installer.WAFPackagesPlan).
+func wafPackagesPlan() (installer.Plan, error) {
+	raw, err := os.ReadFile("/etc/os-release")
+	if err != nil {
+		return nil, err
+	}
+	t, err := osinfo.Parse(string(raw))
+	if err != nil {
+		return nil, err
+	}
+	// "nginx -v" prints its version on standard error.
+	v, _ := exec.Command("nginx", "-v").CombinedOutput()
+	return installer.WAFPackagesPlan(t, installer.NginxVersionOf(string(v)))
 }
 
 // wafLoadPlan writes the rules and turns them on in nginx. It runs after the packages are installed, because which files the rule
@@ -209,7 +220,9 @@ func runSecurity(args []string) {
 		if *mode == security.ModeOff {
 			fail(runPlanQuiet(wafOffPlan()))
 		} else {
-			fail(runPlanQuiet(wafPackagesPlan()))
+			pk, err := wafPackagesPlan()
+			fail(err)
+			fail(runPlanQuiet(pk))
 			plan, err := wafLoadPlan(*mode)
 			fail(err)
 			fail(runPlanQuiet(plan))

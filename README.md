@@ -36,6 +36,8 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 
 **Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13.
 
+**Một bản nginx cố định:** panel luôn chạy nginx 1.28.3 trên mọi hệ điều hành. Mô-đun động của nginx chỉ nạp được vào đúng bản nginx đã dùng để biên dịch nó, mà mỗi bản phân phối đi kèm một bản nginx khác nhau (1.18 đến 1.28), nên panel lấy nginx 1.28.3 từ nginx.org (ghim bằng apt với ưu tiên 1001 và `apt-mark hold`, kiểm tra dấu tay khóa ký trước khi thêm kho) rồi nạp hai mô-đun pagespeed và ModSecurity được build riêng cho bản đó ([mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules), tải về có so mã SHA-256 ghi sẵn trong mã nguồn). Riêng Ubuntu 26.04 vốn đã có nginx 1.28.3 cùng mô-đun đóng gói sẵn nên dùng luôn của bản phân phối, cũng được giữ phiên bản. Nhờ vậy `apt upgrade` không bao giờ làm nginx nhảy phiên bản và làm hỏng mô-đun.
+
 ## Cách hoạt động và bảo mật
 
 - `mpn web` chạy bằng người dùng thường, chỉ nghe `127.0.0.1:8780`, đứng sau nginx có TLS ở cổng 2610. Đăng nhập dùng argon2id, có khóa tạm theo IP, CSRF, kiểm tra Host và Origin.

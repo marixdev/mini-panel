@@ -42,6 +42,19 @@ func Parse(content string) (Target, error) {
 	return Target{}, fmt.Errorf("unsupported OS: %s %s", kv["ID"], kv["VERSION_ID"])
 }
 
+// NginxOrg reports whether this system gets its nginx from nginx.org at one fixed version. Every supported system does except
+// Ubuntu 26.04, whose own nginx is that same version and whose modules are packaged for it. A zero Target (a system the program
+// does not know) keeps the nginx of the distribution.
+func (t Target) NginxOrg() bool {
+	switch t.ID {
+	case "debian":
+		return t.Codename != ""
+	case "ubuntu":
+		return t.Codename != "" && t.Version != "26.04"
+	}
+	return false
+}
+
 // Repository base URLs. Suites for all supported targets were checked on 2026-11-03:
 // Sury PHP has every suite, MariaDB 11.8 has every suite, MySQL 8.4 LTS has the server package.
 func (t Target) PHPRepo() string { return "https://packages.sury.org/php/" }

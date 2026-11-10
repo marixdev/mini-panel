@@ -118,13 +118,16 @@ func Build(o Options) (Plan, error) {
 			Run("sh", "-c", "grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab"),
 		}})
 	}
+	psStep, err := pageSpeedStep(o.Target)
+	if err != nil {
+		return nil, err
+	}
 	plan = append(plan,
 		Step{"journald limit", []Action{
 			WriteFile("/etc/systemd/journald.conf.d/mpn.conf", fmt.Sprintf("[Journal]\nSystemMaxUse=%dM\n", o.Profile.JournalMaxMB), 0o644),
 			Run("systemctl", "restart", "systemd-journald"),
 		}},
-		Step{"nginx", []Action{
-			aptInstall("nginx"),
+		Step{"nginx", slices.Concat(nginxInstallActions(o.Target), []Action{
 			Run("systemctl", "enable", "--now", "nginx"),
 			WriteFile("/etc/nginx/nginx.conf", nginxConf(o.Profile), 0o644),
 			// Debian and Ubuntu enable a default site that would clash with the catch-all below.
@@ -136,15 +139,8 @@ func Build(o Options) (Plan, error) {
 			Run("logrotate", "-d", "/etc/logrotate.d/mpn-sites"), // a syntax error makes this fail before anything reloads
 			Run("nginx", "-t"),
 			ReloadNginx(),
-		}},
-		Step{"nginx pagespeed", []Action{
-			Run("sh", "-c", pagespdAptScript),
-			aptUpdate(),
-			aptInstall("nginx-module-pagespeed"),
-			Run("nginx", "-t"),
-			ReloadNginx(),
-			Run("install", "-d", "-o", "www-data", "-g", "www-data", "-m", "0755", "/var/cache/ngx_pagespeed"),
-		}},
+		})},
+		psStep,
 	)
 	if o.SelfPath != "" {
 		plan = append(plan, serviceStep(o.SelfPath))
