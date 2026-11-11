@@ -62,7 +62,7 @@
       </div>
       {{end}}
       {{if .Need2FA}}
-      <form method="post" action="/login">
+      <form method="post" action="/login/2fa">
         <input type="hidden" name="pending" value="{{.Pending}}">
         <div class="mb-5">
           <label class="label mb-2" for="code">Mã xác thực</label>
@@ -97,7 +97,7 @@ function togglePw(btn) {
   var inp = btn.previousElementSibling;
   var show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
-  btn.textContent = show ? 'An' : 'Hien';
+  btn.textContent = show ? 'Ẩn' : 'Hiện';
   btn.setAttribute('aria-pressed', show ? 'true' : 'false');
 }
 </script>
