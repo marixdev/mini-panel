@@ -1,45 +1,637 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Website đã sẵn sàng</title>
-<!-- mpn-default-page: trang tạm do Mini Panel tạo. Cứ xóa hoặc ghi đè tệp này bằng website của bạn. -->
-<style>
-:root{color-scheme:light dark;--bg:#f1f5f9;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--acc:#0d9488;--acc2:#14b8a6;--soft:#f0fdfa}
-@media (prefers-color-scheme:dark){:root{--bg:#020617;--card:#0f172a;--ink:#f1f5f9;--mut:#94a3b8;--line:#1e293b;--acc:#2dd4bf;--acc2:#5eead4;--soft:#042f2e}}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(1100px 520px at 50% -10%,color-mix(in srgb,var(--acc) 16%,transparent),transparent),var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-main{width:100%;max-width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:40px 36px;box-shadow:0 20px 50px -24px rgb(15 23 42/.35)}
-.ok{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;background:var(--soft);color:var(--acc);font-size:13px;font-weight:600}
-.ok i{width:8px;height:8px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc2) 25%,transparent)}
-h1{margin:18px 0 6px;font-size:30px;line-height:1.2;letter-spacing:-.02em}
-.host{margin:0 0 4px;font:600 15px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--acc);word-break:break-all}
-.lead{margin:12px 0 0;color:var(--mut)}
-ol{margin:26px 0 0;padding:0;list-style:none;counter-reset:s}
-li{counter-increment:s;display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
-li::before{content:counter(s);flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--soft);color:var(--acc);font-size:13px;font-weight:700}
-li b{display:block;font-size:15px}
-li span{color:var(--mut);font-size:14px}
-code{font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
-.meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
-@media (max-width:480px){main{padding:28px 22px}h1{font-size:25px}}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- mpn-default-page: trang tạm do Mini Panel tạo. Cứ xóa hoặc ghi đè tệp này bằng website của bạn. -->
+  <meta name="robots" content="noindex" />
+  <title>Website đã sẵn sàng | Mini Panel</title>
+
+  <style>
+    /* =============================================
+       DESIGN TOKENS
+    ============================================= */
+    :root {
+      color-scheme: light;
+      --radius: 0.375rem;
+      --background: oklch(0.985 0.007 155);
+      --foreground: oklch(0.22 0.025 175);
+      --card: oklch(0.998 0.003 155);
+      --card-foreground: oklch(0.22 0.025 175);
+      --primary: oklch(0.43 0.085 174);
+      --primary-foreground: oklch(0.985 0.007 155);
+      --secondary: oklch(0.94 0.015 160);
+      --secondary-foreground: oklch(0.32 0.045 174);
+      --muted: oklch(0.955 0.01 155);
+      --muted-foreground: oklch(0.49 0.025 174);
+      --accent: oklch(0.76 0.13 72);
+      --accent-foreground: oklch(0.25 0.03 65);
+      --border: oklch(0.88 0.018 160);
+      --input: oklch(0.88 0.018 160);
+      --ring: oklch(0.57 0.09 174);
+      --setup-page-width: 1120px;
+      --setup-line: oklch(0.87 0.018 160);
+      --setup-soft: oklch(0.95 0.018 158);
+      --setup-dim: oklch(0.56 0.025 174);
+      --setup-positive: oklch(0.57 0.13 151);
+      --setup-hero: oklch(0.25 0.045 175);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; line-height: 1.5; }
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    h1, h2, h3, h4 { font-size: inherit; font-weight: inherit; }
+    ol, ul { list-style: none; }
+    img, svg { display: block; }
+    button { font: inherit; cursor: pointer; border: none; background: transparent; }
+    code { font-family: var(--font-mono); }
+
+    /* =============================================
+       LAYOUT COMPONENTS
+    ============================================= */
+    .setup-page {
+      width: min(100% - 48px, var(--setup-page-width));
+      min-height: 100svh;
+      margin: 0 auto;
+      color: var(--foreground);
+      font-family: var(--font-sans);
+    }
+
+    /* Header */
+    .setup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 82px;
+      border-bottom: 1px solid var(--setup-line);
+    }
+    .setup-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--foreground);
+      text-decoration: none;
+    }
+    .setup-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 5px;
+      color: var(--primary-foreground);
+      background: var(--primary);
+    }
+    .setup-brand-mark svg { width: 18px; height: 18px; }
+    .setup-brand-name { font-size: 20px; font-weight: 750; letter-spacing: 0; }
+    .setup-brand-name span { color: var(--primary); }
+    .setup-header-tools { display: flex; align-items: center; gap: 24px; }
+    .setup-header-caption, .setup-eyebrow {
+      color: var(--setup-dim);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    /* Language Button */
+    .setup-language {
+      display: inline-flex;
+      align-items: center;
+      height: 34px;
+      padding-inline: 10px;
+      gap: 8px;
+      border: 1px solid var(--setup-line);
+      border-radius: 4px;
+      color: var(--foreground);
+      background: transparent;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .setup-language:hover { background: var(--muted); }
+    .setup-language svg { width: 14px; height: 14px; color: var(--primary); }
+    .setup-language-divider { width: 1px; height: 14px; background: var(--setup-line); }
+    .setup-language-next { color: var(--setup-dim); }
+
+    /* Hero section */
+    .setup-hero {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      align-items: center;
+      gap: clamp(42px, 8vw, 116px);
+      padding: 92px 0;
+      border-bottom: 1px solid var(--setup-line);
+    }
+    .setup-hero-copy { max-width: 640px; }
+    .setup-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid color-mix(in oklab, var(--setup-positive) 25%, transparent);
+      border-radius: 3px;
+      color: var(--setup-positive);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .setup-status-dot, .setup-overview-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--setup-positive);
+    }
+    .setup-eyebrow { margin: 28px 0 12px; }
+    .setup-eyebrow span { padding: 0 6px; color: var(--primary); }
+    .setup-hero h1 {
+      max-width: 620px;
+      margin: 0;
+      font-size: clamp(40px, 5vw, 58px);
+      line-height: 1.08;
+      font-weight: 660;
+      letter-spacing: 0;
+    }
+    .setup-lead {
+      max-width: 520px;
+      margin: 20px 0 26px;
+      color: var(--setup-dim);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    .setup-domain {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      width: max-content;
+      max-width: 100%;
+      padding: 0 12px;
+      border: 1px solid var(--setup-line);
+      border-radius: 4px;
+      background: var(--card);
+    }
+    .setup-domain > svg { width: 16px; height: 16px; flex: none; color: var(--primary); }
+    .setup-domain > span:first-of-type {
+      max-width: min(52vw, 360px);
+      overflow: hidden;
+      color: var(--foreground);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      text-overflow: ellipsis;
+    }
+    .setup-domain-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 8px;
+      color: var(--setup-positive);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .setup-domain-live svg { width: 12px; height: 12px; }
+
+    /* Overview card */
+    .setup-overview {
+      overflow: hidden;
+      width: 100%;
+      border: 1px solid var(--setup-line);
+      border-radius: 5px;
+      background: var(--card);
+    }
+    .setup-overview-heading {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 22px 22px 20px;
+      border-bottom: 1px solid var(--setup-line);
+    }
+    .setup-overview-icon, .setup-file-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      flex: none;
+      border-radius: 4px;
+      background: var(--setup-soft);
+      color: var(--primary);
+    }
+    .setup-overview-icon svg { width: 18px; height: 18px; }
+    .setup-overview-heading > div:nth-child(2) {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .setup-overview-label { color: var(--setup-dim); font-size: 10px; font-weight: 700; }
+    .setup-overview-heading strong { font-size: 14px; font-weight: 650; }
+    .setup-overview-indicator {
+      margin-left: 10px;
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--setup-positive) 14%, transparent);
+    }
+    .setup-file-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 22px;
+    }
+    .setup-file-icon { width: 34px; height: 34px; }
+    .setup-file-icon svg { width: 17px; height: 17px; }
+    .setup-file-copy { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+    .setup-file-copy strong { font-size: 13px; font-weight: 650; }
+    .setup-file-copy span { color: var(--setup-dim); font-size: 11px; }
+    .setup-file-check {
+      display: grid;
+      place-items: center;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      background: var(--setup-soft);
+      color: var(--setup-positive);
+    }
+    .setup-file-check svg { width: 13px; height: 13px; }
+    .setup-overview-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px 22px;
+      border-top: 1px solid var(--setup-line);
+      background: var(--muted);
+    }
+    .setup-overview-foot span { color: var(--setup-dim); font-size: 9px; font-weight: 700; }
+    .setup-overview-foot code { color: var(--foreground); font-size: 11px; }
+    .setup-hero-index {
+      position: absolute;
+      right: 0;
+      bottom: 25px;
+      color: var(--primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .setup-hero-index span { color: var(--setup-dim); }
+
+    /* Steps section */
+    .setup-steps { padding: 60px 0 64px; }
+    .setup-section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 34px;
+    }
+    .setup-section-heading .setup-eyebrow { margin: 0 0 10px; }
+    .setup-section-heading h2 {
+      max-width: 600px;
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.2;
+      font-weight: 640;
+      letter-spacing: 0;
+    }
+    .setup-section-heading > p {
+      max-width: 330px;
+      margin: 0 0 2px;
+      color: var(--setup-dim);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .setup-step-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .setup-step {
+      min-width: 0;
+      padding-top: 17px;
+      border-top: 1px solid var(--setup-line);
+    }
+    .setup-step-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 30px;
+    }
+    .setup-step-number {
+      color: var(--primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .setup-step-top svg { width: 17px; height: 17px; color: var(--primary); }
+    .setup-step-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 24px 0 9px;
+      color: var(--setup-dim);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .setup-step-label svg { width: 12px; height: 12px; }
+    .setup-step h3 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.4; }
+    .setup-step-body {
+      max-width: 340px;
+      margin: 9px 0 0;
+      color: var(--setup-dim);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* Footer */
+    .setup-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 19px 0 27px;
+      border-top: 1px solid var(--setup-line);
+      color: var(--setup-dim);
+      font-size: 11px;
+    }
+    .setup-footer b { padding: 0 4px; color: var(--primary); }
+
+    /* =============================================
+       ANIMATIONS
+    ============================================= */
+    @media (prefers-reduced-motion: no-preference) {
+      .setup-status-dot {
+        animation: setup-pulse 2.6s ease-in-out infinite;
+      }
+      @keyframes setup-pulse {
+        50% {
+          box-shadow: 0 0 0 5px color-mix(in oklab, var(--setup-positive) 13%, transparent);
+        }
+      }
+    }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 760px) {
+      .setup-page { width: min(100% - 36px, var(--setup-page-width)); }
+      .setup-header { min-height: 70px; }
+      .setup-header-caption { display: none; }
+      .setup-header-tools { gap: 10px; }
+      .setup-hero { grid-template-columns: 1fr; gap: 32px; padding: 58px 0 60px; }
+      .setup-hero h1 { max-width: 560px; font-size: 42px; }
+      .setup-lead { font-size: 15px; }
+      .setup-overview { max-width: 480px; }
+      .setup-hero-index { bottom: 18px; }
+      .setup-steps { padding: 46px 0 48px; }
+      .setup-section-heading { display: block; margin-bottom: 27px; }
+      .setup-section-heading h2 { font-size: 27px; }
+      .setup-section-heading > p { margin-top: 12px; }
+      .setup-step-list { grid-template-columns: 1fr; gap: 0; }
+      .setup-step {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        column-gap: 12px;
+        padding: 18px 0;
+      }
+      .setup-step-top { grid-row: 1 / span 3; align-items: start; min-height: 0; }
+      .setup-step-top svg { display: none; }
+      .setup-step-label { margin: 0 0 6px; }
+      .setup-step h3 { font-size: 16px; }
+      .setup-step-body { max-width: 520px; margin-top: 6px; }
+    }
+
+    @media (max-width: 420px) {
+      .setup-page { width: calc(100% - 28px); }
+      .setup-hero { padding-top: 46px; }
+      .setup-hero h1 { font-size: 37px; }
+      .setup-domain { gap: 7px; padding-inline: 9px; }
+      .setup-domain-live { margin-left: 2px; }
+      .setup-overview-heading, .setup-file-row { padding-inline: 16px; }
+      .setup-overview-foot { padding-inline: 16px; }
+      .setup-footer { flex-wrap: wrap; }
+    }
+  </style>
 </head>
 <body>
-<main>
-  <span class="ok"><i></i>Đang hoạt động</span>
-  <h1>Website của bạn đã sẵn sàng</h1>
-  <p class="host" id="host">{{HOST}}</p>
-  <p class="lead">Đây là trang tạm do Mini Panel tạo ngay sau khi tạo website. Khi bạn đưa mã nguồn lên, trang này sẽ được thay thế.</p>
-  <ol>
-    <li><div><b>Đưa mã nguồn lên</b><span>Dùng tab <em>Tệp</em> trong panel hoặc kết nối SFTP bằng tài khoản của website, rồi chép mã nguồn vào thư mục gốc.</span></div></li>
-    <li><div><b>Thay tệp này</b><span>Ghi đè hoặc xóa <code>{{FILE}}</code> khi website của bạn đã có nội dung.</span></div></li>
-    <li><div><b>Bật HTTPS</b><span>Vào tab <em>SSL</em> để cấp chứng chỉ Let's Encrypt miễn phí khi tên miền đã trỏ về máy chủ.</span></div></li>
-  </ol>
-  <div class="meta"><span>{{RUNTIME}}</span><span>Quản lý bởi Mini Panel</span></div>
-</main>
-<script>var h=document.getElementById('host');if(h&&!h.textContent.trim())h.textContent=location.hostname;</script>
+  <main class="setup-page" id="app">
+    <!-- Header -->
+    <header class="setup-header">
+      <a class="setup-brand" href="/" aria-label="Mini Panel">
+        <span class="setup-brand-mark">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+        </span>
+        <span class="setup-brand-name">mini<span>panel</span></span>
+      </a>
+      <div class="setup-header-tools">
+        <span class="setup-header-caption">WEBSITE HOSTING</span>
+        <button class="setup-language" id="lang-btn" aria-label="Chuyển ngôn ngữ" title="Chuyển ngôn ngữ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span id="lang-current">VI</span>
+          <span class="setup-language-divider" aria-hidden="true"></span>
+          <span class="setup-language-next" id="lang-next">EN</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="setup-hero" aria-labelledby="setup-title">
+      <div class="setup-hero-copy">
+        <div class="setup-status">
+          <span class="setup-status-dot"></span>
+          <span id="text-online">Đang hoạt động</span>
+        </div>
+        <p class="setup-eyebrow">
+          <span id="text-status-label">TRẠNG THÁI WEBSITE</span>
+          <span> / </span> 01
+        </p>
+        <h1 id="setup-title">Website của bạn đã sẵn sàng</h1>
+        <p class="setup-lead" id="text-description">
+          Tên miền đã hoạt động. Hãy tải mã nguồn lên để bắt đầu xây dựng website của bạn.
+        </p>
+        <div class="setup-domain" aria-label="{{HOST}}" id="domain-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <span id="hostname-display">{{HOST}}</span>
+          <span class="setup-domain-live">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            HTTPS
+          </span>
+        </div>
+      </div>
+
+      <!-- Overview card -->
+      <div class="setup-overview" aria-label="Trạng thái website">
+        <div class="setup-overview-heading">
+          <div class="setup-overview-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+          </div>
+          <div>
+            <span class="setup-overview-label" id="text-server-label">MÁY CHỦ</span>
+            <strong id="text-live">Trực tuyến</strong>
+          </div>
+          <span class="setup-overview-indicator"></span>
+        </div>
+        <div class="setup-file-row">
+          <div class="setup-file-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12.5a2 2 0 0 0-1 1.75c0 1.1.9 1.75 2 1.75s2 .65 2 1.75-.9 1.75-2 1.75"/><path d="M11 11v.25"/><path d="M11 19v.25"/></svg>
+          </div>
+          <div class="setup-file-copy">
+            <strong id="text-doc-name">{{FILE}}</strong>
+            <span id="text-doc-status">{{RUNTIME}}</span>
+          </div>
+          <span class="setup-file-check">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+        </div>
+        <div class="setup-overview-foot">
+          <span>ROOT DIRECTORY</span>
+          <code>/public_html</code>
+        </div>
+      </div>
+
+      <div class="setup-hero-index" aria-hidden="true">01<span> / 03</span></div>
+    </section>
+
+    <!-- Steps -->
+    <section class="setup-steps" aria-labelledby="steps-title">
+      <div class="setup-section-heading">
+        <div>
+          <p class="setup-eyebrow" id="text-next">BẮT ĐẦU TẠI ĐÂY</p>
+          <h2 id="steps-title">Hoàn tất thiết lập website</h2>
+        </div>
+        <p id="text-steps-intro">Chỉ cần vài bước để thay trang này bằng website của bạn.</p>
+      </div>
+
+      <ol class="setup-step-list" id="steps-list">
+        <!-- Steps are rendered by JS; noscript fallback below -->
+        <noscript>
+          <li class="setup-step"><div class="setup-step-top"><span class="setup-step-number">01</span></div><p class="setup-step-label">Tải lên</p><h3>Tải mã nguồn lên</h3><p class="setup-step-body">Dùng tab Tệp trong panel hoặc kết nối SFTP để tải mã nguồn vào thư mục gốc của website.</p></li>
+          <li class="setup-step"><div class="setup-step-top"><span class="setup-step-number">02</span></div><p class="setup-step-label">Thay trang</p><h3>Thay trang mặc định</h3><p class="setup-step-body">Ghi đè hoặc xóa tệp {{FILE}} sau khi website của bạn đã có trang chủ riêng.</p></li>
+          <li class="setup-step"><div class="setup-step-top"><span class="setup-step-number">03</span></div><p class="setup-step-label">Bảo mật</p><h3>Bật HTTPS</h3><p class="setup-step-body">Cấp chứng chỉ SSL miễn phí trong tab SSL khi tên miền đã trỏ về máy chủ.</p></li>
+        </noscript>
+      </ol>
+    </section>
+
+    <!-- Footer -->
+    <footer class="setup-footer">
+      <span id="text-footer">Được quản lý bởi Mini Panel</span>
+      <span><span id="text-runtime">{{RUNTIME}}</span> <b>·</b> <span id="text-year"></span></span>
+    </footer>
+  </main>
+
+  <script>
+    var FILE = '{{FILE}}', RUNTIME = '{{RUNTIME}}';
+
+    var copy = {
+      vi: {
+        title: "Website của bạn đã sẵn sàng",
+        htmlTitle: "Website đã sẵn sàng | Mini Panel",
+        description: "Tên miền đã hoạt động. Hãy tải mã nguồn lên để bắt đầu xây dựng website của bạn.",
+        online: "Đang hoạt động",
+        statusLabel: "TRẠNG THÁI WEBSITE",
+        serverLabel: "MÁY CHỦ",
+        live: "Trực tuyến",
+        next: "BẮT ĐẦU TẠI ĐÂY",
+        stepsTitle: "Hoàn tất thiết lập website",
+        stepsIntro: "Chỉ cần vài bước để thay trang này bằng website của bạn.",
+        steps: [
+          { title: "Tải mã nguồn lên", body: "Dùng tab Tệp trong panel hoặc kết nối SFTP để tải mã nguồn vào thư mục gốc của website.", icon: "upload", label: "Tải lên" },
+          { title: "Thay trang mặc định", body: "Ghi đè hoặc xóa tệp " + FILE + " sau khi website của bạn đã có trang chủ riêng.", icon: "file", label: "Thay trang" },
+          { title: "Bật HTTPS", body: "Cấp chứng chỉ SSL miễn phí trong tab SSL khi tên miền đã trỏ về máy chủ.", icon: "lock", label: "Bảo mật" }
+        ],
+        footer: "Được quản lý bởi Mini Panel",
+        switch: "Chuyển ngôn ngữ",
+        overviewAriaLabel: "Trạng thái website"
+      },
+      en: {
+        title: "Your website is ready",
+        htmlTitle: "Your website is ready | Mini Panel",
+        description: "Your domain is live. Upload your files to start building your website.",
+        online: "Operational",
+        statusLabel: "WEBSITE STATUS",
+        serverLabel: "SERVER",
+        live: "Live",
+        next: "GET STARTED",
+        stepsTitle: "Finish setting up your website",
+        stepsIntro: "A few quick steps will replace this page with your website.",
+        steps: [
+          { title: "Upload your files", body: "Use the Files tab in your panel or connect via SFTP to upload your code to the website root directory.", icon: "upload", label: "Upload" },
+          { title: "Replace this page", body: "Overwrite or delete " + FILE + " once your website has its own homepage.", icon: "file", label: "Replace page" },
+          { title: "Enable HTTPS", body: "Issue a free SSL certificate in the SSL tab after your domain points to the server.", icon: "lock", label: "Secure" }
+        ],
+        footer: "Managed by Mini Panel",
+        switch: "Change language",
+        overviewAriaLabel: "Website status"
+      }
+    };
+
+    var icons = {
+      upload: '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>',
+      file: '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 12.5a2 2 0 0 0-1 1.75c0 1.1.9 1.75 2 1.75s2 .65 2 1.75-.9 1.75-2 1.75"/><path d="M11 11v.25"/><path d="M11 19v.25"/></svg>',
+      lock: '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+      chevronRight: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>'
+    };
+
+    var locale = 'vi';
+
+    function renderSteps(text) {
+      var list = document.getElementById('steps-list');
+      list.innerHTML = text.steps.map(function(step, i) {
+        return '<li class="setup-step"><div class="setup-step-top"><span class="setup-step-number">0' + (i+1) + '</span>' + icons[step.icon] + '</div><p class="setup-step-label">' + step.label + ' ' + icons.chevronRight + '</p><h3>' + step.title + '</h3><p class="setup-step-body">' + step.body + '</p></li>';
+      }).join('');
+    }
+
+    function updateUI() {
+      var text = copy[locale];
+      document.documentElement.lang = locale;
+      document.title = text.htmlTitle;
+      document.getElementById('lang-current').textContent = locale === 'vi' ? 'VI' : 'EN';
+      document.getElementById('lang-next').textContent = locale === 'vi' ? 'EN' : 'VI';
+      var langBtn = document.getElementById('lang-btn');
+      langBtn.setAttribute('aria-label', text.switch);
+      langBtn.setAttribute('title', text.switch);
+      document.getElementById('text-online').textContent = text.online;
+      document.getElementById('text-status-label').textContent = text.statusLabel;
+      document.getElementById('setup-title').textContent = text.title;
+      document.getElementById('text-description').textContent = text.description;
+      document.getElementById('text-server-label').textContent = text.serverLabel;
+      document.getElementById('text-live').textContent = text.live;
+      document.getElementById('text-doc-name').textContent = FILE;
+      document.getElementById('text-doc-status').textContent = RUNTIME;
+      document.querySelector('.setup-overview').setAttribute('aria-label', text.overviewAriaLabel);
+      document.getElementById('text-next').textContent = text.next;
+      document.getElementById('steps-title').textContent = text.stepsTitle;
+      document.getElementById('text-steps-intro').textContent = text.stepsIntro;
+      renderSteps(text);
+      document.getElementById('text-footer').textContent = text.footer;
+      document.getElementById('text-runtime').textContent = RUNTIME;
+    }
+
+    function toggleLocale() {
+      locale = locale === 'vi' ? 'en' : 'vi';
+      updateUI();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var hostname = window.location.hostname;
+      if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        var hostEl = document.getElementById('hostname-display');
+        // Only override when placeholder was not filled by server-side code
+        if (hostEl && (hostEl.textContent === '{{HOST}}' || hostEl.textContent === '')) {
+          hostEl.textContent = hostname;
+          document.getElementById('domain-box').setAttribute('aria-label', hostname);
+        }
+      }
+      document.getElementById('text-year').textContent = new Date().getFullYear();
+      document.getElementById('lang-btn').addEventListener('click', toggleLocale);
+      updateUI();
+    });
+  </script>
 </body>
 </html>

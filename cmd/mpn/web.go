@@ -87,9 +87,16 @@ func webServe(args []string) {
 	if runtime.GOOS == "linux" && os.Geteuid() == 0 {
 		fail(errors.New("the web panel must not run as root; run it as the mpn-web user"))
 	}
+	// When the account file is missing the panel can still start: it will show a first-time setup
+	// page and write the file itself, since it runs as the account that owns the directory.
+	accountExists := true
 	if _, err := webauth.LoadAccount(*account); err != nil {
-		fail(fmt.Errorf("%w\ncreate the account as root with: mpn web passwd", err))
+		if !os.IsNotExist(err) {
+			fail(fmt.Errorf("%w\ncreate the account as root with: mpn web passwd", err))
+		}
+		accountExists = false
 	}
+	_ = accountExists // passed to the server below
 	// The measurements are kept next to the account file: the one place the panel is allowed to write.
 	collector := monitor.New(monitor.ProcSource, filepath.Join(filepath.Dir(*account), "metrics.json"))
 	srv := &web.Server{
