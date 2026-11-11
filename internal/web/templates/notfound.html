@@ -1,0 +1,47 @@
+{{define "content"}}<!doctype html>
+<html lang="vi" class="h-full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Không tìm thấy trang - Mini Panel</title>
+<link rel="icon" type="image/svg+xml" href="{{asset "logo.svg"}}">
+<link rel="preload" href="{{asset "jbmono-latin.woff2"}}" as="font" type="font/woff2" crossorigin>
+<script src="{{asset "theme.js"}}"></script>
+<link rel="stylesheet" href="{{asset "app.css"}}">
+</head>
+<body class="bg-background text-foreground">
+<main class="relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-6 py-16 text-center">
+  <div class="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-5 sm:px-10">
+    <a class="flex items-center gap-2.5 no-underline" href="/">
+      <span class="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+      </span>
+      <span class="text-xl font-bold leading-none tracking-tight text-foreground">mini<span class="ml-0.5 text-[10px] font-medium uppercase tracking-[1.5px] text-muted-foreground">panel</span></span>
+    </a>
+    <span class="badge-gray">Lỗi 404</span>
+  </div>
+
+  <div aria-hidden="true" class="pointer-events-none select-none text-[clamp(120px,26vw,260px)] font-bold leading-none tracking-[-0.06em] text-primary/15">404</div>
+
+  <div class="-mt-6 max-w-md sm:-mt-12">
+    <h1 class="text-[clamp(26px,4vw,36px)] font-semibold leading-tight tracking-tight">Không tìm thấy trang này</h1>
+    <p class="mt-3 text-sm leading-relaxed text-muted-foreground">Địa chỉ bạn mở không tồn tại hoặc đã được đổi. Hãy kiểm tra lại đường dẫn, hoặc quay về trang chính để tiếp tục.</p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a class="btn-primary px-5 py-2.5" href="/">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 11 8.5-7 8.5 7M6 9.5V19a1 1 0 0 0 1 1h3.5v-5h3v5H17a1 1 0 0 0 1-1V9.5"/></svg>
+        Về trang chính
+      </a>
+      <a class="btn-secondary px-5 py-2.5" href="/" data-history-back>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg>
+        Quay lại trang trước
+      </a>
+    </div>
+  </div>
+
+  <p class="absolute bottom-6 text-[11px] text-muted-foreground">Mini Panel</p>
+</main>
+<script src="{{asset "app.js"}}" defer></script>
+</body>
+</html>
+{{end}}

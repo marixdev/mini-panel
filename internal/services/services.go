@@ -182,10 +182,14 @@ func Status(p Probe) []Item {
 		id, st := p.unit(d.Key)
 		switch {
 		case id != "":
+			label := d.Label
 			if d.Key == "database" {
 				dbID = id
+				if l := map[string]string{"mariadb.service": "MariaDB", "mysql.service": "MySQL"}[id]; l != "" {
+					label = l // the server that is there, not both names
+				}
 			}
-			out = append(out, Item{Key: d.Key, Label: d.Label, Group: d.Group, Installed: true, Unit: id, State: st, Active: st == "active", Actions: d.Actions, Link: d.Link})
+			out = append(out, Item{Key: d.Key, Label: label, Group: d.Group, Installed: true, Unit: id, State: st, Active: st == "active", Actions: d.Actions, Link: d.Link})
 		case d.Absent:
 			out = append(out, Item{Key: d.Key, Label: d.Label, Group: d.Group, Link: d.Link})
 		}

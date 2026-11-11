@@ -31,11 +31,14 @@
           <div class="flex flex-wrap items-center justify-end gap-2">
             {{if .Installed}}
               {{if eq .Key "phpmyadmin"}}<span class="text-xs text-muted-foreground">{{T "svc.pma.where"}}</span>{{end}}
-              {{$key := .Key}}{{$active := .Active}}
+              {{$key := .Key}}{{$active := .Active}}{{$label := .Label}}
               {{range .Actions}}
-                {{if eq . "stop"}}{{if $active}}<a class="btn-sm" href="/services/{{$key}}/stop">{{T "svc.btn.stop"}}</a>{{end}}
-                {{else if eq . "start"}}{{if not $active}}<form method="post" action="/services/{{$key}}/start" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-sm">{{T "svc.btn.start"}}</button></form>{{end}}
-                {{else}}<form method="post" action="/services/{{$key}}/{{.}}" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-sm">{{T (printf "svc.btn.%s" .)}}</button></form>{{end}}
+                {{if eq . "start"}}
+                  {{if not $active}}<form method="post" action="/services/{{$key}}/start" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="ico-btn text-primary" title="{{T "svc.btn.start"}}" aria-label="{{T "svc.btn.start"}} {{$label}}">{{template "svcico" "start"}}</button></form>{{end}}
+                {{else if $active}}
+                  {{if eq . "stop"}}<a class="ico-btn-danger" href="/services/{{$key}}/stop" title="{{T "svc.btn.stop"}}" aria-label="{{T "svc.btn.stop"}} {{$label}}">{{template "svcico" "stop"}}</a>
+                  {{else}}<form method="post" action="/services/{{$key}}/{{.}}" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="ico-btn" title="{{T (printf "svc.btn.%s" .)}}" aria-label="{{T (printf "svc.btn.%s" .)}} {{$label}}">{{template "svcico" .}}</button></form>{{end}}
+                {{end}}
               {{end}}
             {{else if .Installable}}
               <form method="post" action="/services/{{.Key}}/install" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-primary px-3 py-1.5">{{T "svc.btn.install"}}</button></form>
@@ -53,4 +56,13 @@
 </section>
 {{end}}
 <p class="hint">{{T "svc.hint"}}</p>
+{{end}}
+
+{{/* Icons of the action buttons, one per action. */}}
+{{define "svcico"}}
+{{if eq . "start"}}<svg viewBox="0 0 24 24" class="size-4" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M7 5.2v13.6a.6.6 0 0 0 .9.5l11-6.8a.6.6 0 0 0 0-1L7.9 4.7a.6.6 0 0 0-.9.5Z"/></svg>
+{{else if eq . "stop"}}<svg viewBox="0 0 24 24" class="size-4" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.2"/></svg>
+{{else if eq . "restart"}}<svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5"/></svg>
+{{else if eq . "reload"}}<svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5"/></svg>
+{{end}}
 {{end}}

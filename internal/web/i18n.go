@@ -19,6 +19,7 @@ var vi = map[string]string{
 	"login.locked": "Bạn đã nhập sai quá nhiều lần. Hãy thử lại sau %d giây.",
 	"page.login":   "Đăng nhập",
 	"page.setup":   "Thiết lập Mini Panel",
+	"page.notfound": "Không tìm thấy trang",
 	"setup.err.user":   "Tên đăng nhập không hợp lệ. Chỉ dùng chữ thường, số và dấu gạch ngang/dưới, bắt đầu bằng chữ cái.",
 	"setup.err.short":  "Mật khẩu phải có ít nhất %d ký tự.",
 	"setup.err.long":   "Mật khẩu quá dài (tối đa 256 ký tự).",

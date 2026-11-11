@@ -122,6 +122,10 @@ document.addEventListener('click', function (e) {
     eye.setAttribute('aria-pressed', show ? 'true' : 'false');
     return;
   }
+  if (e.target.closest('[data-history-back]')) { // "back" on the page for a missing address; without history it leaves the link to "/"
+    if (history.length > 1) { history.back(); e.preventDefault(); }
+    return;
+  }
   var toggle = e.target.closest('[data-theme-toggle]');
   if (toggle) {
     var dark = !document.documentElement.classList.contains('dark');

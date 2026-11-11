@@ -105,6 +105,7 @@ func (s *Server) Handler() http.Handler {
 	s.fileRoutes(mux)
 	s.assetRoutes(mux)
 	mux.HandleFunc("GET /result", s.auth(s.resultPage))
+	mux.HandleFunc("GET /", s.notFound) // every address no other route owns
 	return s.guard(mux)
 }
 
@@ -238,6 +239,12 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	}
 	s.Throttle.Reset(key)
 	s.startSession(w, r, acct.User)
+}
+
+// notFound answers an address the panel does not have with a page of its own. It is the same page for a signed-in person and for a
+// stranger, and says nothing about what exists.
+func (s *Server) notFound(w http.ResponseWriter, r *http.Request) {
+	s.render(w, http.StatusNotFound, view{Page: "notfound"})
 }
 
 // startSession signs the browser in: a new session, and its cookie.

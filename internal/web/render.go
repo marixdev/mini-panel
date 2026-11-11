@@ -26,7 +26,7 @@ type page struct {
 var pages = map[string]page{}
 
 func init() {
-	for name, shell := range map[string]string{"login": "auth", "setup": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base", "services": "base", "settings": "base", "emailcf": "base"} {
+	for name, shell := range map[string]string{"login": "auth", "setup": "auth", "notfound": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base", "services": "base", "settings": "base", "emailcf": "base"} {
 		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict}).
 			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
