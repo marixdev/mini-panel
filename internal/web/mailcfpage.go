@@ -103,7 +103,7 @@ func (s *Server) cfFor(domain string, r *http.Request) (*cfView, string) {
 func (s *Server) cfPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	v, msg := s.cfFor(r.URL.Query().Get("domain"), r)
 	if v == nil {
-		s.mailRefuse(w, ss, msg)
+		s.mailRefuse(w, r, ss, msg)
 		return
 	}
 	s.show(w, http.StatusOK, ss, view{Page: "emailcf", CF: v})
@@ -138,7 +138,7 @@ func cfLines(rep cfReport) (text string, conflict bool) {
 func (s *Server) cfAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	v, msg := s.cfFor(r.PostFormValue("domain"), r)
 	if v == nil {
-		s.mailRefuse(w, ss, msg)
+		s.mailRefuse(w, r, ss, msg)
 		return
 	}
 	token := strings.TrimSpace(r.PostFormValue("token"))

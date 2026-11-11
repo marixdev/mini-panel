@@ -282,6 +282,7 @@ type view struct {
 	Log                                         *logView
 	Svc                                         *svcView
 	CF                                          *cfView
+	SM *siteMailView
 	Settings                                    *settingsView
 	Need2FA                                     bool   // the sign-in page asks for the code of the app
 	Pending                                     string // the sign-in that waits for it

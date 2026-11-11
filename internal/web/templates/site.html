@@ -24,6 +24,7 @@
 {{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "cron"}}{{template "crontab" .}}
 {{else if eq .Tab "logs"}}{{template "logstab" .}}
+{{else if eq .Tab "email"}}{{template "siteemail" .}}
 {{else if eq .Tab "wordpress"}}{{template "wptab" .}}
 {{else if eq .Tab "files"}}{{template "filestab" .}}
 

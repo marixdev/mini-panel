@@ -1,0 +1,187 @@
+{{define "siteemail"}}
+{{$sm := .SM}}
+{{$site := .Site}}
+{{if $sm.Error}}<div role="alert" class="alert-error mb-4"><span>{{$sm.Error}}</span></div>{{end}}
+
+{{if not $sm.ServerOn}}
+<div class="card p-6">
+  <h2 class="h-section">{{T "se.server.off"}}</h2>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "se.server.off.desc"}}</p>
+  <a class="btn-secondary mt-4 inline-flex" href="/email">{{T "se.goto.email"}}</a>
+</div>
+{{else}}
+
+{{if $sm.Stopped}}<p class="alert-warn mb-4">{{T "mail.stopped"}}</p>{{end}}
+
+{{/* Webmail link for this site */}}
+{{if $sm.WebURL}}
+<div class="mb-4 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+  <svg class="size-4 shrink-0 text-primary" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m3 7 7 5 7-5"/></svg>
+  <a class="link font-mono text-sm" href="{{$sm.WebURL}}" target="_blank" rel="noopener noreferrer">{{$sm.WebURL}}</a>
+</div>
+{{else}}
+<div class="mb-4 rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+  {{T "se.webmail.hint"}} <a class="link" href="/sites/{{$site.Name}}">{{T "se.goto.overview"}}</a>
+</div>
+{{end}}
+
+{{if not $sm.Domains}}
+<div class="card p-6 text-center text-sm text-muted-foreground">{{T "se.no.domains"}}</div>
+{{else}}
+
+{{range $d := $sm.Domains}}
+<section class="card mb-4 p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <span class="font-mono text-[13px] font-semibold">{{$d.Name}}</span>
+      {{if $d.On}}<span class="badge-teal">{{T "mail.on.badge"}}</span>{{else}}<span class="badge-gray">{{T "se.domain.off"}}</span>{{end}}
+    </div>
+    <div class="flex items-center gap-2">
+      {{if and $d.On $d.Cloudflare}}<a class="btn-sm gap-1.5" href="/sites/{{$site.Name}}/email/cf?domain={{$d.Name}}"><svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 0 0 4.6 11 4 4 0 0 0 6 19z"/></svg>{{T "mail.cf.btn"}}</a>{{end}}
+      {{if not $d.On}}
+      <form method="post" action="/sites/{{$site.Name}}/email/domain/add">
+        <input type="hidden" name="csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="domain" value="{{$d.Name}}">
+        <button class="btn-sm btn-primary">{{T "se.domain.enable"}}</button>
+      </form>
+      {{else}}
+      <details class="relative">
+        <summary class="btn-sm link-danger cursor-pointer list-none">{{T "mail.domain.del"}}</summary>
+        <form method="post" action="/sites/{{$site.Name}}/email/domain/delete" class="absolute right-0 z-10 mt-2 w-72 rounded-lg border border-border bg-card p-4 text-left shadow-lg">
+          <input type="hidden" name="csrf" value="{{$.CSRF}}">
+          <input type="hidden" name="domain" value="{{$d.Name}}">
+          <p class="alert-warn">{{T "mail.domain.delw"}}</p>
+          <label class="mt-3 flex cursor-pointer items-start gap-3"><input type="checkbox" name="purge" value="1" class="mt-1 size-4 accent-primary"><span class="text-sm">{{T "mail.purge"}}</span></label>
+          <div class="mt-3"><button class="btn-secondary w-full">{{T "mail.domain.del"}}</button></div>
+        </form>
+      </details>
+      {{end}}
+    </div>
+  </div>
+
+  {{if and $d.On $d.Records}}
+  <details class="mt-4">
+    <summary class="cursor-pointer text-sm font-medium text-primary">{{T "mail.dns"}}</summary>
+    <div class="table-wrap mt-3">
+      <table class="tbl">
+        <thead><tr><th>{{T "mail.dns.type"}}</th><th>{{T "mail.dns.name"}}</th><th>{{T "mail.dns.value"}}</th></tr></thead>
+        <tbody>{{range $d.Records}}<tr><td class="align-top font-mono text-[13px]">{{.Type}}</td><td class="align-top font-mono text-[13px] break-all">{{.Name}}</td><td class="align-top font-mono text-[12px] break-all">{{.Value}}</td></tr>{{end}}</tbody>
+      </table>
+    </div>
+    <p class="hint">{{T "mail.dns.note" $sm.Host (or $sm.ServerIP "—")}}</p>
+  </details>
+  {{end}}
+
+  {{if $d.On}}
+  {{/* Mailboxes for this domain */}}
+  <div class="mt-5">
+    <h3 class="text-sm font-semibold">{{T "mail.boxes"}}</h3>
+    <form method="post" action="/sites/{{$site.Name}}/email/box/add" class="mt-3 flex flex-wrap items-end gap-3" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="domain" value="{{$d.Name}}">
+      <div class="min-w-48 flex-1">
+        <label for="box-local-{{$d.Name}}" class="label">{{T "mail.box.local"}}</label>
+        <div class="flex items-center gap-1.5">
+          <input id="box-local-{{$d.Name}}" name="local" class="field font-mono" maxlength="64" placeholder="ten" spellcheck="false" autocapitalize="none" required>
+          <span class="shrink-0 text-muted-foreground text-sm">@{{$d.Name}}</span>
+        </div>
+      </div>
+      <div class="min-w-40 flex-1">
+        <label for="box-pass-{{$d.Name}}" class="label">{{T "mail.box.pass"}}</label>
+        <input id="box-pass-{{$d.Name}}" name="password" type="password" class="field" minlength="10" maxlength="128" autocomplete="new-password" required>
+      </div>
+      <div class="w-28">
+        <label for="box-quota-{{$d.Name}}" class="label">{{T "mail.box.quota"}} (MB)</label>
+        <input id="box-quota-{{$d.Name}}" name="quota" type="number" min="0" max="102400" class="field" placeholder="0">
+      </div>
+      <button class="btn-primary shrink-0">{{T "mail.box.add"}}</button>
+    </form>
+    {{if $d.Mailboxes}}
+    <div class="table-wrap mt-3">
+      <table class="tbl">
+        <thead><tr><th>{{T "mail.box.addr"}}</th><th>{{T "mail.box.size"}}</th><th></th></tr></thead>
+        <tbody>
+        {{range $d.Mailboxes}}<tr>
+          <td class="align-top font-mono text-[13px] break-all">{{.Address}}</td>
+          <td class="align-top whitespace-nowrap tabular-nums">{{if .QuotaMB}}{{.QuotaMB}} MB{{else}}{{T "mail.box.nolimit"}}{{end}}</td>
+          <td class="align-top">
+            <div class="flex flex-wrap items-start justify-end gap-x-3 gap-y-2">
+              <details class="relative"><summary class="link cursor-pointer list-none text-sm">{{T "mail.box.change"}}</summary>
+                <form method="post" action="/sites/{{$site.Name}}/email/box/passwd" class="absolute right-0 z-10 mt-2 w-72 rounded-lg border border-border bg-card p-3 text-left shadow-lg" autocomplete="off">
+                  <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                  <label class="label">{{T "mail.box.newpass"}}</label>
+                  <input name="password" type="password" class="field" minlength="10" maxlength="128" autocomplete="new-password" required>
+                  <button class="btn-secondary mt-3 w-full">{{T "mail.box.change"}}</button>
+                </form>
+              </details>
+              <details class="relative"><summary class="link cursor-pointer list-none text-sm">{{T "mail.box.setsize"}}</summary>
+                <form method="post" action="/sites/{{$site.Name}}/email/box/quota" class="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-border bg-card p-3 text-left shadow-lg">
+                  <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                  <label class="label">{{T "mail.box.quota"}}</label>
+                  <input name="quota" type="number" min="0" max="102400" class="field" value="{{.QuotaMB}}">
+                  <button class="btn-secondary mt-3 w-full">{{T "mail.box.setsize"}}</button>
+                </form>
+              </details>
+              <details class="relative"><summary class="link-danger cursor-pointer list-none text-sm">{{T "mail.box.del"}}</summary>
+                <form method="post" action="/sites/{{$site.Name}}/email/box/delete" class="absolute right-0 z-10 mt-2 w-64 rounded-lg border border-border bg-card p-3 text-left shadow-lg">
+                  <input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="address" value="{{.Address}}">
+                  <label class="flex cursor-pointer items-start gap-3"><input type="checkbox" name="purge" value="1" class="mt-1 size-4 accent-primary"><span class="text-sm">{{T "mail.purge"}}</span></label>
+                  <button class="btn-secondary mt-3 w-full">{{T "mail.box.del"}}</button>
+                </form>
+              </details>
+            </div>
+          </td>
+        </tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">{{T "mail.box.imap" $sm.Host}}</p>
+    {{else}}<p class="hint mt-3">{{T "mail.box.none"}}</p>{{end}}
+  </div>
+
+  {{/* Aliases for this domain */}}
+  <div class="mt-5 border-t border-border pt-5">
+    <h3 class="text-sm font-semibold">{{T "mail.aliases"}}</h3>
+    <form method="post" action="/sites/{{$site.Name}}/email/alias/set" class="mt-3 grid gap-3 lg:grid-cols-2" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="domain" value="{{$d.Name}}">
+      <div>
+        <label for="alias-local-{{$d.Name}}" class="label">{{T "mail.alias.name"}}</label>
+        <div class="flex items-center gap-1.5">
+          <input id="alias-local-{{$d.Name}}" name="local" class="field font-mono" maxlength="64" placeholder="info" spellcheck="false" autocapitalize="none" required>
+          <span class="shrink-0 text-muted-foreground text-sm">@{{$d.Name}}</span>
+        </div>
+      </div>
+      <div>
+        <label for="alias-to-{{$d.Name}}" class="label">{{T "mail.alias.to"}}</label>
+        <textarea id="alias-to-{{$d.Name}}" name="targets" rows="3" class="field font-mono" spellcheck="false" autocapitalize="none" required></textarea>
+      </div>
+      <div class="lg:col-span-2"><button class="btn-primary">{{T "mail.alias.save"}}</button></div>
+    </form>
+    {{if $d.Aliases}}
+    <div class="table-wrap mt-3">
+      <table class="tbl">
+        <thead><tr><th>{{T "mail.alias.addr"}}</th><th>{{T "mail.alias.dest"}}</th><th></th></tr></thead>
+        <tbody>
+        {{range $d.Aliases}}<tr>
+          <td class="align-top font-mono text-[13px] break-all">{{.Address}}</td>
+          <td class="align-top font-mono text-[13px] break-all">{{range $i, $t := .Targets}}{{if $i}}<br>{{end}}{{$t}}{{end}}</td>
+          <td class="align-top text-right">
+            <form method="post" action="/sites/{{$site.Name}}/email/alias/delete">
+              <input type="hidden" name="csrf" value="{{$.CSRF}}">
+              <input type="hidden" name="address" value="{{.Address}}">
+              <button class="link-danger text-sm">{{T "mail.alias.del"}}</button>
+            </form>
+          </td>
+        </tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}<p class="hint mt-3">{{T "mail.alias.none"}}</p>{{end}}
+  </div>
+  {{end}}{{/* if $d.On */}}
+</section>
+{{end}}{{/* range $sm.Domains */}}
+{{end}}{{/* if not $sm.Domains */}}
+{{end}}{{/* if not $sm.ServerOn */}}
+{{end}}

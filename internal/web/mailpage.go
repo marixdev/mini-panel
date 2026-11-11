@@ -119,7 +119,7 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 // mailAction runs one operation and shows the result, with the sentence that says what a known failure means.
 func (s *Server) mailAction(w http.ResponseWriter, r *http.Request, title string, req ctl.Request) {
 	res := s.run(T(title), req)
-	res.Back = "/email"
+	res.Back = mailBackOf(r)
 	if !res.OK {
 		switch {
 		case strings.Contains(res.Output, "mail-conflict"):
@@ -141,14 +141,14 @@ func (s *Server) mailAction(w http.ResponseWriter, r *http.Request, title string
 	s.finish(w, r, res)
 }
 
-func (s *Server) mailRefuse(w http.ResponseWriter, ss webauth.Session, msg string) {
-	s.refuseTo(w, ss, "/email", T("mail.fail"), msg)
+func (s *Server) mailRefuse(w http.ResponseWriter, r *http.Request, ss webauth.Session, msg string) {
+	s.refuseTo(w, ss, mailBackOf(r), T("mail.fail"), msg)
 }
 
 func (s *Server) mailEnable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	host := strings.ToLower(strings.TrimSpace(r.PostFormValue("host")))
 	if err := mail.ValidDomain(host); err != nil {
-		s.mailRefuse(w, ss, T("mail.err.host"))
+		s.mailRefuse(w, r, ss, T("mail.err.host"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.enable", ctl.Request{Op: "mail.enable", MailHost: host})
@@ -169,7 +169,7 @@ func (s *Server) mailDisable(w http.ResponseWriter, r *http.Request, ss webauth.
 func (s *Server) mailDomainAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	d := strings.ToLower(strings.TrimSpace(r.PostFormValue("domain")))
 	if err := mail.ValidDomain(d); err != nil {
-		s.mailRefuse(w, ss, T("mail.err.domain"))
+		s.mailRefuse(w, r, ss, T("mail.err.domain"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.domainadd", ctl.Request{Op: "mail.domainadd", MailDomain: d})
@@ -178,7 +178,7 @@ func (s *Server) mailDomainAdd(w http.ResponseWriter, r *http.Request, ss webaut
 func (s *Server) mailDomainDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	d := strings.TrimSpace(r.PostFormValue("domain"))
 	if err := mail.ValidDomain(d); err != nil {
-		s.mailRefuse(w, ss, T("mail.err.domain"))
+		s.mailRefuse(w, r, ss, T("mail.err.domain"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.domaindel", ctl.Request{Op: "mail.domaindel", MailDomain: d, Purge: r.PostFormValue("purge") == "1"})
@@ -207,17 +207,17 @@ func quota(r *http.Request) (int, bool) {
 func (s *Server) mailBoxAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	pw := r.PostFormValue("password")
 	if mail.ValidPassword(pw) != nil {
-		s.mailRefuse(w, ss, T("mail.err.password"))
+		s.mailRefuse(w, r, ss, T("mail.err.password"))
 		return
 	}
 	q, ok := quota(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.quota"))
+		s.mailRefuse(w, r, ss, T("mail.err.quota"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.boxadd", ctl.Request{Op: "mail.boxadd", MailAddress: a, MailPassword: pw, MailQuota: q})
@@ -226,12 +226,12 @@ func (s *Server) mailBoxAdd(w http.ResponseWriter, r *http.Request, ss webauth.S
 func (s *Server) mailBoxPasswd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	pw := r.PostFormValue("password")
 	if mail.ValidPassword(pw) != nil {
-		s.mailRefuse(w, ss, T("mail.err.password"))
+		s.mailRefuse(w, r, ss, T("mail.err.password"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.boxpasswd", ctl.Request{Op: "mail.boxpasswd", MailAddress: a, MailPassword: pw})
@@ -240,12 +240,12 @@ func (s *Server) mailBoxPasswd(w http.ResponseWriter, r *http.Request, ss webaut
 func (s *Server) mailBoxQuota(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	q, ok := quota(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.quota"))
+		s.mailRefuse(w, r, ss, T("mail.err.quota"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.boxquota", ctl.Request{Op: "mail.boxquota", MailAddress: a, MailQuota: q})
@@ -254,7 +254,7 @@ func (s *Server) mailBoxQuota(w http.ResponseWriter, r *http.Request, ss webauth
 func (s *Server) mailBoxDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.boxdel", ctl.Request{Op: "mail.boxdel", MailAddress: a, Purge: r.PostFormValue("purge") == "1"})
@@ -263,17 +263,17 @@ func (s *Server) mailBoxDel(w http.ResponseWriter, r *http.Request, ss webauth.S
 func (s *Server) mailAliasSet(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	targets := strings.FieldsFunc(r.PostFormValue("targets"), func(c rune) bool { return c == '\n' || c == '\r' || c == ',' || c == ' ' || c == '\t' })
 	if len(targets) == 0 || len(targets) > 20 {
-		s.mailRefuse(w, ss, T("mail.err.targets"))
+		s.mailRefuse(w, r, ss, T("mail.err.targets"))
 		return
 	}
 	for _, t := range targets {
 		if _, _, err := mail.SplitAddress(t); err != nil {
-			s.mailRefuse(w, ss, T("mail.err.target", t))
+			s.mailRefuse(w, r, ss, T("mail.err.target", t))
 			return
 		}
 	}
@@ -283,7 +283,7 @@ func (s *Server) mailAliasSet(w http.ResponseWriter, r *http.Request, ss webauth
 func (s *Server) mailAliasDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	a, ok := address(r)
 	if !ok {
-		s.mailRefuse(w, ss, T("mail.err.address"))
+		s.mailRefuse(w, r, ss, T("mail.err.address"))
 		return
 	}
 	s.mailAction(w, r, "act.mail.aliasdel", ctl.Request{Op: "mail.aliasdel", MailAddress: a})

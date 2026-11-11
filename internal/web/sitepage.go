@@ -16,7 +16,7 @@ type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
 func siteMenu(r siteRow) []siteTabLink {
-	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"logs", "/logs"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"email", "/email"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"logs", "/logs"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
 	if r.App == "wordpress" { // the manager comes right after the overview: it is what a WordPress site is mostly used through
 		menu = append([]siteTabLink{menu[0], {"wordpress", "/wordpress"}}, menu[1:]...)
 	}
@@ -24,10 +24,10 @@ func siteMenu(r siteRow) []siteTabLink {
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/logs", "/wordpress"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/logs", "/email", "/wordpress"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/logs": "logs", "/wordpress": "wordpress"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/logs": "logs", "/email": "email", "/wordpress": "wordpress"}[tab])
 		}))
 	}
 	// SSH/SFTP moved into the Overview; the old address still works for bookmarks.
@@ -52,6 +52,21 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/settings", s.auth(s.saveSettings))
 	mux.HandleFunc("POST /sites/{name}/speed", s.auth(s.saveSpeed))
 	mux.HandleFunc("POST /sites/{name}/webmail", s.auth(s.saveWebmail))
+	// The mail of a website, as in cPanel: the same handlers as the Email page, but only for the website's own names, and back to its tab.
+	for path, h := range map[string]func(http.ResponseWriter, *http.Request, webauth.Session){
+		"POST /sites/{name}/email/domain/add":    s.mailDomainAdd,
+		"POST /sites/{name}/email/domain/delete": s.mailDomainDel,
+		"POST /sites/{name}/email/box/add":       s.mailBoxAdd,
+		"POST /sites/{name}/email/box/passwd":    s.mailBoxPasswd,
+		"POST /sites/{name}/email/box/quota":     s.mailBoxQuota,
+		"POST /sites/{name}/email/box/delete":    s.mailBoxDel,
+		"POST /sites/{name}/email/alias/set":     s.mailAliasSet,
+		"POST /sites/{name}/email/alias/delete":  s.mailAliasDel,
+		"GET /sites/{name}/email/cf":             s.cfPage,
+		"POST /sites/{name}/email/cf":            s.cfAdd,
+	} {
+		mux.HandleFunc(path, s.auth(s.siteMailPost(h)))
+	}
 	s.cloudRoutes(mux)
 	s.appRoutes(mux)
 	s.wpRoutes(mux)
@@ -112,6 +127,8 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.Cron = s.loadCron(row)
 	case "logs":
 		v.Log = s.loadLogs(r, row)
+	case "email":
+		v.SM = s.loadSiteMail(row, r.Host)
 	case "databases":
 		v.DBBase = dbadmin.BaseName(row.Name)
 		v.PMA = s.pmaOn()

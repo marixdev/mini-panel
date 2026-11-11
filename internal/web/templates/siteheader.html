@@ -10,6 +10,7 @@
 {{- else if eq . "databases"}}<ellipse cx="10" cy="5.5" rx="6" ry="2.5"/><path d="M4 5.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>
 {{- else if eq . "backups"}}<rect x="2.5" y="4" width="15" height="4" rx="1"/><path d="M4 8v7a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 16 15V8M8 11.5h4"/>
 {{- else if eq . "wordpress"}}<circle cx="10" cy="10" r="7.5"/><path d="M5.5 7.5 8 14l2-5 2 5 2.5-6.5"/>
+{{- else if eq . "email"}}<path d="M3 7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m3 7 7 5 7-5"/>
 {{- end}}</svg>{{end}}
 
 {{/* A small card with a label and a value. Pressing it copies the value: the script in app.js reads data-copy, shows the check mark
