@@ -113,6 +113,15 @@ document.addEventListener('click', function (e) {
     document.getElementById(gen.getAttribute('data-gen-password')).value = randomPassword();
     return;
   }
+  var eye = e.target.closest('[data-toggle-pw]');
+  if (eye) { // the show/hide button of a password field: the field's id is in the attribute
+    var field = document.getElementById(eye.getAttribute('data-toggle-pw'));
+    var show = field.type === 'password';
+    field.type = show ? 'text' : 'password';
+    eye.textContent = eye.getAttribute(show ? 'data-hide' : 'data-show');
+    eye.setAttribute('aria-pressed', show ? 'true' : 'false');
+    return;
+  }
   var toggle = e.target.closest('[data-theme-toggle]');
   if (toggle) {
     var dark = !document.documentElement.classList.contains('dark');
