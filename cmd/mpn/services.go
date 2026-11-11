@@ -33,6 +33,13 @@ func servicesProbe() services.Probe {
 			b, err := os.ReadFile(p)
 			return string(b), err
 		},
+		Series: func(engine string) []string {
+			t, err := thisTarget()
+			if err != nil {
+				return nil
+			}
+			return t.Series(engine)
+		},
 	}
 }
 
@@ -95,7 +102,7 @@ func hostProfile() tune.Profile {
 }
 
 // installPlan returns the plan that adds one thing to a machine that is running: the same step a first install would run for it.
-func installPlan(key string) (installer.Plan, error) {
+func installPlan(key, series string) (installer.Plan, error) {
 	t, err := thisTarget()
 	if err != nil {
 		return nil, err
@@ -111,7 +118,7 @@ func installPlan(key string) (installer.Plan, error) {
 	}
 	switch key {
 	case "mariadb", "mysql":
-		return installer.DatabasePlan(installer.Options{Target: t, Profile: hostProfile(), Engine: key, PHPVersions: site.InstalledPHP("/usr/sbin")})
+		return installer.DatabasePlan(installer.Options{Target: t, Profile: hostProfile(), Engine: key, DBSeries: series, PHPVersions: site.InstalledPHP("/usr/sbin")})
 	case services.PhpMyAdmin:
 		l := lockedPorts()
 		if len(l.Panel) == 0 {
@@ -141,6 +148,7 @@ func runServices(args []string) {
 	fs := flag.NewFlagSet("services "+sub, flag.ExitOnError)
 	asJSON := fs.Bool("json", false, "status: print JSON")
 	key := fs.String("key", "", "the service")
+	series := fs.String("series", "", "install of mariadb or mysql: the version, such as 11.8 or 8.4; empty means the default")
 	action := fs.String("action", "", "control: start, stop, restart or reload")
 	apply := fs.Bool("apply", false, "change this machine (Linux, root); otherwise only check")
 	_ = fs.Parse(args[1:])
@@ -173,7 +181,13 @@ func runServices(args []string) {
 		if alreadyInstalled(*key) {
 			fail(fmt.Errorf("%s is already installed", *key))
 		}
-		plan, err := installPlan(*key)
+		if *series != "" {
+			fail(services.ValidSeries(*series))
+			if *key != "mariadb" && *key != "mysql" {
+				fail(fmt.Errorf("-series applies only to mariadb and mysql"))
+			}
+		}
+		plan, err := installPlan(*key, *series)
 		fail(err)
 		if !*apply {
 			fmt.Print(plan)

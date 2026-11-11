@@ -111,6 +111,8 @@ type Request struct {
 	// services.control and services.install: a service of the fixed list in internal/services, and what to do to it.
 	SvcKey    string `json:"svc_key,omitempty"`
 	SvcAction string `json:"svc_action,omitempty"`
+	// services.install of mariadb or mysql: the version to install, such as "11.8"; empty means the default of the engine.
+	DBSeries string `json:"db_series,omitempty"`
 	// mail.cfadd: the API token of Cloudflare, made for the zone of MailDomain. It reaches mpn on standard input only and is not stored.
 	CFToken string `json:"cf_token,omitempty"`
 }
@@ -260,7 +262,17 @@ func (r Request) Argv() ([]string, error) {
 		if err := services.ValidInstall(r.SvcKey); err != nil {
 			return nil, err
 		}
-		return []string{"services", "install", "-key=" + r.SvcKey, "-apply"}, nil
+		args := []string{"services", "install", "-key=" + r.SvcKey, "-apply"}
+		if r.DBSeries != "" {
+			if r.SvcKey != "mariadb" && r.SvcKey != "mysql" {
+				return nil, fmt.Errorf("only a database server has a version to choose")
+			}
+			if err := services.ValidSeries(r.DBSeries); err != nil {
+				return nil, err
+			}
+			args = append(args, "-series="+r.DBSeries)
+		}
+		return args, nil
 	case "site.domain":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err

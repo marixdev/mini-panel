@@ -41,7 +41,13 @@
                 {{end}}
               {{end}}
             {{else if .Installable}}
-              <form method="post" action="/services/{{.Key}}/install" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-primary px-3 py-1.5">{{T "svc.btn.install"}}</button></form>
+              <form method="post" action="/services/{{.Key}}/install" class="inline-flex items-center gap-2"><input type="hidden" name="csrf" value="{{$.CSRF}}">
+                {{if .Series}}{{$def := .DefaultSeries}}<label class="sr-only" for="series-{{.Key}}">{{T "svc.series.label"}} {{.Label}}</label>
+                <select id="series-{{.Key}}" name="series" class="field w-auto py-1.5 pr-8 text-sm">
+                  {{range .Series}}<option value="{{.}}"{{if eq . $def}} selected{{end}}>{{.}}{{if eq . $def}} {{T "svc.series.default"}}{{end}}</option>{{end}}
+                </select>{{end}}
+                <button class="btn-primary px-3 py-1.5">{{T "svc.btn.install"}}</button>
+              </form>
             {{else if .Link}}
               <a class="btn-sm" href="{{.Link}}">{{T "svc.btn.setup"}}</a>
             {{else if .Needs}}

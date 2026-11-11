@@ -116,6 +116,9 @@ func nginxInstallActions(t osinfo.Target) []Action {
 		aptUpdate(),
 		aptInstall("nginx=" + NginxVersion + "-1~" + t.Codename),
 		Run("apt-mark", "hold", "nginx"),
+		// The modules of the panel load only into this exact build, so any other nginx stops the install here, not later when a module
+		// fails to load.
+		Run("sh", "-c", `v=$(nginx -v 2>&1); case "$v" in *nginx/`+NginxVersion+`*) ;; *) echo "nginx `+NginxVersion+` was expected, this machine has: $v" >&2; exit 1;; esac`),
 		// The panel's nginx.conf includes both folders, which this package does not make.
 		Run("install", "-d", "-m", "0755", nginxModulesEnabled, "/etc/nginx/sites-enabled"),
 		Run("rm", "-f", "/etc/nginx/conf.d/default.conf"),

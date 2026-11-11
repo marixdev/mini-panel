@@ -5,11 +5,13 @@ package services
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
 	"mpn/internal/installer"
 	"mpn/internal/monitor"
+	"mpn/internal/osinfo"
 	"mpn/internal/site"
 )
 
@@ -151,6 +153,21 @@ type Item struct {
 	Version     string   `json:"version,omitempty"`
 	Needs       string   `json:"needs,omitempty"` // what is missing for an install: "panel", "database" or "legacyauth"
 	Link        string   `json:"link,omitempty"`  // the page that sets this program up
+	// Series are the versions of a database server this machine's release can install, oldest first, and DefaultSeries the one chosen when
+	// none is asked for. Only the rows that install MariaDB or MySQL have them.
+	Series        []string `json:"series,omitempty"`
+	DefaultSeries string   `json:"default_series,omitempty"`
+}
+
+var seriesRe = regexp.MustCompile(`^[0-9]{1,2}\.[0-9]{1,2}$`)
+
+// ValidSeries reports whether s has the shape of a database version such as "11.8". Whether this release offers it is decided where the
+// plan is made, which knows the release.
+func ValidSeries(s string) error {
+	if !seriesRe.MatchString(s) {
+		return fmt.Errorf("database version %q must look like 11.8", s)
+	}
+	return nil
 }
 
 // Probe is what Status asks of the machine, so a test can answer without one.
@@ -159,6 +176,7 @@ type Probe struct {
 	Node     []string // the installed Node.js major versions
 	Exists   func(path string) bool
 	ReadFile func(path string) (string, error)
+	Series   func(engine string) []string // the versions of "mariadb" or "mysql" this release offers; nil leaves the choice out
 }
 
 // panelConf is the file the panel's nginx block is written to; it is there on every machine the panel was installed on.
@@ -195,9 +213,13 @@ func Status(p Probe) []Item {
 		}
 	}
 	if dbID == "" { // the only time a database server is offered: with one on the machine there is nothing to choose
-		out = append(out,
-			Item{Key: "mariadb", Label: "MariaDB", Group: GroupDatabase, Installable: true},
-			Item{Key: "mysql", Label: "MySQL", Group: GroupDatabase, Installable: true})
+		for _, e := range []struct{ key, label string }{{"mariadb", "MariaDB"}, {"mysql", "MySQL"}} {
+			it := Item{Key: e.key, Label: e.label, Group: GroupDatabase, Installable: true}
+			if p.Series != nil {
+				it.Series, it.DefaultSeries = p.Series(e.key), osinfo.DefaultSeries(e.key)
+			}
+			out = append(out, it)
+		}
 	}
 	for _, v := range slices.Backward(site.PHPVersions) {
 		it := Item{Key: PHPKey(v), Label: "PHP-FPM " + v, Group: GroupPHP}
