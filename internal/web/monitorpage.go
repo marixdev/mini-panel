@@ -67,8 +67,12 @@ func level(pct float64) string {
 	}
 	return "ok"
 }
+func humanDuration(d time.
+	Duration) string {
+	return humanDurationText(T, d)
+}
 
-func humanDuration(d time.Duration) string {
+func humanDurationText(T translator, d time.Duration) string {
 	days, hours, mins := int(d.Hours())/24, int(d.Hours())%24, int(d.Minutes())%60
 	switch {
 	case days > 0:
@@ -80,6 +84,7 @@ func humanDuration(d time.Duration) string {
 }
 
 func (s *Server) monitorPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := &monView{}
 	chosen := monRanges[0]
 	for _, mr := range monRanges {
@@ -101,7 +106,7 @@ func (s *Server) monitorPage(w http.ResponseWriter, r *http.Request, ss webauth.
 	from := to.Add(-chosen.D)
 	raw := s.Mon.Since(from)
 	v.Machine = s.Mon.Machine()
-	v.Uptime = humanDuration(s.Mon.Uptime())
+	v.Uptime = humanDurationText(T, s.Mon.Uptime())
 	if last, ok := s.Mon.Latest(); ok {
 		v.Now = last
 		v.CPULevel = level(last.CPU)

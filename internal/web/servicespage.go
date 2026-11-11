@@ -31,9 +31,10 @@ func (s *Server) servicesPages(mux *http.ServeMux) {
 }
 
 func (s *Server) servicesPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := &svcView{}
 	var items []services.Item
-	v.Error = s.list(ctl.Request{Op: "services.status"}, &items)
+	v.Error = s.listText(T, ctl.Request{Op: "services.status"}, &items)
 	for _, g := range svcOrder {
 		grp := svcGroup{Key: g}
 		for _, it := range items {
@@ -49,6 +50,7 @@ func (s *Server) servicesPage(w http.ResponseWriter, r *http.Request, ss webauth
 }
 
 func (s *Server) serviceStopConfirm(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	key := r.PathValue("key")
 	if services.ValidAction(key, services.Stop) != nil {
 		http.NotFound(w, r)
@@ -61,6 +63,7 @@ func (s *Server) serviceStopConfirm(w http.ResponseWriter, r *http.Request, ss w
 // serviceAct installs a service, or starts, stops, restarts or reloads one. The key and the action are checked against the fixed list
 // before anything is sent to the helper, which checks them again.
 func (s *Server) serviceAct(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	key, action := r.PathValue("key"), r.PathValue("action")
 	var req ctl.Request
 	var title string
@@ -82,7 +85,7 @@ func (s *Server) serviceAct(w http.ResponseWriter, r *http.Request, ss webauth.S
 		s.refuseTo(w, ss, "/services", T("err.nothing"), T("svc.err.unknown"))
 		return
 	}
-	res := s.run(title, req)
+	res := s.runText(T, title, req)
 	res.Back = "/services"
 	s.finish(w, r, res)
 }

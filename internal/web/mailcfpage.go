@@ -30,6 +30,10 @@ type cfCache struct {
 }
 
 func (s *Server) cloudflareOf(domain string) bool {
+	return s.cloudflareOfText(T, domain)
+}
+
+func (s *Server) cloudflareOfText(T translator, domain string) bool {
 	s.cf.mu.Lock()
 	e, ok := s.cf.m[domain]
 	s.cf.mu.Unlock()
@@ -39,7 +43,7 @@ func (s *Server) cloudflareOf(domain string) bool {
 	var d struct {
 		Cloudflare bool `json:"cloudflare"`
 	}
-	if msg := s.list(ctl.Request{Op: "mail.cfdetect", MailDomain: domain}, &d); msg != "" {
+	if msg := s.listText(T, ctl.Request{Op: "mail.cfdetect", MailDomain: domain}, &d); msg != "" {
 		return false // a lookup that failed is not remembered: the next visit asks again
 	}
 	s.cf.mu.Lock()
@@ -50,9 +54,12 @@ func (s *Server) cloudflareOf(domain string) bool {
 	s.cf.mu.Unlock()
 	return d.Cloudflare
 }
+func (s *Server) markCloudflare(v *mailView) {
+	s.markCloudflareText(T, v)
+}
 
 // markCloudflare asks about every domain at once.
-func (s *Server) markCloudflare(v *mailView) {
+func (s *Server) markCloudflareText(T translator, v *mailView) {
 	if !v.On {
 		return
 	}
@@ -61,7 +68,7 @@ func (s *Server) markCloudflare(v *mailView) {
 		wg.Add(1)
 		go func(d *mailDomainRow) {
 			defer wg.Done()
-			d.Cloudflare = s.cloudflareOf(d.Name)
+			d.Cloudflare = s.cloudflareOfText(T, d.Name)
 		}(&v.Domains[i])
 	}
 	wg.Wait()
@@ -84,12 +91,13 @@ func (s *Server) mailCFPages(mux *http.ServeMux) {
 // cfFor finds the domain among those the mail server has. Nothing else is accepted, so the name in the address is never passed on
 // unchecked.
 func (s *Server) cfFor(domain string, r *http.Request) (*cfView, string) {
+	T := translatorForRequest(r)
 	domain = strings.ToLower(strings.TrimSpace(domain))
 	if err := mail.ValidDomain(domain); err != nil {
 		return nil, T("mail.err.domain")
 	}
 	st := &mailView{}
-	if msg := s.list(ctl.Request{Op: "mail.status"}, st); msg != "" {
+	if msg := s.listText(T, ctl.Request{Op: "mail.status"}, st); msg != "" {
 		return nil, msg
 	}
 	for _, d := range st.Domains {
@@ -121,8 +129,12 @@ type cfReport struct {
 	} `json:"results"`
 }
 
-// cfLines says the report in words, one record to a line, and whether any record met a different one that was left alone.
 func cfLines(rep cfReport) (text string, conflict bool) {
+	return cfLinesText(T, rep)
+}
+
+// cfLines says the report in words, one record to a line, and whether any record met a different one that was left alone.
+func cfLinesText(T translator, rep cfReport) (text string, conflict bool) {
 	var b strings.Builder
 	for _, r := range rep.Results {
 		b.WriteString(T("mail.cf.st."+r.Status) + "  " + r.Type + "  " + r.Name)
@@ -136,6 +148,7 @@ func cfLines(rep cfReport) (text string, conflict bool) {
 }
 
 func (s *Server) cfAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v, msg := s.cfFor(r.PostFormValue("domain"), r)
 	if v == nil {
 		s.mailRefuse(w, r, ss, msg)
@@ -147,12 +160,12 @@ func (s *Server) cfAdd(w http.ResponseWriter, r *http.Request, ss webauth.Sessio
 		s.show(w, http.StatusBadRequest, ss, view{Page: "emailcf", CF: v}) // the token is not put back in the form
 		return
 	}
-	res := s.run(T("act.mail.cf", v.Domain), ctl.Request{Op: "mail.cfadd", MailDomain: v.Domain, CFToken: token})
+	res := s.runText(T, T("act.mail.cf", v.Domain), ctl.Request{Op: "mail.cfadd", MailDomain: v.Domain, CFToken: token})
 	res.Back = "/email"
 	if res.OK {
 		var rep cfReport
 		if json.Unmarshal([]byte(res.Output), &rep) == nil {
-			text, conflict := cfLines(rep)
+			text, conflict := cfLinesText(T, rep)
 			res.Output = T("mail.cf.zone", rep.Zone) + "\n\n" + text
 			if rep.HostIP == "" {
 				res.Output += "\n\n" + T("mail.cf.nohostip", v.Host)

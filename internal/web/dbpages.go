@@ -13,9 +13,13 @@ import (
 // dbRow is one line of `mpn db list -json`.
 type dbRow struct{ Name, Site string }
 
-// list asks the helper for a JSON list and decodes it into dst. It returns the text of the problem, or "".
 func (s *Server) list(req ctl.Request, dst any) string {
-	resp, err := s.ask(req)
+	return s.listText(T, req, dst)
+}
+
+// list asks the helper for a JSON list and decodes it into dst. It returns the text of the problem, or "".
+func (s *Server) listText(T translator, req ctl.Request, dst any) string {
+	resp, err := s.askText(T, req)
 	switch {
 	case err != nil:
 		return T("err.helper", err.Error())
@@ -38,15 +42,16 @@ func (s *Server) dbPages(mux *http.ServeMux) {
 }
 
 func (s *Server) addDB(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	site := r.PostFormValue("site")
 	back := safeBack(r.PostFormValue("back"), siteTab(site, "databases"))
-	name, problem := dbNameFor(site, r.PostFormValue("name"))
+	name, problem := dbNameForText(T, site, r.PostFormValue("name"))
 	if problem != "" {
 		// Said here, in Vietnamese, before the helper is asked: its own message is for the command line.
 		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("act.db.add", site), Error: problem, Back: back}})
 		return
 	}
-	res := s.run(T("act.db.add", site), ctl.Request{Op: "db.add", Site: site, Name: name})
+	res := s.runText(T, T("act.db.add", site), ctl.Request{Op: "db.add", Site: site, Name: name})
 	res.Back = back
 	if !res.OK && (strings.Contains(res.Output, "already taken") || strings.Contains(res.Output, "already exists on the server")) {
 		shown := name
@@ -57,12 +62,16 @@ func (s *Server) addDB(w http.ResponseWriter, r *http.Request, ss webauth.Sessio
 	}
 	s.finish(w, r, res)
 }
+func dbNameFor(site, typed string) (name,
+	problem string) {
+	return dbNameForText(T, site, typed)
+}
 
 // dbNameFor turns what was typed into the name sent to the helper. Nothing typed means the helper picks the default
 // (the site name with "-" as "_"). A name that already starts the right way is kept; anything else is taken as the end of
 // the name, so typing "shop" for the site "blog" gives "blog_shop". Capitals become small letters and "-" becomes "_",
 // because the person is not expected to know the rules of the database server.
-func dbNameFor(site, typed string) (name, problem string) {
+func dbNameForText(T translator, site, typed string) (name, problem string) {
 	typed = strings.ReplaceAll(strings.ToLower(strings.TrimSpace(typed)), "-", "_")
 	if typed == "" {
 		return "", ""
@@ -93,6 +102,7 @@ var dbActions = map[string]struct{ title, warning, button string }{
 func (s *Server) dbConfirm(action string) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	a := dbActions[action]
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+		T := translatorForWriter(w)
 		name := r.URL.Query().Get("name")
 		if !dbadmin.ValidName(name) {
 			http.Error(w, T("err.baddb"), http.StatusBadRequest)
@@ -107,13 +117,14 @@ func (s *Server) dbConfirm(action string) func(http.ResponseWriter, *http.Reques
 func (s *Server) dbAct(action string) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	a := dbActions[action]
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+		T := translatorForWriter(w)
 		name := r.PostFormValue("name")
 		back := safeBack(r.PostFormValue("back"), "/")
 		if !dbadmin.ValidName(name) || r.PostFormValue("confirm") != name {
 			s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("err.nothing"), Error: T("err.confirm"), Back: back}})
 			return
 		}
-		res := s.run(T(a.title, name), ctl.Request{Op: "db." + action, Name: name})
+		res := s.runText(T, T(a.title, name), ctl.Request{Op: "db." + action, Name: name})
 		res.Back = back
 		s.finish(w, r, res)
 	}

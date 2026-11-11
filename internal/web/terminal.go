@@ -41,7 +41,8 @@ func (s *Server) terminalPages(mux *http.ServeMux) {
 }
 
 func (s *Server) terminalPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -78,7 +79,8 @@ func (s *Server) termLog(event string, row siteRow, err error) {
 // own page three ways: the session cookie, the one-time form token in the address, and the Origin that the WebSocket
 // library compares with the Host. Nothing that is typed or shown is kept.
 func (s *Server) terminalSocket(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -113,10 +115,14 @@ func (s *Server) terminalSocket(w http.ResponseWriter, r *http.Request, ss webau
 	}
 	defer conn.CloseNow()
 	conn.SetReadLimit(64 << 10)
-	s.runTerminal(r.Context(), conn, row, cols, rows)
+	s.runTerminalText(T, r.Context(), conn, row, cols, rows)
+}
+func (s *Server) runTerminal(parent context.Context, conn *websocket.Conn,
+	row siteRow, cols, rows int) {
+	s.runTerminalText(T, parent, conn, row, cols, rows)
 }
 
-func (s *Server) runTerminal(parent context.Context, conn *websocket.Conn, row siteRow, cols, rows int) {
+func (s *Server) runTerminalText(T translator, parent context.Context, conn *websocket.Conn, row siteRow, cols, rows int) {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 	// Every normal ending goes through end, which sends a close frame and waits for the browser's answer. Cancelling the

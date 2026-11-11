@@ -77,15 +77,18 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/ssh/disable", s.auth(s.sshAct("disable")))
 	mux.HandleFunc("POST /sites/{name}/ssh/panelkey", s.auth(s.sshPanelKey))
 }
+func (s *Server) findSite(name string) (siteRow, int, string) {
+	return s.findSiteText(T, name)
+}
 
 // findSite looks the site up in the helper's list. The name in the address is checked first, so only a valid name is
 // ever sent on.
-func (s *Server) findSite(name string) (siteRow, int, string) {
+func (s *Server) findSiteText(T translator, name string) (siteRow, int, string) {
 	if !site.ValidName(name) {
 		return siteRow{}, http.StatusNotFound, T("err.nosite")
 	}
 	var rows []siteRow
-	if e := s.list(ctl.Request{Op: "site.list"}, &rows); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "site.list"}, &rows); e != "" {
 		return siteRow{}, http.StatusBadGateway, e
 	}
 	for _, row := range rows {
@@ -104,7 +107,8 @@ func (s *Server) passwdFile() string {
 }
 
 func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Session, tab string) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -114,28 +118,28 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	case "overview":
 		v.Dom = newDomainView(row)
 		var e string
-		if v.Over, e = s.loadOverview(row); e != "" {
+		if v.Over, e = s.loadOverviewText(T, row); e != "" {
 			v.Error = e
 		}
 		s.loadSSH(&v, r, row)
 		v.Apps, v.Locales = appOptions(), apps.Locales
 	case "ssl":
-		v.SSL = s.loadSSL(row, v.ServerIP)
+		v.SSL = s.loadSSLText(T, row, v.ServerIP)
 	case "vhost":
-		v.VH = s.loadVhost(row)
+		v.VH = s.loadVhostText(T, row)
 	case "cron":
-		v.Cron = s.loadCron(row)
+		v.Cron = s.loadCronText(T, row)
 	case "logs":
 		v.Log = s.loadLogs(r, row)
 	case "email":
-		v.SM = s.loadSiteMail(row, r.Host)
+		v.SM = s.loadSiteMailText(T, row, r.Host)
 	case "databases":
 		v.DBBase = dbadmin.BaseName(row.Name)
 		v.PMA = s.pmaOn()
-		v.Error = s.list(ctl.Request{Op: "db.list", Site: row.Name}, &v.DBs)
+		v.Error = s.listText(T, ctl.Request{Op: "db.list", Site: row.Name}, &v.DBs)
 	case "backups":
-		v.Error = s.list(ctl.Request{Op: "backup.list", Site: row.Name}, &v.Backups)
-		v.Cloud = s.loadCloud(row.Name)
+		v.Error = s.listText(T, ctl.Request{Op: "backup.list", Site: row.Name}, &v.Backups)
+		v.Cloud = s.loadCloudText(T, row.Name)
 	case "wordpress":
 		if row.App != "wordpress" {
 			http.NotFound(w, r)
@@ -161,7 +165,8 @@ func (s *Server) loadSSH(v *view, r *http.Request, row siteRow) {
 
 // loginResult runs the helper and, if it worked, adds the account and the new password to what the page shows once.
 func (s *Server) loginResult(r *http.Request, title string, row siteRow, password string) *result {
-	res := s.run(title, ctl.Request{Op: "site.access", Site: row.Name, Enable: true, Password: password})
+	T := translatorForRequest(r)
+	res := s.runText(T, title, ctl.Request{Op: "site.access", Site: row.Name, Enable: true, Password: password})
 	res.Back = siteTab(row.Name, "")
 	if res.OK {
 		res.Output += "\n\n" + T("res.access", hostOnly(r.Host), row.User, password)
@@ -170,7 +175,8 @@ func (s *Server) loginResult(r *http.Request, title string, row siteRow, passwor
 }
 
 func (s *Server) sshEnable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -191,7 +197,8 @@ var sshActions = map[string]struct{ title, warn, button, act string }{
 func (s *Server) sshConfirm(action string) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	a := sshActions[action]
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-		row, status, msg := s.findSite(r.PathValue("name"))
+		T := translatorForWriter(w)
+		row, status, msg := s.findSiteText(T, r.PathValue("name"))
 		if status != 0 {
 			http.Error(w, msg, status)
 			return
@@ -204,7 +211,8 @@ func (s *Server) sshConfirm(action string) func(http.ResponseWriter, *http.Reque
 func (s *Server) sshAct(action string) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	a := sshActions[action]
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-		row, status, msg := s.findSite(r.PathValue("name"))
+		T := translatorForWriter(w)
+		row, status, msg := s.findSiteText(T, r.PathValue("name"))
 		if status != 0 {
 			http.Error(w, msg, status)
 			return
@@ -214,7 +222,7 @@ func (s *Server) sshAct(action string) func(http.ResponseWriter, *http.Request, 
 			return
 		}
 		if action == "disable" {
-			res := s.run(T(a.act, row.Name), ctl.Request{Op: "site.access", Site: row.Name})
+			res := s.runText(T, T(a.act, row.Name), ctl.Request{Op: "site.access", Site: row.Name})
 			res.Back = siteTab(row.Name, "")
 			s.finish(w, r, res)
 			return
@@ -229,12 +237,13 @@ func (s *Server) sshAct(action string) func(http.ResponseWriter, *http.Request, 
 }
 
 func (s *Server) sshPanelKey(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
 	}
-	res := s.run(T("act.ssh.key", row.Name), ctl.Request{Op: "site.panelkey", Site: row.Name})
+	res := s.runText(T, T("act.ssh.key", row.Name), ctl.Request{Op: "site.panelkey", Site: row.Name})
 	res.Back = siteTab(row.Name, "")
 	s.finish(w, r, res)
 }

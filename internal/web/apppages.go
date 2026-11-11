@@ -42,10 +42,13 @@ func readAppForm(r *http.Request) appForm {
 	}
 	return f
 }
+func (f appForm) check(phpVersion string) string {
+	return f.checkText(T, phpVersion)
+}
 
 // check says in words what is wrong with the choice, or returns "". It runs before anything is created, so a form that cannot work leaves
 // nothing behind.
-func (f appForm) check(phpVersion string) string {
+func (f appForm) checkText(T translator, phpVersion string) string {
 	if f.App == "" {
 		return ""
 	}
@@ -72,9 +75,12 @@ func (f appForm) check(phpVersion string) string {
 func (f appForm) request(siteName string) ctl.Request {
 	return ctl.Request{Op: "app.install", Site: siteName, App: f.App, AppTitle: f.Title, AppAdmin: f.Admin, AppEmail: f.Email, AppLocale: f.Locale}
 }
+func appError(out string) string {
+	return appErrorText(T, out)
+}
 
 // appError turns the refusals of the installation into a sentence for the person.
-func appError(out string) string {
+func appErrorText(T translator, out string) string {
 	for _, m := range []struct{ marker, key string }{{"app-notempty", "app.err.notempty"}, {"app-php", "app.err.phpold"}, {"app-installed", "app.err.installed"},
 		{"app-kind", "app.err.kind"}, {"app-db", "app.err.db"}, {"does not match its checksum", "app.err.sum"}} {
 		if strings.Contains(out, m.marker) {
@@ -91,7 +97,8 @@ func (s *Server) appRoutes(mux *http.ServeMux) {
 // appInstall puts an application in a PHP site that has none yet: the way to try again when the installation that follows creating a
 // site failed, and to install one into a site that was made empty.
 func (s *Server) appInstall(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -109,14 +116,14 @@ func (s *Server) appInstall(w http.ResponseWriter, r *http.Request, ss webauth.S
 		s.refuseTo(w, ss, back, T("app.fail"), T("app.err.unknown"))
 		return
 	}
-	if p := f.check(row.PHPVersion()); p != "" {
+	if p := f.checkText(T, row.PHPVersion()); p != "" {
 		s.refuseTo(w, ss, back, T("app.fail"), p)
 		return
 	}
-	res := s.run(T("act.app.install", appLabel(f.App), row.Name), f.request(row.Name))
+	res := s.runText(T, T("act.app.install", appLabel(f.App), row.Name), f.request(row.Name))
 	res.Back = back
 	if !res.OK {
-		if e := appError(res.Output); e != "" {
+		if e := appErrorText(T, res.Output); e != "" {
 			res.Error = e
 		}
 	}

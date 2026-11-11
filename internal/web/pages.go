@@ -56,9 +56,12 @@ func (r siteRow) URL() string {
 	}
 	return scheme + "://" + r.Primary() + "/"
 }
+func (r siteRow) Runtime() string {
+	return r.RuntimeText(T)
+}
 
 // Runtime names what the site runs on in a few words: "PHP 8.4", "Node.js 22", "Python 3.12", or its kind.
-func (r siteRow) Runtime() string {
+func (r siteRow) RuntimeText(T translator) string {
 	f := strings.Fields(r.Detail)
 	switch r.Kind {
 	case "php", "node", "python":
@@ -101,6 +104,10 @@ type confirm struct {
 }
 
 func (s *Server) ask(req ctl.Request) (ctl.Response, error) {
+	return s.askText(T, req)
+}
+
+func (s *Server) askText(T translator, req ctl.Request) (ctl.Response, error) {
 	if s.Call == nil {
 		return ctl.Response{}, errors.New(T("err.nohelper"))
 	}
@@ -109,21 +116,28 @@ func (s *Server) ask(req ctl.Request) (ctl.Response, error) {
 
 var exitStatusRe = regexp.MustCompile(`^exit status \d+$`)
 
+func plainError(e string) string {
+	return plainErrorText(T, e)
+}
+
 // plainError replaces what only a programmer reads ("exit status 2") with a sentence that sends the person to the details,
 // which the page shows right below. Any other error message is kept as it is.
-func plainError(e string) string {
+func plainErrorText(T translator, e string) string {
 	if exitStatusRe.MatchString(strings.TrimSpace(e)) {
 		return T("err.exitstatus")
 	}
 	return e
 }
+func (s *Server) run(title string, reqs ...ctl.Request) *result {
+	return s.runText(T, title, reqs...)
+}
 
 // run sends the requests one after another and stops at the first that fails. The output of all of them is shown.
-func (s *Server) run(title string, reqs ...ctl.Request) *result {
+func (s *Server) runText(T translator, title string, reqs ...ctl.Request) *result {
 	res := &result{Title: title, OK: true}
 	var out []string
 	for _, rq := range reqs {
-		resp, err := s.ask(rq)
+		resp, err := s.askText(T, rq)
 		if t := strings.TrimRight(resp.Output, "\n"); t != "" {
 			out = append(out, t)
 		}
@@ -132,7 +146,7 @@ func (s *Server) run(title string, reqs ...ctl.Request) *result {
 			break
 		}
 		if !resp.OK {
-			res.OK, res.Error = false, plainError(resp.Error)
+			res.OK, res.Error = false, plainErrorText(T, resp.Error)
 			break
 		}
 	}
@@ -154,8 +168,9 @@ func (s *Server) sitePages(mux *http.ServeMux) {
 }
 
 func (s *Server) sitesPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := view{Page: "sites", PHPVersions: site.PHPVersions, NodeVersions: site.NodeVersions}
-	resp, err := s.ask(ctl.Request{Op: "site.list"})
+	resp, err := s.askText(T, ctl.Request{Op: "site.list"})
 	switch {
 	case err != nil:
 		v.Error = T("err.helper", err.Error())
@@ -192,6 +207,7 @@ func (s *Server) installedNode() []string {
 }
 
 func (s *Server) newSitePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := view{Page: "sitenew", Kinds: siteKinds, Reserved: reservedList(), PHPVersions: s.installedPHP(), NodeVersions: s.installedNode(), Apps: appOptions(), Locales: apps.Locales}
 	if k := r.URL.Query().Get("kind"); k != "" {
 		if !slices.Contains(siteKinds, k) {
@@ -228,6 +244,7 @@ func siteNameFrom(host string) string {
 // from the domain unless the form changed it, and the password is random unless one was typed. The account and the
 // password are shown once, on the result page, because this is the only time they are known.
 func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	nothing := func(msg string) { s.refuseTo(w, ss, "/sites/new", T("err.nothing"), msg) }
 	hosts := splitHosts(strings.ToLower(r.PostFormValue("hosts")))
 	if len(hosts) == 0 {
@@ -272,7 +289,7 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	var app appForm
 	if r.PostFormValue("kind") == "php" {
 		app = readAppForm(r)
-		if p := app.check(r.PostFormValue("php")); p != "" {
+		if p := app.checkText(T, r.PostFormValue("php")); p != "" {
 			nothing(p)
 			return
 		}
@@ -292,7 +309,7 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	// A name or an account that another website already holds is refused here, before anything is created, so that no
 	// half-made site is left behind.
 	var rows []siteRow
-	if s.list(ctl.Request{Op: "site.list"}, &rows) == "" {
+	if s.listText(T, ctl.Request{Op: "site.list"}, &rows) == "" {
 		for _, row := range rows {
 			switch {
 			case row.Name == name:
@@ -307,7 +324,7 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 			}
 		}
 	}
-	res := s.run(T("act.site.create", name),
+	res := s.runText(T, T("act.site.create", name),
 		ctl.Request{Op: "site.add", Site: name, User: user, Kind: r.PostFormValue("kind"), Hosts: hosts, PHP: r.PostFormValue("php"),
 			Node: r.PostFormValue("node"), Python: r.PostFormValue("python"), Entry: strings.TrimSpace(r.PostFormValue("entry")), Upstream: strings.TrimSpace(r.PostFormValue("upstream"))},
 		ctl.Request{Op: "site.apply", Site: name},
@@ -322,13 +339,13 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	if app.App != "" {
 		// The website exists and its login is in the output above. The application is installed as a second step, so that a failure
 		// of the download leaves a website the person can use and try again on.
-		ar := s.run(T("act.app.install", appLabel(app.App), name), app.request(name))
+		ar := s.runText(T, T("act.app.install", appLabel(app.App), name), app.request(name))
 		if ar.Output != "" {
 			res.Output += "\n\n" + ar.Output
 		}
 		if !ar.OK {
 			reason := ar.Error
-			if e := appError(ar.Output); e != "" {
+			if e := appErrorText(T, ar.Output); e != "" {
 				reason = e
 			}
 			res.OK, res.Error = false, T("app.err.after", reason)
@@ -338,13 +355,15 @@ func (s *Server) addSite(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 }
 
 func (s *Server) applySite(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name := r.PostFormValue("site")
-	res := s.run(T("act.site.apply", name), ctl.Request{Op: "site.apply", Site: name})
+	res := s.runText(T, T("act.site.apply", name), ctl.Request{Op: "site.apply", Site: name})
 	res.Back = safeBack(r.PostFormValue("back"), "/")
 	s.finish(w, r, res)
 }
 
 func (s *Server) removeConfirm(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name := r.URL.Query().Get("site")
 	if !site.ValidName(name) {
 		http.Error(w, T("err.badsite"), http.StatusBadRequest)
@@ -357,11 +376,12 @@ func (s *Server) removeConfirm(w http.ResponseWriter, r *http.Request, ss webaut
 }
 
 func (s *Server) removeSite(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name := r.PostFormValue("site")
 	if !site.ValidName(name) || r.PostFormValue("confirm") != name {
 		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("site.rm.fail"), Error: T("err.confirm")}})
 		return
 	}
 	req := ctl.Request{Op: "site.remove", Site: name, Purge: r.PostFormValue("purge") != ""}
-	s.finish(w, r, s.run(T("act.site.remove", name), req))
+	s.finish(w, r, s.runText(T, T("act.site.remove", name), req))
 }

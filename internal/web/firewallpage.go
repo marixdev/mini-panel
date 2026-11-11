@@ -32,19 +32,21 @@ func (s *Server) firewallPages(mux *http.ServeMux) {
 }
 
 func (s *Server) firewallPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := &fwView{Client: s.clientKey(r), Max: firewall.MaxRules}
-	v.Error = s.list(ctl.Request{Op: "firewall.status"}, v)
+	v.Error = s.listText(T, ctl.Request{Op: "firewall.status"}, v)
 	s.show(w, 200, ss, view{Page: "firewall", FW: v})
 }
 
 // fwAction runs one operation and shows the result, with the sentences that say what a refusal means.
 func (s *Server) fwAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, build func() (ctl.Request, string)) {
+	T := translatorForWriter(w)
 	req, problem := build()
 	if problem != "" {
 		s.refuseTo(w, ss, "/firewall", T("fw.fail"), problem)
 		return
 	}
-	res := s.run(T(title), req)
+	res := s.runText(T, T(title), req)
 	res.Back = "/firewall"
 	if !res.OK {
 		switch {
@@ -68,6 +70,7 @@ func (s *Server) fwDisable(w http.ResponseWriter, r *http.Request, ss webauth.Se
 }
 
 func (s *Server) fwAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.fwAction(w, r, ss, "act.fw.add", func() (ctl.Request, string) {
 		rule := firewall.Rule{Action: r.PostFormValue("action"), Proto: r.PostFormValue("proto"), Port: strings.TrimSpace(r.PostFormValue("port")),
 			Source: strings.TrimSpace(r.PostFormValue("source")), Comment: strings.TrimSpace(r.PostFormValue("comment"))}
@@ -80,6 +83,7 @@ func (s *Server) fwAdd(w http.ResponseWriter, r *http.Request, ss webauth.Sessio
 
 // fwBlock is the short form most people want: stop one address or one network from reaching the server at all.
 func (s *Server) fwBlock(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.fwAction(w, r, ss, "act.fw.block", func() (ctl.Request, string) {
 		src := strings.TrimSpace(r.PostFormValue("source"))
 		if src == "" {
@@ -94,6 +98,7 @@ func (s *Server) fwBlock(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 }
 
 func (s *Server) fwDelete(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.fwAction(w, r, ss, "act.fw.del", func() (ctl.Request, string) {
 		id, ok := jobID(r)
 		if !ok {

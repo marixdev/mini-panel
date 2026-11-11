@@ -65,9 +65,13 @@ func (s *Server) maxUpload() int64 {
 	}
 	return 1 << 30
 }
+func (
+	s *Server) openFM(user string) (fm.Client, func(), error) {
+	return s.openFMText(T, user)
+}
 
 // openFM logs in as the site's account, opens SFTP and says where its home directory is.
-func (s *Server) openFM(user string) (fm.Client, func(), error) {
+func (s *Server) openFMText(T translator, user string) (fm.Client, func(), error) {
 	if s.Dialer == nil {
 		return fm.Client{}, nil, errors.New(T("err.nohelper"))
 	}
@@ -96,9 +100,12 @@ func (s *Server) openFM(user string) (fm.Client, func(), error) {
 	}
 	return fm.Client{C: sc, Root: path.Clean(root)}, closeAll, nil
 }
+func fmMessage(err error) string {
+	return fmMessageText(T, err)
+}
 
 // fmMessage turns an error of the file manager into a sentence for the page.
-func fmMessage(err error) string {
+func fmMessageText(T translator, err error) string {
 	for e, key := range map[error]string{
 		fm.ErrBadPath: "fm.err.path", fm.ErrBadName: "fm.err.name", fm.ErrExists: "fm.err.exists", fm.ErrNotFound: "fm.err.notfound",
 		fm.ErrDenied: "fm.err.denied", fm.ErrBinary: "fm.err.binary", fm.ErrChanged: "fm.err.changed", fm.ErrTooBig: "fm.err.toobig",
@@ -122,12 +129,13 @@ type filesCtx struct {
 // withFiles finds the site, logs in as its account and checks the folder in the address. On failure it has already
 // answered and returns false.
 func (s *Server) withFiles(w http.ResponseWriter, r *http.Request, ss webauth.Session, dirParam string) (*filesCtx, bool) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return nil, false
 	}
-	f, closeFn, err := s.openFM(row.User)
+	f, closeFn, err := s.openFMText(T, row.User)
 	if err != nil {
 		s.termLog("files login failed", row, err)
 		s.show(w, http.StatusBadGateway, ss, view{Page: "site", Site: row, Tab: "files", Error: T("fm.err.login")})
@@ -141,7 +149,7 @@ func (s *Server) withFiles(w http.ResponseWriter, r *http.Request, ss webauth.Se
 	}
 	if _, err := f.Abs(raw); err != nil {
 		closeFn()
-		http.Error(w, fmMessage(err), http.StatusBadRequest)
+		http.Error(w, fmMessageText(T, err), http.StatusBadRequest)
 		return nil, false
 	}
 	return &filesCtx{row: row, f: f, dir: fm.Clean(raw), close: closeFn}, true
@@ -178,6 +186,7 @@ func humanSize(n int64) string {
 }
 
 func (s *Server) filesPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "path")
 	if !ok {
 		return
@@ -191,7 +200,7 @@ func (s *Server) filesPage(w http.ResponseWriter, r *http.Request, ss webauth.Se
 	w.Header().Set("Content-Security-Policy", basePolicy+"; connect-src 'self'")
 	entries, cut, err := fc.f.List(fc.dir)
 	if err != nil {
-		v.Error = fmMessage(err)
+		v.Error = fmMessageText(T, err)
 	}
 	v.Cut = cut
 	for _, e := range entries {
@@ -223,6 +232,7 @@ func (s *Server) filesPage(w http.ResponseWriter, r *http.Request, ss webauth.Se
 }
 
 func (s *Server) download(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "path")
 	if !ok {
 		return
@@ -230,7 +240,7 @@ func (s *Server) download(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 	defer fc.close()
 	file, fi, err := fc.f.Open(fc.dir)
 	if err != nil {
-		http.Error(w, fmMessage(err), http.StatusNotFound)
+		http.Error(w, fmMessageText(T, err), http.StatusNotFound)
 		return
 	}
 	defer file.Close()
@@ -268,6 +278,7 @@ func (s *Server) authStream(h func(http.ResponseWriter, *http.Request, webauth.S
 }
 
 func (s *Server) upload(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	rc := http.NewResponseController(w)
 	_ = rc.SetReadDeadline(time.Now().Add(2 * time.Hour)) // the server's short read limit is for ordinary forms
 	fc, ok := s.withFiles(w, r, ss, "dir")
@@ -300,7 +311,7 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, ss webauth.Sessi
 				continue
 			}
 			if _, err := fc.f.Upload(fc.dir, name, part, overwrite, s.maxUpload()); err != nil {
-				lines = append(lines, name+": "+fmMessage(err))
+				lines = append(lines, name+": "+fmMessageText(T, err))
 			} else {
 				done++
 			}
@@ -321,6 +332,7 @@ func (s *Server) upload(w http.ResponseWriter, r *http.Request, ss webauth.Sessi
 
 func (s *Server) simpleAction(title string, do func(fc *filesCtx, r *http.Request) error) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+		T := translatorForWriter(w)
 		fc, ok := s.withFiles(w, r, ss, "dir")
 		if !ok {
 			return
@@ -329,7 +341,7 @@ func (s *Server) simpleAction(title string, do func(fc *filesCtx, r *http.Reques
 		res := &result{Title: T(title), OK: true}
 		if err := do(fc, r); err != nil {
 			// The title says what was asked for ("Đã đổi tên."), so it must not stay over a message that says it failed.
-			res.OK, res.Title, res.Error = false, T("fm.fail"), fmMessage(err)
+			res.OK, res.Title, res.Error = false, T("fm.fail"), fmMessageText(T, err)
 		}
 		s.back(w, r, fc.row.Name, fc.dir, res)
 	}
@@ -377,6 +389,7 @@ func (s *Server) itemPaths(dir, items string) []string {
 }
 
 func (s *Server) renamePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "dir")
 	if !ok {
 		return
@@ -384,13 +397,14 @@ func (s *Server) renamePage(w http.ResponseWriter, r *http.Request, ss webauth.S
 	defer fc.close()
 	name := r.URL.Query().Get("name")
 	if !fm.ValidName(name) {
-		http.Error(w, fmMessage(fm.ErrBadName), http.StatusBadRequest)
+		http.Error(w, fmMessageText(T, fm.ErrBadName), http.StatusBadRequest)
 		return
 	}
 	s.show(w, 200, ss, view{Page: "filerename", Site: fc.row, Dir: fc.dir, FileName: name})
 }
 
 func (s *Server) deleteConfirm(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "dir")
 	if !ok {
 		return
@@ -398,12 +412,12 @@ func (s *Server) deleteConfirm(w http.ResponseWriter, r *http.Request, ss webaut
 	defer fc.close()
 	names := r.PostForm["item"]
 	if len(names) == 0 {
-		http.Error(w, fmMessage(fm.ErrNotFound), http.StatusBadRequest)
+		http.Error(w, fmMessageText(T, fm.ErrNotFound), http.StatusBadRequest)
 		return
 	}
 	for _, n := range names {
 		if !fm.ValidName(n) {
-			http.Error(w, fmMessage(fm.ErrBadName), http.StatusBadRequest)
+			http.Error(w, fmMessageText(T, fm.ErrBadName), http.StatusBadRequest)
 			return
 		}
 	}
@@ -414,6 +428,7 @@ func (s *Server) deleteConfirm(w http.ResponseWriter, r *http.Request, ss webaut
 }
 
 func (s *Server) zipAction(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "dir")
 	if !ok {
 		return
@@ -428,7 +443,7 @@ func (s *Server) zipAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 	res := &result{OK: true}
 	st, err := fc.f.Zip(fc.dir, r.PostForm["item"], name, fm.DefaultLimits)
 	if err != nil {
-		res.OK, res.Title, res.Error = false, T("fm.done.zip.fail"), fmMessage(err)
+		res.OK, res.Title, res.Error = false, T("fm.done.zip.fail"), fmMessageText(T, err)
 	} else {
 		res.Title = T("fm.done.zip", st.Files, st.Dirs)
 		if st.Skipped > 0 {
@@ -439,6 +454,7 @@ func (s *Server) zipAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 }
 
 func (s *Server) unzipAction(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "dir")
 	if !ok {
 		return
@@ -449,13 +465,13 @@ func (s *Server) unzipAction(w http.ResponseWriter, r *http.Request, ss webauth.
 	zipName := r.PostFormValue("zip")
 	res := &result{OK: true}
 	if !fm.ValidName(zipName) {
-		res.OK, res.Title, res.Error = false, T("fm.done.unzip.fail"), fmMessage(fm.ErrBadName)
+		res.OK, res.Title, res.Error = false, T("fm.done.unzip.fail"), fmMessageText(T, fm.ErrBadName)
 		s.back(w, r, fc.row.Name, fc.dir, res)
 		return
 	}
 	st, err := fc.f.Unzip(path.Join(fc.dir, zipName), fc.dir, r.PostFormValue("overwrite") != "", fm.DefaultLimits)
 	if err != nil {
-		res.OK, res.Title, res.Error = false, T("fm.done.unzip.fail"), fmMessage(err)
+		res.OK, res.Title, res.Error = false, T("fm.done.unzip.fail"), fmMessageText(T, err)
 	} else {
 		res.Title = T("fm.done.unzip", st.Files, st.Dirs)
 		if st.Skipped > 0 {

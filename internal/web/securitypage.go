@@ -43,8 +43,9 @@ func (s *Server) securityPages(mux *http.ServeMux) {
 }
 
 func (s *Server) securityPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := &secView{Client: s.clientKey(r)}
-	v.Error = s.list(ctl.Request{Op: "security.status"}, v)
+	v.Error = s.listText(T, ctl.Request{Op: "security.status"}, v)
 	v.IgnoreText = strings.Join(v.Ignore, "\n")
 	v.PSSL = s.loadPanelSSL(r)
 	s.show(w, 200, ss, view{Page: "security", Sec: v})
@@ -52,7 +53,8 @@ func (s *Server) securityPage(w http.ResponseWriter, r *http.Request, ss webauth
 
 // secAction runs one operation and shows the result, with the sentence that says what a known failure means.
 func (s *Server) secAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, req ctl.Request) {
-	res := s.run(T(title), req)
+	T := translatorForWriter(w)
+	res := s.runText(T, T(title), req)
 	res.Back = "/security"
 	if !res.OK {
 		switch {
@@ -66,6 +68,7 @@ func (s *Server) secAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 }
 
 func (s *Server) secWAF(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	mode := r.PostFormValue("mode")
 	if err := security.ValidMode(mode); err != nil {
 		s.refuseTo(w, ss, "/security", T("sec.fail"), T("sec.err.mode"))
@@ -77,6 +80,7 @@ func (s *Server) secWAF(w http.ResponseWriter, r *http.Request, ss webauth.Sessi
 // secF2B turns fail2ban on or off. The address of the person is added to the trusted list when it is turned on, so the person
 // who just typed a wrong password three times is not the first one to be banned.
 func (s *Server) secF2B(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	on := r.PostFormValue("on") == "1"
 	list := strings.FieldsFunc(r.PostFormValue("ignore"), func(c rune) bool { return c == '\n' || c == '\r' || c == ',' || c == ' ' || c == '\t' })
 	if on && s.clientKey(r) != "" {
@@ -91,6 +95,7 @@ func (s *Server) secF2B(w http.ResponseWriter, r *http.Request, ss webauth.Sessi
 }
 
 func (s *Server) secUnban(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	jail, ip := r.PostFormValue("jail"), r.PostFormValue("ip")
 	if security.ValidJail(jail) != nil {
 		s.refuseTo(w, ss, "/security", T("sec.fail"), T("sec.err.jail"))

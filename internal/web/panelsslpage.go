@@ -41,8 +41,9 @@ func (s *Server) panelSSLRoutes(mux *http.ServeMux) {
 }
 
 func (s *Server) loadPanelSSL(r *http.Request) *pSSLView {
+	T := translatorForRequest(r)
 	v := &pSSLView{ServerIP: serverIP(r.Host)}
-	if e := s.list(ctl.Request{Op: "panel.sslinfo"}, v); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "panel.sslinfo"}, v); e != "" {
 		v.Error = e
 		return v
 	}
@@ -58,11 +59,12 @@ func (s *Server) loadPanelSSL(r *http.Request) *pSSLView {
 
 // panelSSLAction runs one operation on the certificate of the panel and says what a known failure means.
 func (s *Server) panelSSLAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, req ctl.Request, problem string) {
+	T := translatorForWriter(w)
 	if problem != "" {
 		s.refuseTo(w, ss, "/security", T("psl.fail"), problem)
 		return
 	}
-	res := s.run(T(title), req)
+	res := s.runText(T, T(title), req)
 	res.Back = "/security"
 	if !res.OK {
 		switch {
@@ -80,6 +82,7 @@ func (s *Server) panelSSLAction(w http.ResponseWriter, r *http.Request, ss webau
 }
 
 func panelDomain(r *http.Request) (string, string) {
+	T := translatorForRequest(r)
 	d := strings.ToLower(strings.TrimSpace(r.PostFormValue("domain")))
 	if err := panelssl.ValidDomain(d); err != nil {
 		return d, T("psl.err.domain")
@@ -93,6 +96,7 @@ func (s *Server) panelSSLLetsEncrypt(w http.ResponseWriter, r *http.Request, ss 
 }
 
 func (s *Server) panelSSLCustom(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	d, problem := panelDomain(r)
 	req := ctl.Request{Op: "panel.sslcustom", Domain: d, Key: strings.TrimSpace(r.PostFormValue("key")), Cert: strings.TrimSpace(r.PostFormValue("cert")),
 		Chain: strings.TrimSpace(r.PostFormValue("chain")), AllowUntrusted: r.PostFormValue("allow_untrusted") == "1"}

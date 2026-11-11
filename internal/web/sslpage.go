@@ -36,8 +36,12 @@ type sslView struct {
 }
 
 func (s *Server) loadSSL(row siteRow, ip string) *sslView {
+	return s.loadSSLText(T, row, ip)
+}
+
+func (s *Server) loadSSLText(T translator, row siteRow, ip string) *sslView {
 	v := &sslView{Domain: row.Primary(), ServerIP: ip, Redirect: !row.AllowHTTP}
-	if e := s.list(ctl.Request{Op: "site.sslinfo", Site: row.Name}, &v.certInfo); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "site.sslinfo", Site: row.Name}, &v.certInfo); e != "" {
 		v.Error = e
 		return v
 	}
@@ -53,7 +57,8 @@ func (s *Server) loadSSL(row siteRow, ip string) *sslView {
 
 // sslAction runs one operation on the certificate of a site and shows its result on the SSL tab.
 func (s *Server) sslAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, build func(row siteRow) (ctl.Request, string)) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -64,7 +69,7 @@ func (s *Server) sslAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 		s.refuseTo(w, ss, back, T("ssl.fail"), problem)
 		return
 	}
-	res := s.run(T(title, row.Name), req)
+	res := s.runText(T, T(title, row.Name), req)
 	res.Back = back
 	if !res.OK {
 		switch {
@@ -100,6 +105,7 @@ func (s *Server) sslRedirect(w http.ResponseWriter, r *http.Request, ss webauth.
 }
 
 func (s *Server) sslCSR(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.sslAction(w, r, ss, "act.ssl.csr", func(row siteRow) (ctl.Request, string) {
 		algo := r.PostFormValue("algo")
 		if algo != "ecdsa" && algo != "rsa" {
@@ -110,6 +116,7 @@ func (s *Server) sslCSR(w http.ResponseWriter, r *http.Request, ss webauth.Sessi
 }
 
 func (s *Server) sslCustom(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.sslAction(w, r, ss, "act.ssl.custom", func(row siteRow) (ctl.Request, string) {
 		req := ctl.Request{Op: "site.sslcustom", Site: row.Name, Key: strings.TrimSpace(r.PostFormValue("key")), Cert: strings.TrimSpace(r.PostFormValue("cert")),
 			Chain: strings.TrimSpace(r.PostFormValue("chain")), AllowUntrusted: r.PostFormValue("allow_untrusted") == "1"}

@@ -109,6 +109,7 @@ func newTicketID() (string, error) {
 }
 
 func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	if !s.pmaOn() {
 		http.NotFound(w, r)
 		return
@@ -121,13 +122,13 @@ func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("pma.title"), Error: T("err.baddb"), Back: "/"}})
 		return
 	}
-	resp, err := s.ask(ctl.Request{Op: "db.pma", Name: name})
+	resp, err := s.askText(T, ctl.Request{Op: "db.pma", Name: name})
 	switch {
 	case err != nil:
 		fail(T("err.helper", err.Error()))
 		return
 	case !resp.OK:
-		fail(pmaFailure(resp))
+		fail(pmaFailureText(T, resp))
 		return
 	}
 	var visit struct {
@@ -141,7 +142,7 @@ func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	id, err := newTicketID()
 	now := time.Now()
 	if err != nil || !s.tickets.put(id, pmaTicket{visit.User, visit.Password, visit.Database, now.Add(pmaTicketTTL)}, now) {
-		_, _ = s.ask(ctl.Request{Op: "db.pmadrop", User: visit.User}) // nothing will use it
+		_, _ = s.askText(T, ctl.Request{Op: "db.pmadrop", User: visit.User}) // nothing will use it
 		fail(T("pma.busy"))
 		return
 	}
@@ -153,10 +154,14 @@ func (s *Server) pmaOpen(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 	// to where the post is sent on to. A link that the page's script follows is not a form post.
 	s.show(w, 200, ss, view{Page: "pmaopen", PMALink: target.String(), PMAName: name})
 }
+func pmaFailure(resp ctl.
+	Response) string {
+	return pmaFailureText(T, resp)
+}
 
 // pmaFailure says in words why the helper could not make a temporary user. The helper's own text is for the command line
 // ("exit status 2" and a line in English), so the cases a person can act on are told in Vietnamese.
-func pmaFailure(resp ctl.Response) string {
+func pmaFailureText(T translator, resp ctl.Response) string {
 	detail := strings.TrimSpace(resp.Output)
 	switch {
 	case strings.Contains(detail, "not found"):
@@ -201,11 +206,12 @@ func (s *Server) pmaTrade(w http.ResponseWriter, r *http.Request) {
 
 // pmaEnd drops the temporary user when the administrator signs out of the browser.
 func (s *Server) pmaEnd(w http.ResponseWriter, r *http.Request) {
+	T := translatorForWriter(w)
 	u := r.URL.Query().Get("u")
 	if !s.keyOK(r) || !dbadmin.ValidTempName(u) {
 		http.NotFound(w, r)
 		return
 	}
-	_, _ = s.ask(ctl.Request{Op: "db.pmadrop", User: u})
+	_, _ = s.askText(T, ctl.Request{Op: "db.pmadrop", User: u})
 	w.WriteHeader(http.StatusNoContent)
 }

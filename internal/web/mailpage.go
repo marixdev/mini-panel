@@ -90,8 +90,9 @@ func (s *Server) mailPages(mux *http.ServeMux) {
 }
 
 func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	v := &mailView{ServerIP: serverIP(r.Host)}
-	v.Error = s.list(ctl.Request{Op: "mail.status"}, v)
+	v.Error = s.listText(T, ctl.Request{Op: "mail.status"}, v)
 	for _, n := range []string{"postfix", "dovecot", "opendkim"} {
 		up := v.Services[n]
 		v.Svc = append(v.Svc, mailSvc{n, up})
@@ -102,7 +103,7 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 	for _, d := range v.Domains {
 		v.DomainOpt = append(v.DomainOpt, d.Name)
 	}
-	s.markCloudflare(v)
+	s.markCloudflareText(T, v)
 	if v.Webmail.On && v.Webmail.Port > 0 {
 		h := r.Host
 		if hh, _, err := net.SplitHostPort(r.Host); err == nil {
@@ -118,7 +119,8 @@ func (s *Server) mailPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 
 // mailAction runs one operation and shows the result, with the sentence that says what a known failure means.
 func (s *Server) mailAction(w http.ResponseWriter, r *http.Request, title string, req ctl.Request) {
-	res := s.run(T(title), req)
+	T := translatorForWriter(w)
+	res := s.runText(T, T(title), req)
 	res.Back = mailBackOf(r)
 	if !res.OK {
 		switch {
@@ -142,10 +144,12 @@ func (s *Server) mailAction(w http.ResponseWriter, r *http.Request, title string
 }
 
 func (s *Server) mailRefuse(w http.ResponseWriter, r *http.Request, ss webauth.Session, msg string) {
+	T := translatorForWriter(w)
 	s.refuseTo(w, ss, mailBackOf(r), T("mail.fail"), msg)
 }
 
 func (s *Server) mailEnable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	host := strings.ToLower(strings.TrimSpace(r.PostFormValue("host")))
 	if err := mail.ValidDomain(host); err != nil {
 		s.mailRefuse(w, r, ss, T("mail.err.host"))
@@ -167,6 +171,7 @@ func (s *Server) mailDisable(w http.ResponseWriter, r *http.Request, ss webauth.
 }
 
 func (s *Server) mailDomainAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	d := strings.ToLower(strings.TrimSpace(r.PostFormValue("domain")))
 	if err := mail.ValidDomain(d); err != nil {
 		s.mailRefuse(w, r, ss, T("mail.err.domain"))
@@ -176,6 +181,7 @@ func (s *Server) mailDomainAdd(w http.ResponseWriter, r *http.Request, ss webaut
 }
 
 func (s *Server) mailDomainDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	d := strings.TrimSpace(r.PostFormValue("domain"))
 	if err := mail.ValidDomain(d); err != nil {
 		s.mailRefuse(w, r, ss, T("mail.err.domain"))
@@ -205,6 +211,7 @@ func quota(r *http.Request) (int, bool) {
 }
 
 func (s *Server) mailBoxAdd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))
@@ -224,6 +231,7 @@ func (s *Server) mailBoxAdd(w http.ResponseWriter, r *http.Request, ss webauth.S
 }
 
 func (s *Server) mailBoxPasswd(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))
@@ -238,6 +246,7 @@ func (s *Server) mailBoxPasswd(w http.ResponseWriter, r *http.Request, ss webaut
 }
 
 func (s *Server) mailBoxQuota(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))
@@ -252,6 +261,7 @@ func (s *Server) mailBoxQuota(w http.ResponseWriter, r *http.Request, ss webauth
 }
 
 func (s *Server) mailBoxDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))
@@ -261,6 +271,7 @@ func (s *Server) mailBoxDel(w http.ResponseWriter, r *http.Request, ss webauth.S
 }
 
 func (s *Server) mailAliasSet(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))
@@ -281,6 +292,7 @@ func (s *Server) mailAliasSet(w http.ResponseWriter, r *http.Request, ss webauth
 }
 
 func (s *Server) mailAliasDel(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	a, ok := address(r)
 	if !ok {
 		s.mailRefuse(w, r, ss, T("mail.err.address"))

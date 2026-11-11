@@ -17,6 +17,7 @@ import (
 var permRe = regexp.MustCompile(`^[0-7]{3}$`)
 
 func (s *Server) chmodAction(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "dir")
 	if !ok {
 		return
@@ -24,7 +25,7 @@ func (s *Server) chmodAction(w http.ResponseWriter, r *http.Request, ss webauth.
 	defer fc.close()
 	res := &result{OK: true}
 	fail := func(err error) {
-		res.OK, res.Title, res.Error = false, T("fm.done.chmod.fail"), fmMessage(err)
+		res.OK, res.Title, res.Error = false, T("fm.done.chmod.fail"), fmMessageText(T, err)
 		s.back(w, r, fc.row.Name, fc.dir, res)
 	}
 	mode := r.PostFormValue("mode")

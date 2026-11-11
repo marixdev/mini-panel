@@ -78,6 +78,7 @@ const maxBody = 64 << 10
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /language/{language}", s.changeLanguage)
 	s.setupPages(mux)
 	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
 		if s.firstRun() {
@@ -123,6 +124,9 @@ func (s *Server) guard(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "same-origin")
 		h.Set("Cache-Control", "no-store")
+		h.Set("Content-Language", requestLanguage(r))
+		h.Add("Vary", "Cookie")
+		h.Add("Vary", "Accept-Language")
 		if s.Secure {
 			h.Set("Strict-Transport-Security", "max-age=31536000")
 		}
@@ -219,6 +223,7 @@ func (s *Server) auth(h func(http.ResponseWriter, *http.Request, webauth.Session
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
+	T := translatorForWriter(w)
 	key := s.clientKey(r)
 	if d := s.Throttle.Wait(key); d > 0 {
 		w.Header().Set("Retry-After", strconv.Itoa(int(d.Seconds())+1))
@@ -296,7 +301,7 @@ type view struct {
 	Log                                         *logView
 	Svc                                         *svcView
 	CF                                          *cfView
-	SM *siteMailView
+	SM                                          *siteMailView
 	Settings                                    *settingsView
 	Need2FA                                     bool   // the sign-in page asks for the code of the app
 	Pending                                     string // the sign-in that waits for it

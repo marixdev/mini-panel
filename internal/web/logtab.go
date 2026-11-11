@@ -33,6 +33,7 @@ type logView struct {
 // loadLogs reads the end of one log of the site. The kind, the count and the search come from the address; a value that is not
 // valid is replaced by the default instead of being passed on.
 func (s *Server) loadLogs(r *http.Request, row siteRow) *logView {
+	T := translatorForRequest(r)
 	hasApp := row.Kind == string(site.Node) || row.Kind == string(site.Python)
 	q := r.URL.Query()
 	kind := q.Get("kind")
@@ -56,7 +57,7 @@ func (s *Server) loadLogs(r *http.Request, row siteRow) *logView {
 	if hasApp {
 		v.Kinds = append(v.Kinds, logKindLink{sitelog.App, kind == sitelog.App})
 	}
-	if e := s.list(ctl.Request{Op: "site.log", Site: row.Name, LogKind: kind, Lines: lines, Query: v.Query}, &v.Res); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "site.log", Site: row.Name, LogKind: kind, Lines: lines, Query: v.Query}, &v.Res); e != "" {
 		v.Error = e
 		return v
 	}

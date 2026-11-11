@@ -51,10 +51,13 @@ func (s *Server) cloudRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /sites/{name}/cloud/backups", s.auth(s.cloudBackupsPage))
 	mux.HandleFunc("POST /sites/{name}/cloud/fetch", s.auth(s.cloudFetch))
 }
-
 func (s *Server) loadCloud(siteName string) *cloudView {
+	return s.loadCloudText(T, siteName)
+}
+
+func (s *Server) loadCloudText(T translator, siteName string) *cloudView {
 	v := &cloudView{}
-	if e := s.list(ctl.Request{Op: "cloud.status", Site: siteName}, v); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "cloud.status", Site: siteName}, v); e != "" {
 		v.Error = e
 		return v
 	}
@@ -73,14 +76,15 @@ func (s *Server) loadCloud(siteName string) *cloudView {
 	}
 	if v.Fetch != nil {
 		v.FetchAtText = time.Unix(v.Fetch.At, 0).Local().Format("02/01/2006 15:04")
-		v.FetchMsg = fetchMessage(v.Fetch.Message)
+		v.FetchMsg = fetchMessageText(T, v.Fetch.Message)
 	}
 	return v
 }
 
 // cloudAction runs one operation of the card and shows its result on the Backups tab, with the sentence for each known refusal.
 func (s *Server) cloudAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, build func(name string) (ctl.Request, string)) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -91,7 +95,7 @@ func (s *Server) cloudAction(w http.ResponseWriter, r *http.Request, ss webauth.
 		s.refuseTo(w, ss, back, T("cld.fail"), problem)
 		return
 	}
-	res := s.run(T(title, row.Name), req)
+	res := s.runText(T, T(title, row.Name), req)
 	res.Back = back
 	if !res.OK {
 		for marker, key := range map[string]string{"cloud-not-connected": "cld.err.notconnected", "cloud-pending": "cld.err.pending", "cloud-denied": "cld.err.denied",
@@ -106,6 +110,7 @@ func (s *Server) cloudAction(w http.ResponseWriter, r *http.Request, ss webauth.
 }
 
 func (s *Server) cloudConnect(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.cloudAction(w, r, ss, "act.cld.connect", func(string) (ctl.Request, string) {
 		id, secret := strings.TrimSpace(r.PostFormValue("client_id")), strings.TrimSpace(r.PostFormValue("client_secret"))
 		if err := cloudsync.ValidClient(id, secret); err != nil {

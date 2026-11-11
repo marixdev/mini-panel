@@ -1,0 +1,4 @@
+{{define "language"}}<nav aria-label="{{T "language.label"}}" class="flex items-center gap-2 text-xs">
+<a{{if eq (lang) "en"}} aria-current="true"{{end}} href="/language/en" lang="en" hreflang="en" class="nav-link">English</a>
+<a{{if eq (lang) "vi"}} aria-current="true"{{end}} href="/language/vi" lang="vi" hreflang="vi" class="nav-link">Tiếng Việt</a>
+</nav>{{end}}

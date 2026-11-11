@@ -1,6 +1,6 @@
-﻿# Mini Panel (`mpn`)
+# Mini Panel (`mpn`)
 
-Bảng điều khiển hosting nhẹ, viết bằng Go, cho VPS RAM thấp (mục tiêu 1 vCPU / 1 GB). Một tệp chạy tĩnh duy nhất cài sẵn nginx, PHP-FPM nhiều phiên bản, Node.js, MariaDB hoặc MySQL, rồi quản lý website, cơ sở dữ liệu, SSL và sao lưu qua một giao diện web tiếng Việt.
+Bảng điều khiển hosting nhẹ, viết bằng Go, cho VPS RAM thấp (mục tiêu 1 vCPU / 1 GB). Một tệp chạy tĩnh duy nhất cài sẵn nginx, PHP-FPM nhiều phiên bản, Node.js, MariaDB hoặc MySQL, rồi quản lý website, cơ sở dữ liệu, SSL và sao lưu qua một giao diện web tiếng Việt và tiếng Anh.
 
 Dự án được viết từ đầu theo yêu cầu chức năng. Nó không chứa mã, mẫu cấu hình hay giao diện của sản phẩm nào khác. Chi tiết nằm trong [PLAN.md](PLAN.md).
 
@@ -45,6 +45,10 @@ Dự án được viết từ đầu theo yêu cầu chức năng. Nó không ch
 **Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13.
 
 **Một bản nginx cố định:** panel luôn chạy nginx 1.28.3 trên mọi hệ điều hành. Mô-đun động của nginx chỉ nạp được vào đúng bản nginx đã dùng để biên dịch nó, mà mỗi bản phân phối đi kèm một bản nginx khác nhau (1.18 đến 1.28), nên panel lấy nginx 1.28.3 từ nginx.org (ghim bằng apt với ưu tiên 1001 và `apt-mark hold`, kiểm tra dấu tay khóa ký trước khi thêm kho) rồi nạp hai mô-đun pagespeed và ModSecurity được build riêng cho bản đó ([mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules), tải về có so mã SHA-256 ghi sẵn trong mã nguồn). Riêng Ubuntu 26.04 vốn đã có nginx 1.28.3 cùng mô-đun đóng gói sẵn nên dùng luôn của bản phân phối, cũng được giữ phiên bản. Nhờ vậy `apt upgrade` không bao giờ làm nginx nhảy phiên bản và làm hỏng mô-đun.
+
+## Ngôn ngữ giao diện
+
+Chọn **English** hoặc **Tiếng Việt** trên thanh đầu trang, kể cả ở trang đăng nhập và thiết lập lần đầu. Panel nhớ lựa chọn trên trình duyệt trong một năm. Khi chưa chọn, panel dùng ngôn ngữ được trình duyệt ưu tiên nếu có tiếng Anh hoặc tiếng Việt; mặc định là tiếng Việt. Ngôn ngữ được áp dụng riêng cho từng yêu cầu, nên người dùng khác nhau có thể dùng hai ngôn ngữ cùng lúc. Đầu ra trực tiếp của lệnh quản trị được giữ nguyên.
 
 ## Cách hoạt động và bảo mật
 

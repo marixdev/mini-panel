@@ -30,8 +30,10 @@ type cloudListView struct {
 	Error string
 }
 
+func fetchMessage(m string) string { return fetchMessageText(T, m) }
+
 // fetchMessage turns the refusals a download can end with into a sentence for the person; anything else is shown as it is.
-func fetchMessage(m string) string {
+func fetchMessageText(T translator, m string) string {
 	for marker, key := range map[string]string{"cloud-interrupted": "cld.fetch.interrupted", "cloud-nospace": "cld.err.nospace", "cloud-nocopy": "cld.err.nocopy",
 		"cloud-busy": "cld.err.busy", "cloud-exists": "cld.err.exists", "damaged": "cld.err.damaged", "invalid_grant": "cld.revoked", "cloud-revoked": "cld.revoked"} {
 		if strings.Contains(m, marker) {
@@ -43,14 +45,15 @@ func fetchMessage(m string) string {
 
 // cloudBackupsPage lists what the drive holds for this website and offers to bring a backup back to this server.
 func (s *Server) cloudBackupsPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
 	}
 	v := &cloudListView{}
-	if e := s.list(ctl.Request{Op: "cloud.list", Site: row.Name}, &v.Rows); e != "" {
-		v.Error = fetchMessage(e)
+	if e := s.listText(T, ctl.Request{Op: "cloud.list", Site: row.Name}, &v.Rows); e != "" {
+		v.Error = fetchMessageText(T, e)
 		if strings.Contains(e, "cloud-not-connected") {
 			v.Error = T("cld.err.notconnected")
 		}
@@ -60,6 +63,7 @@ func (s *Server) cloudBackupsPage(w http.ResponseWriter, r *http.Request, ss web
 
 // cloudFetch starts the download of one backup. It runs in the background, because a backup can be gigabytes.
 func (s *Server) cloudFetch(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.cloudAction(w, r, ss, "act.cld.fetch", func(name string) (ctl.Request, string) {
 		stamp := r.PostFormValue("backup")
 		if !backup.ValidStamp(stamp) {

@@ -19,8 +19,12 @@ type vhostView struct {
 }
 
 func (s *Server) loadVhost(row siteRow) *vhostView {
+	return s.loadVhostText(T, row)
+}
+
+func (s *Server) loadVhostText(T translator, row siteRow) *vhostView {
 	v := &vhostView{MaxKB: vhost.MaxCustom >> 10}
-	v.Error = s.list(ctl.Request{Op: "site.vhost", Site: row.Name}, v)
+	v.Error = s.listText(T, ctl.Request{Op: "site.vhost", Site: row.Name}, v)
 	return v
 }
 
@@ -31,7 +35,8 @@ func normalizeNewlines(s string) string {
 
 // vhostAction runs one operation on the nginx configuration of a site and shows the result on the vHost tab.
 func (s *Server) vhostAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, build func(row siteRow) (ctl.Request, string)) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -42,7 +47,7 @@ func (s *Server) vhostAction(w http.ResponseWriter, r *http.Request, ss webauth.
 		s.refuseTo(w, ss, back, T("vh.fail"), problem)
 		return
 	}
-	res := s.run(T(title, row.Name), req)
+	res := s.runText(T, T(title, row.Name), req)
 	res.Back = back
 	if !res.OK {
 		// nginx -t says what is wrong in its own words, which the page shows below; the sentence on top says what happened to the site.
@@ -52,6 +57,7 @@ func (s *Server) vhostAction(w http.ResponseWriter, r *http.Request, ss webauth.
 }
 
 func (s *Server) saveVhost(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.vhostAction(w, r, ss, "act.vhost.save", func(row siteRow) (ctl.Request, string) {
 		text := normalizeNewlines(r.PostFormValue("vhost"))
 		if err := vhost.CheckCustom(text, row.TLS); err != nil {

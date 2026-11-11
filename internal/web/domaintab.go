@@ -45,7 +45,8 @@ func cleanDomain(v string) string {
 // saveDomain changes the domain and the www choice. A new domain needs a new certificate, so the helper takes the SSL of the
 // site away when the domain changes; the person chooses a source again on the SSL tab.
 func (s *Server) saveDomain(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -61,7 +62,7 @@ func (s *Server) saveDomain(w http.ResponseWriter, r *http.Request, ss webauth.S
 		return
 	}
 	var rows []siteRow
-	if s.list(ctl.Request{Op: "site.list"}, &rows) == "" {
+	if s.listText(T, ctl.Request{Op: "site.list"}, &rows) == "" {
 		for _, o := range rows {
 			if o.Name == row.Name {
 				continue
@@ -76,7 +77,7 @@ func (s *Server) saveDomain(w http.ResponseWriter, r *http.Request, ss webauth.S
 			}
 		}
 	}
-	res := s.run(T("act.site.domain", row.Name), req)
+	res := s.runText(T, T("act.site.domain", row.Name), req)
 	res.Back = back
 	if !res.OK && strings.Contains(res.Output, "custom-vhost") {
 		res.Error = T("vh.err.custom")

@@ -33,6 +33,7 @@ func (s *Server) setupGet(w http.ResponseWriter, r *http.Request) {
 var validSetupUser = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,31}$`)
 
 func (s *Server) setupPost(w http.ResponseWriter, r *http.Request) {
+	T := translatorForWriter(w)
 	if !s.firstRun() {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return

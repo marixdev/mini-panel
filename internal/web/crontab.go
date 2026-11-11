@@ -32,17 +32,24 @@ type cronView struct {
 }
 
 func (s *Server) loadCron(row siteRow) *cronView {
+	return s.loadCronText(T, row)
+}
+
+func (s *Server) loadCronText(T translator, row siteRow) *cronView {
 	v := &cronView{Presets: cronPresets, Max: cron.MaxJobs}
 	var jobs []cron.Job
-	v.Error = s.list(ctl.Request{Op: "site.cronlist", Site: row.Name}, &jobs)
+	v.Error = s.listText(T, ctl.Request{Op: "site.cronlist", Site: row.Name}, &jobs)
 	for _, j := range jobs {
-		v.Jobs = append(v.Jobs, cronRow{j, describeSchedule(j.Schedule)})
+		v.Jobs = append(v.Jobs, cronRow{j, describeScheduleText(T, j.Schedule)})
 	}
 	return v
 }
+func describeSchedule(s string) string {
+	return describeScheduleText(T, s)
+}
 
 // describeSchedule says a schedule in words when it is one of the common shapes, and gives it back unchanged otherwise.
-func describeSchedule(s string) string {
+func describeScheduleText(T translator, s string) string {
 	switch s {
 	case "@hourly":
 		return T("cr.d.hour")
@@ -82,7 +89,8 @@ func describeSchedule(s string) string {
 }
 
 func (s *Server) cronAction(w http.ResponseWriter, r *http.Request, ss webauth.Session, title string, build func(row siteRow) (ctl.Request, string)) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -93,12 +101,13 @@ func (s *Server) cronAction(w http.ResponseWriter, r *http.Request, ss webauth.S
 		s.refuseTo(w, ss, back, T("cr.fail"), problem)
 		return
 	}
-	res := s.run(T(title, row.Name), req)
+	res := s.runText(T, T(title, row.Name), req)
 	res.Back = back
 	s.finish(w, r, res)
 }
 
 func (s *Server) addCron(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.cronAction(w, r, ss, "act.cron.add", func(row siteRow) (ctl.Request, string) {
 		schedule := strings.Join(strings.Fields(r.PostFormValue("custom")), " ")
 		if schedule == "" {
@@ -121,6 +130,7 @@ func jobID(r *http.Request) (int64, bool) {
 }
 
 func (s *Server) toggleCron(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.cronAction(w, r, ss, "act.cron.toggle", func(row siteRow) (ctl.Request, string) {
 		id, ok := jobID(r)
 		if !ok {
@@ -131,6 +141,7 @@ func (s *Server) toggleCron(w http.ResponseWriter, r *http.Request, ss webauth.S
 }
 
 func (s *Server) deleteCron(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	s.cronAction(w, r, ss, "act.cron.del", func(row siteRow) (ctl.Request, string) {
 		id, ok := jobID(r)
 		if !ok {

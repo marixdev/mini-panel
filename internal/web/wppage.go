@@ -45,8 +45,12 @@ type wpView struct {
 	SearchErr  string    `json:"-"`
 }
 
-// wpMessage turns the refusals of the manager into a sentence for the person; anything else is shown as it is.
 func wpMessage(out string) string {
+	return wpMessageText(T, out)
+}
+
+// wpMessage turns the refusals of the manager into a sentence for the person; anything else is shown as it is.
+func wpMessageText(T translator, out string) string {
 	for _, m := range []struct{ marker, key string }{{"wp-notwp", "wp.err.notwp"}, {"wp-broken", "wp.err.broken"}, {"wp-search", "wp.err.search"}} {
 		if strings.Contains(out, m.marker) {
 			return T(m.key)
@@ -61,9 +65,10 @@ func (s *Server) wpRoutes(mux *http.ServeMux) {
 
 // loadWP reads the state of the WordPress of a site, and the result of a search when the address carries one (?k=plugin&q=seo).
 func (s *Server) loadWP(row siteRow, r *http.Request) *wpView {
+	T := translatorForRequest(r)
 	v := &wpView{}
-	if e := s.list(ctl.Request{Op: "wp.status", Site: row.Name}, v); e != "" {
-		v.Error = wpMessage(e)
+	if e := s.listText(T, ctl.Request{Op: "wp.status", Site: row.Name}, v); e != "" {
+		v.Error = wpMessageText(T, e)
 		return v
 	}
 	if k, q := r.URL.Query().Get("k"), strings.TrimSpace(r.URL.Query().Get("q")); k != "" || q != "" {
@@ -72,8 +77,8 @@ func (s *Server) loadWP(row siteRow, r *http.Request) *wpView {
 			v.SearchErr = T("wp.err.term")
 			return v
 		}
-		if e := s.list(ctl.Request{Op: "wp.search", Site: row.Name, WPKind: k, WPTerm: q}, &v.Found); e != "" {
-			v.SearchErr = wpMessage(e)
+		if e := s.listText(T, ctl.Request{Op: "wp.search", Site: row.Name, WPKind: k, WPTerm: q}, &v.Found); e != "" {
+			v.SearchErr = wpMessageText(T, e)
 		}
 		// wordpress.org sends its texts already HTML-encoded (&quot;); the template encodes them once more, so they are decoded here.
 		for i := range v.Found {
@@ -85,7 +90,8 @@ func (s *Server) loadWP(row siteRow, r *http.Request) *wpView {
 
 // wpRun does one thing to a plugin, a theme or WordPress itself, and shows the result on the WordPress tab.
 func (s *Server) wpRun(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
@@ -100,10 +106,10 @@ func (s *Server) wpRun(w http.ResponseWriter, r *http.Request, ss webauth.Sessio
 		s.refuseTo(w, ss, back, T("wp.fail"), T("wp.err.action"))
 		return
 	}
-	res := s.run(T("act.wp."+action, slugOrCore(kind, slug), row.Name), ctl.Request{Op: "wp.run", Site: row.Name, WPKind: kind, WPAction: action, WPSlug: slug})
+	res := s.runText(T, T("act.wp."+action, slugOrCore(kind, slug), row.Name), ctl.Request{Op: "wp.run", Site: row.Name, WPKind: kind, WPAction: action, WPSlug: slug})
 	res.Back = back
 	if !res.OK {
-		res.Error = wpMessage(res.Error)
+		res.Error = wpMessageText(T, res.Error)
 	}
 	s.finish(w, r, res)
 }

@@ -210,6 +210,7 @@ func (s *Server) settingsDone(w http.ResponseWriter, r *http.Request, title stri
 func (s *Server) guessKey(r *http.Request, what string) string { return what + ":" + s.clientKey(r) }
 
 func (s *Server) tooMany(w http.ResponseWriter, r *http.Request, ss webauth.Session, key, which string) bool {
+	T := translatorForWriter(w)
 	if d := s.Throttle.Wait(key); d > 0 {
 		w.Header().Set("Retry-After", fmt.Sprint(int(d.Seconds())+1))
 		s.showSettings(w, r, ss, http.StatusTooManyRequests, settingsView{Error: T("login.locked", int(d.Seconds())+1), Which: which}, nil)
@@ -219,6 +220,7 @@ func (s *Server) tooMany(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 }
 
 func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fail := func(status int, msg string) {
 		s.showSettings(w, r, ss, status, settingsView{Error: msg, Which: "password"}, nil)
 	}
@@ -267,6 +269,7 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webau
 // twoFASetupPage makes a new secret and shows it as a QR code and as text. It is stored only in memory until a code from the app
 // proves that the app has it.
 func (s *Server) twoFASetupPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	acct, err := s.Account()
 	if err != nil || s.SaveAccount == nil {
 		s.showSettings(w, r, ss, http.StatusServiceUnavailable, settingsView{Error: T("set.unavailable"), Which: "2fa"}, nil)
@@ -286,6 +289,7 @@ func (s *Server) twoFASetupPage(w http.ResponseWriter, r *http.Request, ss webau
 }
 
 func (s *Server) showSetup(w http.ResponseWriter, r *http.Request, ss webauth.Session, status int, user, secret, problem string) {
+	T := translatorForWriter(w)
 	qr, err := qrSVG(webauth.TOTPURI(T("app.name"), user, secret), T("set.2fa.qr.alt"))
 	if err != nil {
 		log.Printf("qr code: %v", err)
@@ -294,6 +298,7 @@ func (s *Server) showSetup(w http.ResponseWriter, r *http.Request, ss webauth.Se
 }
 
 func (s *Server) twoFAEnable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	key := s.guessKey(r, "2fa")
 	if s.tooMany(w, r, ss, key, "2fa") {
 		return
@@ -324,6 +329,7 @@ func (s *Server) twoFAEnable(w http.ResponseWriter, r *http.Request, ss webauth.
 
 // twoFADisable needs both the password and a current code: a session that somebody else got hold of cannot take the second step off.
 func (s *Server) twoFADisable(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	key := s.guessKey(r, "2fa")
 	if s.tooMany(w, r, ss, key, "2fa") {
 		return
@@ -354,6 +360,7 @@ func (s *Server) twoFADisable(w http.ResponseWriter, r *http.Request, ss webauth
 // loginSecondStep is the code that follows a right password. The sign-in is a token held in memory; it ends after a few wrong
 // codes or a few minutes, and a code that was used cannot be used again.
 func (s *Server) loginSecondStep(w http.ResponseWriter, r *http.Request) {
+	T := translatorForWriter(w)
 	key := s.clientKey(r)
 	tok, code := r.PostFormValue("pending"), r.PostFormValue("code")
 	expired := func() {

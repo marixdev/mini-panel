@@ -65,10 +65,14 @@ type overview struct {
 }
 
 func humanBytes(n int64) string { return humanSize(n) }
+func (s *Server) loadOverview(row siteRow) (*overview,
+	string) {
+	return s.loadOverviewText(T, row)
+}
 
-func (s *Server) loadOverview(row siteRow) (*overview, string) {
+func (s *Server) loadOverviewText(T translator, row siteRow) (*overview, string) {
 	var in siteInfo
-	if e := s.list(ctl.Request{Op: "site.info", Site: row.Name}, &in); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "site.info", Site: row.Name}, &in); e != "" {
 		return nil, e
 	}
 	o := &overview{siteInfo: in, Home: site.HtdocsOf(row.User) + "/"}
@@ -122,6 +126,7 @@ func withCurrent(installed []string, cur string) []string {
 // settingsRequest reads the settings form of a site into a request for the helper. The kind comes from the stored site, never
 // from the form. Every value is checked here too, so that a mistake is explained in Vietnamese next to its name.
 func (s *Server) settingsRequest(r *http.Request, row siteRow, info siteInfo) (ctl.Request, string) {
+	T := translatorForRequest(r)
 	req := ctl.Request{Op: "site.set", Site: row.Name, Kind: row.Kind}
 	get := func(k string) string { return strings.TrimSpace(r.PostFormValue(k)) }
 	kind := site.Kind(row.Kind)
@@ -198,13 +203,14 @@ func (s *Server) settingsRequest(r *http.Request, row siteRow, info siteInfo) (c
 }
 
 func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-	row, status, msg := s.findSite(r.PathValue("name"))
+	T := translatorForWriter(w)
+	row, status, msg := s.findSiteText(T, r.PathValue("name"))
 	if status != 0 {
 		http.Error(w, msg, status)
 		return
 	}
 	back := siteTab(row.Name, "")
-	o, e := s.loadOverview(row)
+	o, e := s.loadOverviewText(T, row)
 	if e != "" {
 		s.refuseTo(w, ss, back, T("set.fail"), e)
 		return
@@ -214,7 +220,7 @@ func (s *Server) saveSettings(w http.ResponseWriter, r *http.Request, ss webauth
 		s.refuseTo(w, ss, back, T("set.fail"), problem)
 		return
 	}
-	res := s.run(T("act.site.set", row.Name), req)
+	res := s.runText(T, T("act.site.set", row.Name), req)
 	res.Back = back
 	if !res.OK {
 		switch {

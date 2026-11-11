@@ -27,19 +27,26 @@ var pages = map[string]page{}
 
 func init() {
 	for name, shell := range map[string]string{"login": "auth", "setup": "auth", "notfound": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base", "services": "base", "settings": "base", "emailcf": "base"} {
-		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict}).
-			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html"}, extraTemplates[name]...)...))
+		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict, "lang": func() string { return "vi" }, "runtime": func(row siteRow) string { return row.Runtime() }}).
+			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html", "templates/language.html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
 	}
 }
 
 func (s *Server) execute(w io.Writer, v view) {
+	T := translatorForWriter(w)
 	if p, ok := pages[v.Page]; ok {
 		v.Title = T("page." + v.Page)
 		v.Nav = navOf[v.Page]
 		// The status and the first part of the page are already sent when a template fails, so the person sees a page cut
 		// short. The reason goes to the log instead of being thrown away.
-		if err := p.t.ExecuteTemplate(w, shellName[p.shell], v); err != nil {
+		localized, err := p.t.Clone()
+		if err != nil {
+			log.Printf("clone page %s: %v", v.Page, err)
+			return
+		}
+		localized.Funcs(template.FuncMap{"T": T, "lang": func() string { return writerLanguage(w) }, "runtime": func(row siteRow) string { return row.RuntimeText(T) }})
+		if err := localized.ExecuteTemplate(w, shellName[p.shell], v); err != nil {
 			log.Printf("page %s could not be drawn completely: %v", v.Page, err)
 		}
 		return

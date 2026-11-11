@@ -74,7 +74,8 @@ func formMailDomain(r *http.Request) string {
 // handler does the checking of the values and the work, and returns to the website's tab.
 func (s *Server) siteMailPost(h func(http.ResponseWriter, *http.Request, webauth.Session)) func(http.ResponseWriter, *http.Request, webauth.Session) {
 	return func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-		row, status, msg := s.findSite(r.PathValue("name"))
+		T := translatorForWriter(w)
+		row, status, msg := s.findSiteText(T, r.PathValue("name"))
 		if status != 0 {
 			http.Error(w, msg, status)
 			return
@@ -113,9 +114,13 @@ type siteMailView struct {
 }
 
 func (s *Server) loadSiteMail(row siteRow, hostHeader string) *siteMailView {
+	return s.loadSiteMailText(T, row, hostHeader)
+}
+
+func (s *Server) loadSiteMailText(T translator, row siteRow, hostHeader string) *siteMailView {
 	v := &siteMailView{ServerIP: serverIP(hostHeader)}
 	st := &mailView{}
-	if msg := s.list(ctl.Request{Op: "mail.status"}, st); msg != "" {
+	if msg := s.listText(T, ctl.Request{Op: "mail.status"}, st); msg != "" {
 		v.Error = msg
 		return v
 	}
@@ -161,7 +166,7 @@ func (s *Server) loadSiteMail(row siteRow, hostHeader string) *siteMailView {
 			wg.Add(1)
 			go func(d *siteMailDomain) {
 				defer wg.Done()
-				d.Cloudflare = s.cloudflareOf(d.Name)
+				d.Cloudflare = s.cloudflareOfText(T, d.Name)
 			}(&v.Domains[i])
 		}
 		wg.Wait()

@@ -71,6 +71,7 @@ func (s *Server) renderEditor(w http.ResponseWriter, ss webauth.Session, fc *fil
 }
 
 func (s *Server) editPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "path")
 	if !ok {
 		return
@@ -82,7 +83,7 @@ func (s *Server) editPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 		if parent == "." {
 			parent = ""
 		}
-		s.back(w, r, fc.row.Name, parent, &result{Title: T("fm.edit.fail"), Error: fmMessage(err)})
+		s.back(w, r, fc.row.Name, parent, &result{Title: T("fm.edit.fail"), Error: fmMessageText(T, err)})
 		return
 	}
 	v := view{EditText: text, EditMtime: mtime, CRLF: strings.Contains(text, "\r\n")}
@@ -96,6 +97,7 @@ func (s *Server) editPage(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 // back into what the file used (LF unless the file already used CRLF). If the file changed while it was open, the text is
 // kept on the page and nothing is overwritten unless the person saves again.
 func (s *Server) editSave(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	fc, ok := s.withFiles(w, r, ss, "path")
 	if !ok {
 		return
@@ -107,13 +109,13 @@ func (s *Server) editSave(w http.ResponseWriter, r *http.Request, ss webauth.Ses
 		content = strings.ReplaceAll(content, "\n", "\r\n")
 	}
 	if len(content) > maxEditBytes {
-		s.renderEditor(w, ss, fc, http.StatusRequestEntityTooLarge, view{EditText: strings.ReplaceAll(content, "\r\n", "\n"), CRLF: crlf, Error: fmMessage(fm.ErrTooBig)})
+		s.renderEditor(w, ss, fc, http.StatusRequestEntityTooLarge, view{EditText: strings.ReplaceAll(content, "\r\n", "\n"), CRLF: crlf, Error: fmMessageText(T, fm.ErrTooBig)})
 		return
 	}
 	mtime, _ := strconv.ParseInt(r.PostFormValue("mtime"), 10, 64)
 	newMtime, err := fc.f.WriteText(fc.dir, content, mtime)
 	if err != nil {
-		v := view{EditText: strings.ReplaceAll(content, "\r\n", "\n"), EditMtime: mtime, CRLF: crlf, Error: fmMessage(err)}
+		v := view{EditText: strings.ReplaceAll(content, "\r\n", "\n"), EditMtime: mtime, CRLF: crlf, Error: fmMessageText(T, err)}
 		status := http.StatusBadRequest
 		if err == fm.ErrChanged {
 			if fi, serr := fc.f.Stat(fc.dir); serr == nil {

@@ -27,8 +27,9 @@ func (s *Server) backupPages(mux *http.ServeMux) {
 }
 
 func (s *Server) createBackup(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name := r.PostFormValue("site")
-	res := s.run(T("act.bk.create", name), ctl.Request{Op: "backup.create", Site: name})
+	res := s.runText(T, T("act.bk.create", name), ctl.Request{Op: "backup.create", Site: name})
 	res.Back = safeBack(r.PostFormValue("back"), "/")
 	s.finish(w, r, res)
 }
@@ -43,13 +44,14 @@ func (s *Server) refuseTo(w http.ResponseWriter, ss webauth.Session, back, title
 }
 
 func (s *Server) restoreConfirm(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name, stamp := r.URL.Query().Get("site"), r.URL.Query().Get("backup")
 	if !site.ValidName(name) || !backup.ValidStamp(stamp) {
 		http.Error(w, T("err.badbackup"), http.StatusBadRequest)
 		return
 	}
 	var rows []backupRow
-	if e := s.list(ctl.Request{Op: "backup.list", Site: name}, &rows); e != "" {
+	if e := s.listText(T, ctl.Request{Op: "backup.list", Site: name}, &rows); e != "" {
 		s.show(w, http.StatusBadGateway, ss, view{Page: "result", Result: &result{Title: T("bk.rs.fail"), Error: e, Back: safeBack(r.URL.Query().Get("back"), "/backups")}})
 		return
 	}
@@ -74,6 +76,7 @@ func (s *Server) restoreConfirm(w http.ResponseWriter, r *http.Request, ss webau
 }
 
 func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name, stamp := r.PostFormValue("site"), r.PostFormValue("backup")
 	files, dbs := r.PostFormValue("files") != "", r.PostForm["database"]
 	back := safeBack(r.PostFormValue("back"), "/backups")
@@ -84,13 +87,14 @@ func (s *Server) restoreBackup(w http.ResponseWriter, r *http.Request, ss webaut
 		s.refuseTo(w, ss, back, T("bk.rs.fail"), T("err.pick"))
 	default:
 		req := ctl.Request{Op: "backup.restore", Site: name, Backup: stamp, Files: files, Databases: dbs}
-		res := s.run(T("act.bk.restore", name, stamp), req)
+		res := s.runText(T, T("act.bk.restore", name, stamp), req)
 		res.Back = back
 		s.finish(w, r, res)
 	}
 }
 
 func (s *Server) pruneBackups(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
 	name := r.PostFormValue("site")
 	keep, err := strconv.Atoi(r.PostFormValue("keep"))
 	back := safeBack(r.PostFormValue("back"), "/backups")
@@ -100,7 +104,7 @@ func (s *Server) pruneBackups(w http.ResponseWriter, r *http.Request, ss webauth
 	case err != nil || keep < 1 || keep > 365:
 		s.refuseTo(w, ss, back, T("bk.pr.fail"), T("err.keep"))
 	default:
-		res := s.run(T("act.bk.prune", name), ctl.Request{Op: "backup.prune", Site: name, Keep: keep})
+		res := s.runText(T, T("act.bk.prune", name), ctl.Request{Op: "backup.prune", Site: name, Keep: keep})
 		res.Back = back
 		s.finish(w, r, res)
 	}
