@@ -182,7 +182,6 @@ func panelStep(o Options) (Step, error) {
 		Run("systemctl", "daemon-reload"),
 		Run("systemctl", "enable", "mpn-root", "mpn-web"),
 		Run("systemctl", "restart", "mpn-root"),
-		Run("sh", "-c", "[ -s /var/lib/mpn-web/account.json ] || "+mpnBinary+" web passwd"),
 		Run("systemctl", "restart", "mpn-web"),
 	}
 	if o.PMA { // the group and the key must exist before the panel starts with the browser switched on

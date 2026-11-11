@@ -67,8 +67,9 @@ Chép `mpn` lên máy chủ vào `/usr/local/bin/mpn`, rồi:
 ```
 mpn plan -engine mariadb -php 8.4 -node 22 -panel -pma           # xem kế hoạch, chưa thay đổi gì
 mpn plan -engine mariadb -php 8.4 -node 22 -panel -pma -apply     # chạy thật (root, Linux)
-mpn web passwd                                                    # đặt mật khẩu quản trị, in ra một lần
 ```
+
+Bộ cài không tạo tài khoản quản trị. Lần đầu mở panel ở `https://<IP>:2610`, trang `/setup` hiện ra để bạn tự đặt tên đăng nhập và mật khẩu (tối thiểu 12 ký tự); xong trang này không dùng được nữa. Mở panel ngay sau khi cài, vì ai vào `/setup` trước sẽ là người tạo tài khoản. Quên mật khẩu thì chạy `mpn web passwd` bằng root.
 
 Panel ở `https://<IP>:2610` (chứng chỉ tự ký cho tới khi có chứng chỉ thật). phpMyAdmin ở cổng kế tiếp (2611), cần mở cả hai cổng ở tường lửa của nhà cung cấp. Chạy lại `plan` trên máy đã có cơ sở dữ liệu thì thêm `-engine none`.
 
