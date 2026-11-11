@@ -79,7 +79,13 @@ const maxBody = 64 << 10
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	s.setupPages(mux)
-	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) { s.render(w, 200, view{Page: "login"}) })
+	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
+		if s.firstRun() {
+			http.Redirect(w, r, "/setup", http.StatusSeeOther)
+			return
+		}
+		s.render(w, 200, view{Page: "login"})
+	})
 	mux.HandleFunc("POST /login", s.login)
 	s.settingsPages(mux)
 	mux.HandleFunc("POST /logout", s.auth(s.logout))
