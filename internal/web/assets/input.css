@@ -38,8 +38,9 @@
 /* The colours are named by the part they play, not by hue, and every one is redefined for the dark theme below. A
    component says bg-card or text-muted-foreground and is then correct in both themes without a dark: variant. */
 @theme inline {
-  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* JetBrains Mono has no Chinese glyphs, so the Chinese system fonts follow it and the browser takes them for those. */
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

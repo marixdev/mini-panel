@@ -49,9 +49,19 @@ jobs:
           [ "$(./release/mpn_linux_amd64 version)" = "$VERSION" ] || { echo "::error::binary version does not match the tag"; exit 1; }
           cd release && sha256sum mpn_linux_* > SHA256SUMS && cat SHA256SUMS
 
+      # The notes of the release are this version's section of CHANGELOG.md.
+      - name: Release notes
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v v="$VERSION" '/^## \[/{p = index($0, "## [" v "]") == 1; next} p' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || { echo "::error::CHANGELOG.md has no section for $VERSION"; exit 1; }
+          cat release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: Mini Panel ${{ github.ref_name }}
           files: release/*
+          body_path: release-notes.md
           generate_release_notes: true

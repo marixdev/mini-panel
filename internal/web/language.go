@@ -13,10 +13,8 @@ import (
 type translator func(string, ...any) string
 
 func translate(language, key string, args ...any) string {
-	if language == "en" {
-		if text, ok := en[key]; ok {
-			return formatText(text, args...)
-		}
+	if text, ok := catalogs[language][key]; ok {
+		return formatText(text, args...)
 	}
 	return T(key, args...)
 }
@@ -26,7 +24,7 @@ func translatorFor(language string) translator {
 }
 
 func requestLanguage(r *http.Request) string {
-	if c, err := r.Cookie("mpn_language"); err == nil && (c.Value == "en" || c.Value == "vi") {
+	if c, err := r.Cookie("mpn_language"); err == nil && supportedLanguage(c.Value) {
 		return c.Value
 	}
 	// Vietnamese remains the default. Match the browser's supported preference,
@@ -35,7 +33,7 @@ func requestLanguage(r *http.Request) string {
 	for _, preference := range strings.Split(r.Header.Get("Accept-Language"), ",") {
 		parts := strings.Split(strings.TrimSpace(preference), ";")
 		language := strings.ToLower(strings.Split(parts[0], "-")[0])
-		if language != "en" && language != "vi" {
+		if !supportedLanguage(language) {
 			continue
 		}
 		q := 1.0
@@ -60,8 +58,8 @@ func requestLanguage(r *http.Request) string {
 func translatorForRequest(r *http.Request) translator { return translatorFor(requestLanguage(r)) }
 
 func writerLanguage(w io.Writer) string {
-	if h, ok := w.(interface{ Header() http.Header }); ok && h.Header().Get("Content-Language") == "en" {
-		return "en"
+	if h, ok := w.(interface{ Header() http.Header }); ok && supportedLanguage(h.Header().Get("Content-Language")) {
+		return h.Header().Get("Content-Language")
 	}
 	return "vi"
 }
@@ -71,7 +69,7 @@ func translatorForWriter(w io.Writer) translator { return translatorFor(writerLa
 // This preference does not require sign-in, so setup and login can be localized.
 func (s *Server) changeLanguage(w http.ResponseWriter, r *http.Request) {
 	language := r.PathValue("language")
-	if language != "en" && language != "vi" {
+	if !supportedLanguage(language) {
 		http.NotFound(w, r)
 		return
 	}

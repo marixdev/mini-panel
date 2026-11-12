@@ -32,9 +32,9 @@ const (
 // The release the panel installs. The program is downloaded once, from the release of the project that publishes it, and compared with
 // the checksum fixed here; a file that does not match is never installed.
 const (
-	WebmailVersion = "1.0.0"
+	WebmailVersion = "1.0.1"
 	WebmailURL     = "https://github.com/marixdev/mpn-mail/releases/download/v" + WebmailVersion + "/mpn-mail_linux_amd64"
-	WebmailSHA256  = "9be05cd8806ca1dc7fc6a2a57f913c81af8e7bc04935aac074dade6daca856df"
+	WebmailSHA256  = "61760f089c7ccce5b7ce898e3555e80711e29f0a378c3723fc907941fb2473fa"
 )
 
 // WebmailPort is the port of the web mail: the second one after the panel's (the first is the database browser's).

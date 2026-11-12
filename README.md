@@ -35,7 +35,7 @@ Tùy chọn: `MPN_VERSION=1.0.0` để cài một bản cố định, `MPN_PANEL
 - **Sao lưu:** hằng đêm, giữ 7 bản, khôi phục từ giao diện, đồng bộ lên Google Drive.
 - **Bảo mật:** tường lửa nftables không khóa nhầm SSH và cổng panel, ModSecurity với OWASP CRS, fail2ban, xác thực hai bước (TOTP).
 - **Giám sát:** CPU, bộ nhớ, tải, mạng, ổ đĩa và trạng thái dịch vụ trong 24 giờ.
-- **Giao diện** tiếng Việt và tiếng Anh, sáng và tối.
+- **Giao diện** tiếng Việt, tiếng Anh và tiếng Trung giản thể, sáng và tối.
 
 ## Cách hoạt động
 

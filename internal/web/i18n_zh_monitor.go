@@ -1,0 +1,53 @@
+package web
+
+// Simplified Chinese text of the monitoring page.
+func init() {
+	for k, v := range map[string]string{
+		"nav.monitor":           "监控",
+		"page.monitor":          "监控",
+		"mon.title":             "服务器监控",
+		"mon.sub":               "CPU、内存、磁盘和网络状态。每 30 秒采样一次，保留 24 小时。",
+		"mon.range":             "时间范围",
+		"mon.r.1h":              "1 小时",
+		"mon.r.6h":              "6 小时",
+		"mon.r.24h":             "24 小时",
+		"mon.now":               "当前",
+		"mon.empty":             "暂无数据",
+		"mon.empty.d":           "面板刚开始收集数据，请几分钟后再来查看。",
+		"mon.nochart":           "至少有两次采样（约一分钟）后才会显示图表。",
+		"mon.cpu":               "CPU",
+		"mon.cpu.sub":           "%d 个核心",
+		"mon.mem":               "内存",
+		"mon.mem.sub":           "总计 %s，不含可回收的系统缓存",
+		"mon.mem.used":          "已用",
+		"mon.swap":              "swap %s MB",
+		"mon.load":              "平均负载",
+		"mon.load.sub":          "过去 1 分钟，共 %d 个核心。负载等于核心数即为满载。",
+		"mon.load.ok":           "正常",
+		"mon.load.warn":         "偏高",
+		"mon.load.crit":         "过载",
+		"mon.uptime":            "运行时间",
+		"mon.uptime.sub":        "自上次启动以来",
+		"mon.up.dh":             "%d 天 %d 小时",
+		"mon.up.hm":             "%d 小时 %d 分钟",
+		"mon.up.m":              "%d 分钟",
+		"mon.disk":              "磁盘",
+		"mon.disk.warn":         "即将占满",
+		"mon.disk.crit":         "空间所剩无几",
+		"mon.net":               "网络",
+		"mon.net.sub":           "各物理网卡的传输速率",
+		"mon.net.rx":            "接收",
+		"mon.net.tx":            "发送",
+		"mon.services":          "服务",
+		"mon.svc.on":            "运行中",
+		"mon.svc.off":           "已停止",
+		"mon.svc.failed":        "失败",
+		"svc.unit.mpn-root":     "Mini Panel（root 辅助程序）",
+		"svc.unit.mpn-web":      "Mini Panel（Web 界面）",
+		"svc.unit.mpn-firewall": "防火墙",
+		"mon.table":             "以表格查看",
+		"mon.t.time":            "时间",
+	} {
+		zh[k] = v
+	}
+}

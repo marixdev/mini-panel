@@ -1,0 +1,52 @@
+package web
+
+// Simplified Chinese text of the Cron tab.
+func init() {
+	for k, v := range map[string]string{
+		"tab.cron":         "计划任务",
+		"cr.col.when":      "计划",
+		"cr.col.command":   "命令",
+		"cr.col.state":     "状态",
+		"cr.on":            "运行中",
+		"cr.off":           "已暂停",
+		"cr.pause":         "暂停",
+		"cr.resume":        "恢复",
+		"cr.delete":        "删除",
+		"cr.empty":         "暂无计划任务",
+		"cr.empty.d":       "添加一条命令，让它按计划自动运行，例如每天发送邮件或清理缓存。",
+		"cr.add.title":     "添加计划任务",
+		"cr.add.sub":       "命令将以网站账户 %s 运行，没有 root 权限，也不会发送邮件通知。",
+		"cr.when":          "运行",
+		"cr.custom":        "或输入自定义计划",
+		"cr.custom.hint":   "五个字段，以空格分隔：分 时 日 月 周。填写此项时将替代左侧的选择。",
+		"cr.command":       "命令",
+		"cr.command.hint":  "使用 /bin/sh 在 %s 的主目录下运行。输出会被丢弃；如需保留，请在末尾追加 >> ~/cron.log 2>&1。",
+		"cr.add.btn":       "添加",
+		"cr.max":           "每个网站最多 %d 个计划任务。",
+		"cr.p.minute":      "每分钟",
+		"cr.p.5min":        "每 5 分钟",
+		"cr.p.15min":       "每 15 分钟",
+		"cr.p.hour":        "每小时（第 0 分钟）",
+		"cr.p.day":         "每天 03:00",
+		"cr.p.week":        "每周，周日 03:00",
+		"cr.p.month":       "每月，1 日 03:00",
+		"cr.d.hour":        "每小时",
+		"cr.d.midnight":    "每天 00:00",
+		"cr.d.week":        "每周",
+		"cr.d.month":       "每月",
+		"cr.d.year":        "每年",
+		"cr.d.everyminute": "每分钟",
+		"cr.d.everyn":      "每 %d 分钟",
+		"cr.d.hourly":      "每小时第 %d 分钟",
+		"cr.d.daily":       "每天 %02d:%02d",
+		"act.cron.add":     "为网站 %s 添加计划任务",
+		"act.cron.toggle":  "切换网站 %s 的计划任务",
+		"act.cron.del":     "删除网站 %s 的计划任务",
+		"cr.fail":          "操作未完成",
+		"cr.err.schedule":  "计划无效：%s。",
+		"cr.err.command":   "命令无效：%s。",
+		"cr.err.id":        "计划任务无效。",
+	} {
+		zh[k] = v
+	}
+}

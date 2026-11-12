@@ -1,0 +1,53 @@
+package web
+
+// Simplified Chinese text of the menu under the name of the signed-in person, the Settings page and the code step of the sign-in.
+func init() {
+	for k, v := range map[string]string{
+		"user.menu":         "账户",
+		"user.signedin":     "当前登录账户",
+		"user.settings":     "设置",
+		"page.settings":     "设置",
+		"set.title":         "账户设置",
+		"set.sub":           "管理员账户的密码和双重验证。",
+		"set.pw.title":      "修改密码",
+		"set.pw.sub":        "使用旧密码登录的其他浏览器将被注销。",
+		"set.pw.current":    "当前密码",
+		"set.pw.new":        "新密码",
+		"set.pw.again":      "确认新密码",
+		"set.pw.hint":       "至少 %d 个字符。请勿使用您在其他地方用过的密码。",
+		"set.pw.btn":        "修改密码",
+		"set.pw.done":       "密码已修改",
+		"set.pw.wrong":      "当前密码不正确。",
+		"set.pw.short":      "新密码长度必须在 %d–256 个字符之间。",
+		"set.pw.mismatch":   "两次输入的新密码不一致。",
+		"set.pw.same":       "新密码必须与当前密码不同。",
+		"set.2fa.title":     "双重验证（2FA）",
+		"set.2fa.sub":       "登录时除密码外，还需输入验证器应用（如 Google Authenticator、Microsoft Authenticator 或 Authy）显示的 6 位数字验证码。",
+		"set.2fa.on":        "已启用",
+		"set.2fa.off":       "已禁用",
+		"set.2fa.enable":    "启用 2FA",
+		"set.2fa.step1":     "用验证器应用扫描二维码，或在应用中输入下方的密钥。",
+		"set.2fa.qr.alt":    "用于在验证器应用中添加此账户的二维码",
+		"set.2fa.secret":    "手动输入密钥",
+		"set.2fa.step2":     "输入验证器应用当前显示的 6 位数字以确认。",
+		"set.2fa.code":      "验证码",
+		"set.2fa.confirm":   "确认并启用",
+		"set.2fa.cancel":    "取消",
+		"set.2fa.wrong":     "验证码不正确或已过期。请输入验证器应用中当前显示的新验证码。",
+		"set.2fa.done":      "已启用双重验证",
+		"set.2fa.off.title": "禁用 2FA",
+		"set.2fa.off.sub":   "需要同时输入密码和当前验证码，这样即使他人获得了您的登录会话，也无法将其关闭。",
+		"set.2fa.off.btn":   "禁用 2FA",
+		"set.2fa.off.wrong": "密码或验证码不正确。",
+		"set.2fa.off.done":  "已禁用双重验证",
+		"set.2fa.lost":      "丢失了验证器应用？请通过 SSH 登录服务器，运行下方命令禁用 2FA，然后仅用密码登录。",
+		"set.2fa.cmd":       "命令",
+		"set.save":          "无法保存更改。请查看服务器上 mpn-web 的日志。",
+		"set.unavailable":   "服务器暂不允许修改此设置。",
+		"login.2fa.back":    "返回登录",
+		"login.2fa.wrong":   "验证码不正确或已过期。",
+		"login.2fa.expired": "登录会话已过期，或错误次数过多。请重新登录。",
+	} {
+		zh[k] = v
+	}
+}

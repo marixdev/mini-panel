@@ -95,7 +95,7 @@ func (s *Server) loadOverviewText(T translator, row siteRow) (*overview, string)
 	o.PyVersions = withCurrent(in.InstalledPy, in.PyVer)
 	if row.Kind == string(site.PHP) {
 		for _, d := range site.PHPSettings(strconv.Itoa(in.PHPMemory) + "M") {
-			f := phpField{Name: d.Name, Default: d.Default, Hint: hintFor(d.Name, d.Hint), Common: d.Common, Choices: d.Choices, Value: in.PHPValues[d.Name]}
+			f := phpField{Name: d.Name, Default: d.Default, Hint: hintFor(T, d.Name, d.Hint), Common: d.Common, Choices: d.Choices, Value: in.PHPValues[d.Name]}
 			_, f.Changed = in.PHPSet[d.Name]
 			if f.Common {
 				o.Fields = append(o.Fields, f)
@@ -107,9 +107,10 @@ func (s *Server) loadOverviewText(T translator, row siteRow) (*overview, string)
 	return o, ""
 }
 
-// hintFor is the Vietnamese description of a PHP setting; the English one of the site package is the fallback.
-func hintFor(name, fallback string) string {
-	if s, ok := vi["ph."+name]; ok {
+// hintFor is the description of a PHP setting in the request's language; the English one of the site package is the
+// fallback.
+func hintFor(T translator, name, fallback string) string {
+	if s := T("ph." + name); s != "ph."+name {
 		return s
 	}
 	return fallback
@@ -152,7 +153,7 @@ func (s *Server) settingsRequest(r *http.Request, row siteRow, info siteInfo) (c
 				continue // what the machine does anyway is not stored
 			}
 			if hint, ok := site.CheckPHPSetting(d.Name, v); !ok {
-				return req, T("set.err.ini", d.Name, v, hintFor(d.Name, hint))
+				return req, T("set.err.ini", d.Name, v, hintFor(T, d.Name, hint))
 			}
 			req.PHPIni[d.Name] = v
 		}
