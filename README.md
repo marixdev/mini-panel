@@ -17,7 +17,7 @@ Bảng điều khiển hosting nhẹ cho VPS nhỏ, viết bằng Go. Một tệ
 curl -fsSL https://mpanel.biz/install.sh | sh
 ```
 
-Bộ cài kiểm tra hệ điều hành, tải `mpn` từ bản phát hành mới nhất trên GitHub và so mã SHA-256 với `SHA256SUMS`. Sau đó nó cài nginx 1.28.3 cùng mô-đun pagespeed và ModSecurity, rồi cài panel ở cổng 2610 với chứng chỉ tự ký. Bộ cài **không** cài PHP, Node.js hay cơ sở dữ liệu: bạn chọn những thứ đó sau, trong trang Dịch vụ của panel.
+Bộ cài kiểm tra hệ điều hành, tải `mpn` từ bản phát hành mới nhất trên GitHub và so mã SHA-256 với `SHA256SUMS`. Sau đó nó cài nginx 1.28.3 cùng mô-đun pagespeed, rồi cài panel ở cổng 2610 với chứng chỉ tự ký. Mô-đun ModSecurity chỉ được cài khi bạn bật tường lửa ứng dụng web trong tab Bảo mật. Bộ cài **không** cài PHP, Node.js hay cơ sở dữ liệu: bạn chọn những thứ đó sau, trong trang Dịch vụ của panel.
 
 Cài xong, mở địa chỉ được in ra (`https://<IP>:2610/setup`) để tạo tài khoản quản trị. Hãy làm ngay, vì khi chưa có tài khoản, ai mở `/setup` trước sẽ là người tạo.
 
