@@ -8,7 +8,8 @@
 
 <section id="fm" class="card overflow-hidden" data-site="{{.Site.Name}}" data-dir="{{.Dir}}" data-csrf="{{.CSRF}}"
   data-t-create="{{T "fm.create"}}" data-t-newfile="{{T "fm.newfile"}}" data-t-newdir="{{T "fm.mkdir"}}" data-t-rename="{{T "fm.rename.title"}}" data-t-selected="{{T "fm.sel.count"}}" data-t-none="{{T "fm.filter.none"}}" data-t-uploading="{{T "fm.uploading"}}"
-  data-t-delete-one="{{T "fm.delete.one"}}" data-t-delete-many="{{T "fm.delete.title"}}" data-t-failed="{{T "fm.upload.failed"}}">
+  data-t-delete-one="{{T "fm.delete.one"}}" data-t-delete-many="{{T "fm.delete.title"}}" data-t-failed="{{T "fm.upload.failed"}}"
+  data-t-clip-cut="{{T "fm.clip.cut"}}" data-t-clip-copy="{{T "fm.clip.copy"}}" data-t-paste-here="{{T "fm.paste.here"}}">
 
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border px-3 py-2.5">
     <nav aria-label="{{T "fm.path"}}" class="flex min-w-0 flex-wrap items-center gap-1 font-mono text-[13px]">
@@ -30,11 +31,24 @@
 
   <div id="fm-sel" hidden class="flex flex-wrap items-center gap-1 border-b border-primary bg-primary/10 px-3 py-2">
     <span id="fm-count" class="mr-2 text-sm font-medium text-primary" aria-live="polite"></span>
+    <button type="button" class="tool-btn" data-fm="cut">{{template "fmbtn" "cut"}}<span>{{T "fm.cut.btn"}}</span></button>
+    <button type="button" class="tool-btn" data-fm="copy">{{template "fmbtn" "copy"}}<span>{{T "fm.copy.btn"}}</span></button>
     <button type="button" class="tool-btn" data-fm="zip">{{template "fmbtn" "zip"}}<span>{{T "fm.sel.zip"}}</span></button>
     <button type="button" class="tool-btn" data-fm="chmod">{{template "fmbtn" "chmod"}}<span>{{T "fm.chmod"}}</span></button>
     <button type="button" class="tool-btn-danger" data-fm="delete-selected">{{template "fmbtn" "delete"}}<span>{{T "fm.delete.btn"}}</span></button>
     <button type="button" class="tool-btn ml-auto" data-fm="clear">{{template "fmbtn" "close"}}<span>{{T "fm.sel.clear"}}</span></button>
   </div>
+
+  <div id="fm-clip" hidden class="flex flex-wrap items-center gap-1 border-b border-border bg-muted px-3 py-2">
+    <span class="text-muted-foreground">{{template "fmbtn" "paste"}}</span>
+    <span id="fm-clip-text" class="mr-2 min-w-0 text-sm" aria-live="polite"></span>
+    <button type="button" class="tool-btn-main" data-fm="paste">{{template "fmbtn" "paste"}}<span id="fm-clip-paste">{{T "fm.paste.btn"}}</span></button>
+    <button type="button" class="tool-btn ml-auto" data-fm="clipclear">{{template "fmbtn" "close"}}<span>{{T "fm.clip.clear"}}</span></button>
+  </div>
+  <form id="fm-paste-form" method="post" action="/sites/{{.Site.Name}}/files/paste" hidden>
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="dir" value="{{.Dir}}">
+    <input type="hidden" name="from" value=""><input type="hidden" name="mode" value="">
+  </form>
 
   {{if .Cut}}<p class="alert-warn m-3">{{T "fm.cut"}}</p>{{end}}
 
@@ -107,6 +121,9 @@
   <button type="button" role="menuitem" class="fm-mi" data-m="newfile">{{template "fmbtn" "newfile"}}<span>{{T "fm.newfile"}}</span></button>
   <button type="button" role="menuitem" class="fm-mi" data-m="newdir">{{template "fmbtn" "newdir"}}<span>{{T "fm.mkdir"}}</span></button>
   <hr class="fm-sep" role="separator">
+  <button type="button" role="menuitem" class="fm-mi" data-m="cut">{{template "fmbtn" "cut"}}<span>{{T "fm.cut.btn"}}</span><kbd class="fm-kbd">Ctrl+X</kbd></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="copy">{{template "fmbtn" "copy"}}<span>{{T "fm.copy.btn"}}</span><kbd class="fm-kbd">Ctrl+C</kbd></button>
+  <button type="button" role="menuitem" class="fm-mi" data-m="paste">{{template "fmbtn" "paste"}}<span>{{T "fm.paste.btn"}}</span><kbd class="fm-kbd">Ctrl+V</kbd></button>
   <button type="button" role="menuitem" class="fm-mi" data-m="rename">{{template "fmbtn" "rename"}}<span>{{T "fm.rename"}}</span></button>
   <button type="button" role="menuitem" class="fm-mi" data-m="chmod">{{template "fmbtn" "chmod"}}<span>{{T "fm.chmod"}}</span></button>
   <button type="button" role="menuitem" class="fm-mi" data-m="zip">{{template "fmbtn" "zip"}}<span>{{T "fm.zip.btn"}}</span></button>

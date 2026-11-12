@@ -111,7 +111,18 @@ func init() {
 		"fm.err.mode":         "Invalid permissions: enter three digits from 0 to 7.",
 		"fm.menu.open":        "Open",
 		"fm.menu.refresh":     "Refresh",
-	} {
+		"fm.cut.btn":          "Cut",
+		"fm.copy.btn":         "Copy",
+		"fm.paste.btn":        "Paste",
+		"fm.paste.here":       "Paste %d entries here",
+		"fm.clip.cut":         "%d entries cut. Open the target folder and choose Paste.",
+		"fm.clip.copy":        "%d entries copied. Open the target folder and choose Paste.",
+		"fm.clip.clear":       "Cancel",
+		"fm.done.copy":        "Copied %d files and %d directories.",
+		"fm.done.move":        "Moved %d files and %d directories.",
+		"fm.done.paste.fail":  "Could not paste.",
+		"fm.paste.partial":    "%d files and %d directories were done before the error.",
+		"fm.err.inside":       "A directory cannot be pasted into itself or into one of its subdirectories.",	} {
 		en[k] = v
 	}
 }

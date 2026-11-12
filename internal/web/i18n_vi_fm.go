@@ -111,7 +111,18 @@ func init() {
 		"fm.err.mode":         "Quyền không hợp lệ, cần ba chữ số từ 0 đến 7.",
 		"fm.menu.open":        "Mở",
 		"fm.menu.refresh":     "Làm mới",
-	} {
+		"fm.cut.btn":          "Cắt",
+		"fm.copy.btn":         "Sao chép",
+		"fm.paste.btn":        "Dán",
+		"fm.paste.here":       "Dán %d mục vào đây",
+		"fm.clip.cut":         "Đã cắt %d mục. Mở thư mục đích rồi chọn Dán.",
+		"fm.clip.copy":        "Đã sao chép %d mục. Mở thư mục đích rồi chọn Dán.",
+		"fm.clip.clear":       "Huỷ",
+		"fm.done.copy":        "Đã sao chép %d tệp và %d thư mục.",
+		"fm.done.move":        "Đã di chuyển %d tệp và %d thư mục.",
+		"fm.done.paste.fail":  "Không dán được.",
+		"fm.paste.partial":    "Đã xong %d tệp và %d thư mục trước khi gặp lỗi.",
+		"fm.err.inside":       "Không thể dán một thư mục vào chính nó hoặc thư mục con của nó.",	} {
 		vi[k] = v
 	}
 }

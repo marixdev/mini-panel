@@ -111,7 +111,18 @@ func init() {
 		"fm.err.mode":         "权限无效，需要输入 0 到 7 之间的三位数字。",
 		"fm.menu.open":        "打开",
 		"fm.menu.refresh":     "刷新",
-	} {
+		"fm.cut.btn":          "剪切",
+		"fm.copy.btn":         "复制",
+		"fm.paste.btn":        "粘贴",
+		"fm.paste.here":       "将 %d 个条目粘贴到此处",
+		"fm.clip.cut":         "已剪切 %d 个条目。打开目标文件夹后选择粘贴。",
+		"fm.clip.copy":        "已复制 %d 个条目。打开目标文件夹后选择粘贴。",
+		"fm.clip.clear":       "取消",
+		"fm.done.copy":        "已复制 %d 个文件和 %d 个文件夹。",
+		"fm.done.move":        "已移动 %d 个文件和 %d 个文件夹。",
+		"fm.done.paste.fail":  "无法粘贴。",
+		"fm.paste.partial":    "出错前已完成 %d 个文件和 %d 个文件夹。",
+		"fm.err.inside":       "不能将文件夹粘贴到它自身或其子文件夹中。",	} {
 		zh[k] = v
 	}
 }

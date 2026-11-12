@@ -110,6 +110,7 @@ func fmMessageText(T translator, err error) string {
 		fm.ErrBadPath: "fm.err.path", fm.ErrBadName: "fm.err.name", fm.ErrExists: "fm.err.exists", fm.ErrNotFound: "fm.err.notfound",
 		fm.ErrDenied: "fm.err.denied", fm.ErrBinary: "fm.err.binary", fm.ErrChanged: "fm.err.changed", fm.ErrTooBig: "fm.err.toobig",
 		fm.ErrIsDir: "fm.err.isdir", fm.ErrRoot: "fm.err.root", fm.ErrTooMany: "fm.err.toomany", fm.ErrBadMode: "fm.err.mode",
+		fm.ErrInside: "fm.err.inside",
 	} {
 		if errors.Is(err, e) {
 			return T(key)
@@ -374,6 +375,7 @@ func (s *Server) fileRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/files/zip", s.auth(s.zipAction))
 	mux.HandleFunc("POST /sites/{name}/files/chmod", s.auth(s.chmodAction))
 	mux.HandleFunc("POST /sites/{name}/files/unzip", s.auth(s.unzipAction))
+	mux.HandleFunc("POST /sites/{name}/files/paste", s.auth(s.pasteAction))
 	s.editorRoutes(mux)
 }
 

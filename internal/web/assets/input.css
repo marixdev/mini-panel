@@ -422,6 +422,12 @@
   .fm-mi svg {
     @apply text-muted-foreground;
   }
+  .fm-kbd {
+    @apply text-muted-foreground ml-auto pl-4 font-mono text-[11px];
+  }
+  .fm-row[data-cut="1"] {
+    @apply opacity-50;
+  }
   .fm-mi-danger {
     @apply text-destructive hover:bg-destructive/10 focus:bg-destructive/10;
   }

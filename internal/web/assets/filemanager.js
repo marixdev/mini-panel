@@ -144,10 +144,55 @@
     return true;
   }
 
+  // ---- cut, copy and paste. The items are remembered for this site in this tab, so the person can open another folder
+  // and paste there. Nothing changes on the server until Paste is chosen.
+  var clipKey = 'mpn-fm-clip:' + site;
+  function getClip() {
+    try { var c = JSON.parse(sessionStorage.getItem(clipKey) || 'null'); return c && c.names && c.names.length ? c : null; } catch (_) { return null; }
+  }
+  function setClip(c) {
+    try { if (c) sessionStorage.setItem(clipKey, JSON.stringify(c)); else sessionStorage.removeItem(clipKey); } catch (_) {}
+    clipShow(c);
+  }
+  var memClip = null; // used when the browser keeps nothing in sessionStorage
+  function clip() { return getClip() || memClip; }
+  function clipShow(c) {
+    var bar = $('fm-clip');
+    if (!bar) return;
+    bar.hidden = !c;
+    rows.forEach(function (r) { r.removeAttribute('data-cut'); });
+    if (!c) return;
+    $('fm-clip-text').textContent = say(c.mode === 'cut' ? 'clip-cut' : 'clip-copy').replace('%d', c.names.length);
+    $('fm-clip-paste').textContent = say('paste-here').replace('%d', c.names.length);
+    if (c.mode === 'cut' && c.dir === dir) c.names.forEach(function (n) { var r = rowOf(n); if (r) r.setAttribute('data-cut', '1'); });
+  }
+  function remember(mode, names) {
+    if (!names.length) return false;
+    memClip = { mode: mode, dir: dir, names: names };
+    setClip(memClip);
+    return true;
+  }
+  function paste(target) {
+    var c = clip(), form = $('fm-paste-form');
+    if (!c || !form) return false;
+    form.querySelector('[name=dir]').value = target;
+    form.querySelector('[name=from]').value = c.dir;
+    form.querySelector('[name=mode]').value = c.mode;
+    itemsInto(form, c.names);
+    if (c.mode === 'cut') { memClip = null; setClip(null); } // a cut can be pasted once; a copy as often as wanted
+    form.submit();
+    return true;
+  }
+
   // ---- one place that carries out an action, whether it came from a button, the menu or the keyboard
   function run(act, names) {
     var one = names[0];
     switch (act) {
+      case 'cut': return remember('cut', names);
+      case 'copy': return remember('copy', names);
+      // From the menu on a folder, the items go into that folder; otherwise into the open one.
+      case 'paste': return paste(one && rowOf(one) && rowOf(one).getAttribute('data-dir') === '1' ? rel(one) : dir);
+      case 'clipclear': memClip = null; setClip(null); return true;
       case 'upload': return openUpload();
       case 'newfile': return nameDialog(say('newfile'), 'newfile', say('create'), '');
       case 'newdir': return nameDialog(say('newdir'), 'mkdir', say('create'), '');
@@ -173,7 +218,7 @@
     if (!b) return;
     var act = b.getAttribute('data-fm'), name = b.getAttribute('data-name');
     if (act === 'delete-selected') act = 'delete';
-    if (run(act, name ? [name] : chosen())) e.preventDefault();
+    if (run(act, name ? [name] : act === 'paste' ? [] : chosen())) e.preventDefault();
   });
 
   // ---- the menu of the right mouse button
@@ -187,11 +232,13 @@
   function showMenu(x, y, names) {
     var one = names.length === 1 ? rowOf(names[0]) : null, isDir = one && one.getAttribute('data-dir') === '1';
     var allowed = !names.length ? ['upload', 'newfile', 'newdir', 'refresh', 'selectall'] :
-      names.length > 1 ? ['zip', 'chmod', 'delete'] :
-      isDir ? ['open', 'rename', 'chmod', 'zip', 'delete'] :
-      ['edit', 'download', 'rename', 'chmod', 'zip', 'unzip', 'delete'].filter(function (a) {
+      names.length > 1 ? ['cut', 'copy', 'zip', 'chmod', 'delete'] :
+      isDir ? ['open', 'cut', 'copy', 'rename', 'chmod', 'zip', 'delete'] :
+      ['edit', 'download', 'cut', 'copy', 'rename', 'chmod', 'zip', 'unzip', 'delete'].filter(function (a) {
         return (a !== 'edit' || one.getAttribute('data-edit') === '1') && (a !== 'unzip' || one.getAttribute('data-zip') === '1');
       });
+    // Paste goes into the open folder, or into the folder that was right-clicked.
+    if (clip() && (!names.length || isDir)) allowed.push('paste');
     items.forEach(function (i) { i.hidden = allowed.indexOf(i.getAttribute('data-m')) < 0; });
     menu.querySelectorAll('.fm-sep').forEach(function (s) { s.hidden = !names.length; });
     menu.setAttribute('data-names', JSON.stringify(names));
@@ -246,6 +293,13 @@
     if (e.key === 'Escape') { closeMenu(); if (names.length) run('clear', []); }
     else if (e.key === 'F2' && names.length === 1) { e.preventDefault(); run('rename', names); }
     else if (e.key === 'Delete' && names.length) { e.preventDefault(); run('delete', names); }
+    else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && window.getSelection && String(window.getSelection()) === '') {
+      // Only when no text is selected on the page, so copying text still works as usual.
+      var k = e.key.toLowerCase();
+      if (k === 'x' && names.length) { e.preventDefault(); run('cut', names); }
+      else if (k === 'c' && names.length) { e.preventDefault(); run('copy', names); }
+      else if (k === 'v' && clip()) { e.preventDefault(); run('paste', []); }
+    }
   });
 
   // ---- upload
@@ -307,5 +361,6 @@
     zone.addEventListener('dragover', function () { zone.setAttribute('data-over', '1'); });
     ['dragleave', 'drop'].forEach(function (n) { zone.addEventListener(n, function () { zone.removeAttribute('data-over'); }); });
   }
+  clipShow(clip());
   refresh();
 })();

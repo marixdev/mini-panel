@@ -23,7 +23,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 
 安装完成后，打开输出的地址（`https://<IP>:2610/setup`）创建管理员账户。请立即完成：在账户创建之前，谁先打开 `/setup` 谁就能创建账户。
 
-可选项：`MPN_VERSION=1.0.1` 安装指定版本，`MPN_PANEL_PORT=2610` 修改面板端口。
+可选项：`MPN_VERSION=1.0.2` 安装指定版本，`MPN_PANEL_PORT=2610` 修改面板端口。
 
 **操作系统：** Ubuntu 22.04、24.04、26.04 和 Debian 12、13，x86_64 架构。
 
