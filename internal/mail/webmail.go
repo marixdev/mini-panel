@@ -34,7 +34,7 @@ const (
 const (
 	WebmailVersion = "1.0.1"
 	WebmailURL     = "https://github.com/marixdev/mpn-mail/releases/download/v" + WebmailVersion + "/mpn-mail_linux_amd64"
-	WebmailSHA256  = "84ecbd75f0c4c83bb7a68878219942c7d792ad8b8bfaba14303d86014b79eda1"
+	WebmailSHA256  = "baa6ef9eee515631b240705fd173e94caefa6d79a61cf521e365db27da5e86af"
 )
 
 // WebmailPort is the port of the web mail: the second one after the panel's (the first is the database browser's).
