@@ -13,6 +13,7 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 - Web mail lên [mpn-mail 1.0.1](https://github.com/marixdev/mpn-mail/releases/tag/v1.0.1), bản có tiếng Trung và đi theo ngôn ngữ của panel.
 - Mô tả các thiết lập PHP trong tab Tổng quan nay hiện theo ngôn ngữ đang chọn, trước đây luôn là tiếng Việt.
+- README có thêm bản tiếng Anh ([README.en.md](README.en.md)) và tiếng Trung ([README.zh.md](README.zh.md)), kèm bảng các repo đi kèm (mpn-mail, mpn-nginx-modules).
 
 ## [1.0.0] - 2026-11-12
 

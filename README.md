@@ -7,6 +7,8 @@ Bảng điều khiển hosting nhẹ cho VPS nhỏ, viết bằng Go. Một tệ
 <a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">Cài đặt</a> · <a href="https://github.com/marixdev/mini-panel/releases">Bản phát hành</a>
 </p>
 
+<p align="center"><b>Tiếng Việt</b> · <a href="README.en.md">English</a> · <a href="README.zh.md">简体中文</a></p>
+
 ---
 
 ## Cài đặt
@@ -21,7 +23,7 @@ Bộ cài kiểm tra hệ điều hành, tải `mpn` từ bản phát hành mớ
 
 Cài xong, mở địa chỉ được in ra (`https://<IP>:2610/setup`) để tạo tài khoản quản trị. Hãy làm ngay, vì khi chưa có tài khoản, ai mở `/setup` trước sẽ là người tạo.
 
-Tùy chọn: `MPN_VERSION=1.0.0` để cài một bản cố định, `MPN_PANEL_PORT=2610` để đổi cổng panel.
+Tùy chọn: `MPN_VERSION=1.0.1` để cài một bản cố định, `MPN_PANEL_PORT=2610` để đổi cổng panel.
 
 **Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13, kiến trúc x86_64.
 
@@ -45,6 +47,15 @@ Tùy chọn: `MPN_VERSION=1.0.0` để cài một bản cố định, `MPN_PANEL
 - Mọi thay đổi trên máy là một kế hoạch gồm nhiều bước, mặc định chỉ xem thử và chạy thật khi có `-apply`. Nếu `nginx -t` hoặc một bước lỗi, tệp cũ được khôi phục.
 - nginx được ghim ở 1.28.3 trên mọi hệ điều hành (từ nginx.org, `apt-mark hold`), nên `apt upgrade` không làm hỏng các mô-đun đã build cho bản đó ([mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules)). Mọi tệp tải về đều được so với mã SHA-256 ghi sẵn trong mã nguồn.
 - Dữ liệu của panel nằm trong SQLite, `/var/lib/mpn/mpn.db` quyền 0600.
+
+## Các repo đi kèm
+
+Panel tải các thành phần sau từ bản phát hành của chúng và so mã SHA-256 đã ghim trong mã nguồn:
+
+| Repo | Panel dùng để | Ghim ở |
+|---|---|---|
+| [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | Web mail ở `/webmail/` (bản tùy biến của lilmail) | `internal/mail/webmail.go` |
+| [marixdev/mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules) | Mô-đun PageSpeed và ModSecurity build cho nginx 1.28.3 | `internal/installer/nginx.go` |
 
 ## Dòng lệnh
 
