@@ -19,19 +19,26 @@ type Options struct {
 	CertDir string // directory holding fullchain.pem and privkey.pem
 }
 
+// DefaultCertDir is the self-signed certificate the installer makes for the catch-all server. A site without a certificate of
+// its own answers https:// with it and sends the visitor to http://, so the visitor sees the site and not the page of the
+// catch-all (which nginx would otherwise pick, since no server of port 443 has the name).
+const DefaultCertDir = "/etc/mpn/certs/_default"
+
 type data struct {
-	Site      site.Site
-	Names     string // the names that serve the site
-	Aliases   string // the names that only send visitors to the primary one
-	Primary   string
-	Scheme    string // of the address visitors are sent to
-	Upstream  string
-	TLS       bool
-	AllowHTTP bool
-	CertDir   string
-	BodyMax   string // client_max_body_size of a PHP site: what PHP accepts, so the two agree
-	Timeout   int    // how long nginx waits for PHP, in seconds
-	Webmail   string // the locations of the web mail, when the site has it and serves over SSL
+	Site        site.Site
+	Names       string // the names that serve the site
+	Aliases     string // the names that only send visitors to the primary one
+	Primary     string
+	Scheme      string // of the address visitors are sent to
+	Upstream    string
+	TLS         bool
+	AllowHTTP   bool
+	CertDir     string
+	BodyMax     string // client_max_body_size of a PHP site: what PHP accepts, so the two agree
+	Timeout     int    // how long nginx waits for PHP, in seconds
+	Webmail     string // the locations of the web mail, when the site has it and serves over SSL
+	AllNames    string // every name of the site, for the 443 server of a site without a certificate
+	DefaultCert string
 }
 
 // What a site serves. It appears once for HTTP and once for HTTPS when both serve it.
@@ -101,6 +108,17 @@ server {
 {{- template "body" .}}
 }
 {{- end}}
+{{- if not .TLS}}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    ssl_certificate {{.DefaultCert}}/fullchain.pem;
+    ssl_certificate_key {{.DefaultCert}}/privkey.pem;
+    server_name {{.AllNames}};
+    return 302 http://$host$request_uri;
+}
+{{- end}}
 {{- if .Aliases}}
 
 server {
@@ -159,7 +177,8 @@ func Render(s site.Site, o Options) (string, error) {
 		return "", fmt.Errorf("certificate directory %q is not a safe path", o.CertDir)
 	}
 	var b bytes.Buffer
-	d := data{Site: s, Names: strings.Join(s.Hostnames, " "), Primary: s.Primary(), Upstream: s.ProxyTarget(), TLS: o.TLS, AllowHTTP: s.AllowHTTP, CertDir: o.CertDir, Scheme: "http"}
+	d := data{Site: s, Names: strings.Join(s.Hostnames, " "), Primary: s.Primary(), Upstream: s.ProxyTarget(), TLS: o.TLS, AllowHTTP: s.AllowHTTP, CertDir: o.CertDir, Scheme: "http",
+		AllNames: strings.Join(s.Hostnames, " "), DefaultCert: DefaultCertDir}
 	if o.TLS {
 		d.Scheme = "https"
 	}
