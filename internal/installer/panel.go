@@ -184,6 +184,7 @@ func panelStep(o Options) (Step, error) {
 		Run("systemctl", "restart", "mpn-root"),
 		Run("systemctl", "restart", "mpn-web"),
 	}
+	acts = append(acts, motdActions()...)
 	if o.PMA { // the group and the key must exist before the panel starts with the browser switched on
 		acts = append(acts[:2], append(pmaPrepareActions(), acts[2:]...)...)
 	}
