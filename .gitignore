@@ -23,3 +23,5 @@ scripts/browser-check.ps1
 # local scratch and build output
 /.tmp-*/
 /mpn-linux
+/PLAN.md
+/UI-PLAN.md
