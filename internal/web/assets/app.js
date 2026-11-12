@@ -83,7 +83,7 @@ function setMenu(menu, open) {
   var panel = menu.querySelector('[data-menu-panel]'), button = menu.querySelector('[data-menu-button]');
   panel.hidden = !open;
   button.setAttribute('aria-expanded', open ? 'true' : 'false');
-  if (open) { var first = panel.querySelector('[role=menuitem]'); if (first) first.focus(); }
+  if (open) { var first = panel.querySelector('[role^=menuitem]'); if (first) first.focus(); }
 }
 document.addEventListener('click', function (e) {
   var button = e.target.closest('[data-menu-button]');
@@ -100,7 +100,7 @@ document.addEventListener('keydown', function (e) {
     setMenu(menu, false);
     menu.querySelector('[data-menu-button]').focus();
   } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !panel.hidden) {
-    var items = Array.prototype.slice.call(panel.querySelectorAll('[role=menuitem]'));
+    var items = Array.prototype.slice.call(panel.querySelectorAll('[role^=menuitem]'));
     var at = items.indexOf(document.activeElement);
     items[(at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
     e.preventDefault();

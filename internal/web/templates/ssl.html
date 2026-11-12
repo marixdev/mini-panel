@@ -12,7 +12,7 @@
     <span class="badge-gray">{{if $s.LetsEncrypt}}{{T "ssl.source.le"}}{{else}}{{T "ssl.source.custom"}}{{end}}</span>
   </div>
   <dl class="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-    <div><dt class="text-muted-foreground">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if $s.Issuer}}{{$s.Issuer}}{{else}}â€“{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if $s.Issuer}}{{$s.Issuer}}{{else}}–{{end}}</dd></div>
     <div><dt class="text-muted-foreground">{{T "ssl.names"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{range $s.Names}}<div>{{.}}</div>{{end}}</dd></div>
     {{if $s.UntilText}}<div class="sm:col-span-2"><dt class="text-muted-foreground">{{T "ssl.until" $s.UntilText $s.Days}}</dt>
       <dd class="mt-1">{{if $s.Soon}}<span class="badge-amber">{{T "ssl.soon"}}</span>{{end}}</dd></div>{{end}}

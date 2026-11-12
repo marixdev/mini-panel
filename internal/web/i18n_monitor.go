@@ -17,6 +17,7 @@ func init() {
 		"mon.disk": "Ổ đĩa", "mon.disk.warn": "Sắp đầy", "mon.disk.crit": "Gần hết chỗ",
 		"mon.net": "Mạng", "mon.net.sub": "Tốc độ qua các card mạng thật", "mon.net.rx": "Nhận", "mon.net.tx": "Gửi",
 		"mon.services": "Dịch vụ", "mon.svc.on": "Đang chạy", "mon.svc.off": "Đã dừng", "mon.svc.failed": "Lỗi",
+		"svc.unit.mpn-root": "Mini Panel (trình hỗ trợ)", "svc.unit.mpn-web": "Mini Panel (giao diện)", "svc.unit.mpn-firewall": "Tường lửa",
 		"mon.table": "Xem dạng bảng", "mon.t.time": "Thời điểm",
 	} {
 		vi[k] = v

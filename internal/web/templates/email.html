@@ -23,7 +23,7 @@
     </div>
     <button class="btn-primary">{{T "mail.enable"}}</button>
   </div>
-  <p class="hint">{{T "mail.host.hint" (or $m.ServerIP "â€“")}}</p>
+  <p class="hint">{{T "mail.host.hint" (or $m.ServerIP "–")}}</p>
   <p class="hint">{{T "mail.ports" "25, 465, 587, 993"}}</p>
 </form>
 {{else}}
@@ -44,10 +44,10 @@
       {{if eq $m.Cert.Mode "letsencrypt"}}<span class="badge-teal">{{T "mail.cert.le"}}</span>{{else}}<span class="badge-amber">{{T "mail.cert.self"}}</span>{{end}}
     </div>
     {{if eq $m.Cert.Mode "letsencrypt"}}
-    <p class="mt-2 text-sm text-muted-foreground">{{T "mail.cert.days" $m.Cert.Days}}{{if $m.Cert.Issuer}} Â· {{$m.Cert.Issuer}}{{end}}</p>
+    <p class="mt-2 text-sm text-muted-foreground">{{T "mail.cert.days" $m.Cert.Days}}{{if $m.Cert.Issuer}} · {{$m.Cert.Issuer}}{{end}}</p>
     {{else}}<p class="alert-warn mt-3">{{T "mail.tls.note" $m.Host}}</p>{{end}}
     <form method="post" action="/email/ssl" class="mt-3"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{if eq $m.Cert.Mode "letsencrypt"}}{{T "mail.cert.renew"}}{{else}}{{T "mail.cert.get"}}{{end}}</button></form>
-    <p class="hint">{{T "mail.cert.hint" $m.Host (or $m.ServerIP "â€“")}}</p>
+    <p class="hint">{{T "mail.cert.hint" $m.Host (or $m.ServerIP "–")}}</p>
   </div>
   <details class="mt-4 rounded-lg border border-border">
     <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-rose-700 dark:text-rose-400">{{T "mail.off.title2"}}</summary>

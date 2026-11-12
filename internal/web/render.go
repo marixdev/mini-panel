@@ -28,7 +28,7 @@ var pages = map[string]page{}
 func init() {
 	for name, shell := range map[string]string{"login": "auth", "setup": "auth", "notfound": "auth", "sites": "base", "result": "base", "confirm": "base", "sitenew": "base", "site": "base", "fileedit": "base", "filerename": "base", "pmaopen": "base", "firewall": "base", "security": "base", "email": "base", "cloudlist": "base", "monitor": "base", "services": "base", "settings": "base", "emailcf": "base"} {
 		t := template.Must(template.New(name).Funcs(template.FuncMap{"T": T, "stamp": stampText, "asset": assetURL, "siteMenu": siteMenu, "dict": dict, "lang": func() string { return "vi" }, "runtime": func(row siteRow) string { return row.Runtime() }}).
-			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html", "templates/language.html"}, extraTemplates[name]...)...))
+			ParseFS(templateFS, append([]string{"templates/" + shell + ".html", "templates/" + name + ".html", "templates/language.html", "templates/footer.html"}, extraTemplates[name]...)...))
 		pages[name] = page{t, shell}
 	}
 }
@@ -38,6 +38,7 @@ func (s *Server) execute(w io.Writer, v view) {
 	if p, ok := pages[v.Page]; ok {
 		v.Title = T("page." + v.Page)
 		v.Nav = navOf[v.Page]
+		v.Foot = s.footer()
 		// The status and the first part of the page are already sent when a template fails, so the person sees a page cut
 		// short. The reason goes to the log instead of being thrown away.
 		localized, err := p.t.Clone()

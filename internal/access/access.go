@@ -68,7 +68,7 @@ func bannerSnippet(s site.Site) string {
 case $- in *i*)
   if [ -z "$MPN_BANNER" ]; then
     MPN_BANNER=1; export MPN_BANNER
-    printf '\n  Mini Panel · %%s\n  Tài khoản %%s · thư mục web %%s\n  Gõ exit để thoát.\n\n' '%s' "$USER" '%s'
+    printf '\n  Mini Panel · %%s\n  Account %%s · web root %%s\n  Type exit to leave.\n\n' '%s' "$USER" '%s'
   fi;;
 esac
 `, s.Hostnames[0], s.Root)

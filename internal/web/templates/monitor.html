@@ -26,7 +26,7 @@
     <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "mon.mem"}}</p>
     <p class="mt-2 text-2xl font-semibold">{{printf "%.0f" $m.MemPct}}%</p>
     <div class="mt-3">{{template "meter" (dict "Pct" $m.MemPct "Level" $m.MemLevel)}}</div>
-    <p class="hint">{{printf "%.0f" $m.Now.MemMB}} / {{printf "%.0f" $m.Machine.MemTotalMB}} MB{{if $m.Machine.SwapTotalMB}} Â· {{T "mon.swap" (printf "%.0f" $m.Now.SwapMB)}}{{end}}</p>
+    <p class="hint">{{printf "%.0f" $m.Now.MemMB}} / {{printf "%.0f" $m.Machine.MemTotalMB}} MB{{if $m.Machine.SwapTotalMB}} · {{T "mon.swap" (printf "%.0f" $m.Now.SwapMB)}}{{end}}</p>
   </div>
   <div class="card p-4">
     <p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">{{T "mon.load"}}</p>

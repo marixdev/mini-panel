@@ -19,3 +19,7 @@ testdata/
 internal/sshtest/
 tools/wscheck/
 scripts/browser-check.ps1
+
+# local scratch and build output
+/.tmp-*/
+/mpn-linux

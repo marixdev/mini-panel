@@ -98,6 +98,7 @@ func webServe(args []string) {
 	}
 	_ = accountExists // passed to the server below
 	// The measurements are kept next to the account file: the one place the panel is allowed to write.
+	web.Version = version
 	collector := monitor.New(monitor.ProcSource, filepath.Join(filepath.Dir(*account), "metrics.json"))
 	srv := &web.Server{
 		Mon:     collector,

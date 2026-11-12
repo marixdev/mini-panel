@@ -3,6 +3,7 @@
 package installer
 
 import (
+	_ "embed"
 	"fmt"
 	"slices"
 	"strings"
@@ -133,6 +134,9 @@ func Build(o Options) (Plan, error) {
 			// Debian and Ubuntu enable a default site that would clash with the catch-all below.
 			Run("rm", "-f", "/etc/nginx/sites-enabled/default"),
 			Run("sh", "-c", defaultCertScript),
+			Run("install", "-d", "-m", "0755", "-o", "root", "-g", "root", defaultPageDir),
+			WriteFile(defaultPageDir+"/index.html", defaultPage, 0o644),
+			WriteFile("/etc/nginx/mpn-default-page.conf", defaultPageConf, 0o644),
 			WriteFile("/etc/nginx/conf.d/00-default.conf", defaultServer, 0o644),
 			Run("install", "-d", "-m", "0755", "/var/log/mpn/sites"),
 			WriteFile("/etc/logrotate.d/mpn-sites", siteLogRotation, 0o644),
@@ -325,14 +329,22 @@ const siteLogRotation = `/var/log/mpn/sites/*/*.log {
 }
 `
 
-// defaultServer answers requests for unknown host names by closing the connection, on both ports. Port 443 needs a
-// certificate to complete the handshake, so a self-signed one is generated; "ssl_reject_handshake" would avoid that
-// but needs nginx 1.19.4, and Ubuntu 22.04 ships an older nginx.
+// defaultPageDir holds the page shown for the server's IP address and for any host name no site has. It belongs to
+// root and holds nothing else, so the catch-all server can read no file of a site.
+const defaultPageDir = "/usr/local/share/mpn/default"
+
+//go:embed pages/default.html
+var defaultPage string
+
+// defaultServer answers requests for the IP address and for unknown host names with one static page, on both ports,
+// instead of closing the connection (the browser then said "didn't send any data", which looks like a broken server).
+// Every path gets the same page, and nothing of a site or of the panel is named in it. Port 443 needs a certificate to
+// complete the handshake, so a self-signed one is generated.
 const defaultServer = `server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
-    return 444;
+    include /etc/nginx/mpn-default-page.conf;
 }
 
 server {
@@ -341,7 +353,19 @@ server {
     server_name _;
     ssl_certificate /etc/mpn/certs/_default/fullchain.pem;
     ssl_certificate_key /etc/mpn/certs/_default/privkey.pem;
-    return 444;
+    include /etc/nginx/mpn-default-page.conf;
+}
+`
+
+// defaultPageConf is shared by both servers of defaultServer. The page has its own inline style and script and loads
+// nothing, so the policy allows only those.
+const defaultPageConf = `root ` + defaultPageDir + `;
+access_log off;
+add_header X-Content-Type-Options nosniff always;
+add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; frame-ancestors 'none'" always;
+location / {
+    limit_except GET { deny all; }
+    try_files /index.html =404;
 }
 `
 

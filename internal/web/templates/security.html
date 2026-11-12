@@ -19,7 +19,7 @@
   {{if .Own}}
   <dl class="mt-5 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
     <div><dt class="text-muted-foreground">{{T "psl.domain"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{.Domain}}</dd></div>
-    <div><dt class="text-muted-foreground">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if .Issuer}}{{.Issuer}}{{else}}â€“{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ssl.issuer"}}</dt><dd class="mt-0.5 font-medium">{{if .Issuer}}{{.Issuer}}{{else}}–{{end}}</dd></div>
     <div><dt class="text-muted-foreground">{{T "psl.urls"}}</dt><dd class="mt-0.5 grid gap-1 font-mono text-[13px] font-medium break-all">
       {{if .Plain}}<span>{{T "psl.panel"}}: https://{{.Domain}}</span>
       {{if .PMAPath}}<span>{{T "psl.pma"}}: https://{{.Domain}}/pma/</span>{{end}}
@@ -48,7 +48,7 @@
         </div>
         <button class="btn-primary">{{if eq .Mode "letsencrypt"}}{{T "psl.le.replace"}}{{else}}{{T "psl.le.btn"}}{{end}}</button>
       </div>
-      <p class="hint">{{T "psl.le.hint" (or .ServerIP "â€“")}}</p>
+      <p class="hint">{{T "psl.le.hint" (or .ServerIP "–")}}</p>
     </form>
 
     <form method="post" action="/security/panel-ssl/custom" class="rounded-lg border border-border p-4" autocomplete="off">

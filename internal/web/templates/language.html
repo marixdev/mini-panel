@@ -1,4 +1,14 @@
-{{define "language"}}<nav aria-label="{{T "language.label"}}" class="flex items-center gap-2 text-xs">
-<a{{if eq (lang) "en"}} aria-current="true"{{end}} href="/language/en" lang="en" hreflang="en" class="nav-link">English</a>
-<a{{if eq (lang) "vi"}} aria-current="true"{{end}} href="/language/vi" lang="vi" hreflang="vi" class="nav-link">Tiếng Việt</a>
-</nav>{{end}}
+{{define "language"}}<div class="relative" data-menu>
+  <button type="button" data-menu-button aria-haspopup="menu" aria-expanded="false" aria-controls="language-menu" title="{{T "language.label"}}" aria-label="{{T "language.label"}}" class="menu-trigger">
+    <svg viewBox="0 0 24 24" class="text-muted-foreground size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0-18"/></svg>
+    <span class="font-medium sm:hidden">{{if eq (lang) "en"}}EN{{else}}VI{{end}}</span>
+    <span class="hidden font-medium sm:inline">{{if eq (lang) "en"}}English{{else}}Tiếng Việt{{end}}</span>
+    <svg viewBox="0 0 24 24" class="text-muted-foreground size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div id="language-menu" data-menu-panel hidden role="menu" aria-label="{{T "language.label"}}" class="menu-panel lang-panel">
+    <div class="p-1">
+      <a role="menuitemradio" href="/language/vi" lang="vi" hreflang="vi" class="menu-item" aria-checked="{{if eq (lang) "vi"}}true{{else}}false{{end}}">Tiếng Việt{{if eq (lang) "vi"}}<svg viewBox="0 0 24 24" class="text-primary ml-auto size-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>{{end}}</a>
+      <a role="menuitemradio" href="/language/en" lang="en" hreflang="en" class="menu-item" aria-checked="{{if eq (lang) "en"}}true{{else}}false{{end}}">English{{if eq (lang) "en"}}<svg viewBox="0 0 24 24" class="text-primary ml-auto size-4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>{{end}}</a>
+    </div>
+  </div>
+</div>{{end}}

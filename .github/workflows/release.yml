@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
+
+      # The web mail the panel installs is pinned by URL and SHA-256 in internal/mail/webmail.go. A release whose pin
+      # does not match the published mpn-mail binary would fail on every machine, so the release stops here instead.
+      - name: Check the pinned web mail
+        run: |
+          set -euo pipefail
+          ver=$(sed -n 's/^\s*WebmailVersion *= *"\(.*\)"/\1/p' internal/mail/webmail.go)
+          sum=$(sed -n 's/^\s*WebmailSHA256 *= *"\(.*\)"/\1/p' internal/mail/webmail.go)
+          url="https://github.com/marixdev/mpn-mail/releases/download/v${ver}/mpn-mail_linux_amd64"
+          curl -fsSL -o /tmp/mpn-mail "$url"
+          got=$(sha256sum /tmp/mpn-mail | cut -d' ' -f1)
+          [ "$got" = "$sum" ] || { echo "::error::$url has SHA-256 $got, the panel pins $sum"; exit 1; }
+          echo "web mail v${ver} matches the pin"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p release
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" \
+              -o "release/mpn_linux_${arch}" ./cmd/mpn
+          done
+          [ "$(./release/mpn_linux_amd64 version)" = "$VERSION" ] || { echo "::error::binary version does not match the tag"; exit 1; }
+          cd release && sha256sum mpn_linux_* > SHA256SUMS && cat SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mini Panel ${{ github.ref_name }}
+          files: release/*
+          generate_release_notes: true

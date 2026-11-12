@@ -94,7 +94,7 @@
       <div>
         <label for="i-{{.Name}}" class="label flex min-h-6 items-center gap-2 font-mono text-[13px]">{{.Name}}{{if .Changed}}<span class="badge-teal font-sans">{{T "ov.php.changed"}}</span>{{end}}</label>
         <input id="i-{{.Name}}" name="ini_{{.Name}}" class="field font-mono" value="{{.Value}}" spellcheck="false" maxlength="40">
-        <p class="hint">{{.Hint}} Â· {{T "ov.php.default" .Default}}</p>
+        <p class="hint">{{.Hint}} · {{T "ov.php.default" .Default}}</p>
       </div>
       {{end}}
     </div>
@@ -110,7 +110,7 @@
           {{else}}
           <input id="i-{{.Name}}" name="ini_{{.Name}}" class="field font-mono" value="{{.Value}}" spellcheck="false" maxlength="40">
           {{end}}
-          <p class="hint">{{.Hint}} Â· {{T "ov.php.default" .Default}}</p>
+          <p class="hint">{{.Hint}} · {{T "ov.php.default" .Default}}</p>
         </div>
         {{end}}
       </div>

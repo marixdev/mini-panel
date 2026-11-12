@@ -1,92 +1,42 @@
-{{define "content"}}<!doctype html>
-<html lang="{{lang}}" class="h-full">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<title>{{T "login.document.title"}}</title>
-<link rel="icon" type="image/svg+xml" href="{{asset "logo.svg"}}">
-<link rel="preload" href="{{asset "jbmono-latin.woff2"}}" as="font" type="font/woff2" crossorigin>
-<script src="{{asset "theme.js"}}"></script>
-<link rel="stylesheet" href="{{asset "app.css"}}">
-</head>
-<body class="bg-background text-foreground">
-<a href="#main" class="fixed -top-20 left-4 z-50 bg-card px-3 py-3 text-sm font-medium rounded-md shadow-sm border border-border focus:top-4 outline-none">{{T "auth.skip"}}</a>
-<div class="auth-shell">
-  <aside class="auth-story" aria-label="Mini Panel">
-    <a class="flex items-center gap-2.5 no-underline w-max" href="/login">
-      <img src="{{asset "logo.svg"}}" alt="" class="size-9" width="36" height="36">
-      <span class="text-lg font-bold tracking-tight text-foreground">{{T "app.name"}}</span>
-    </a>
-    <div class="auth-story-copy mt-[70px]">
-      <p class="text-[10px] font-bold tracking-[2px] text-primary uppercase">{{T "login.badge"}}</p>
-      <h2 class="text-[clamp(38px,4.1vw,62px)] leading-[1.09] tracking-[-2.5px] font-[500] mt-[18px] mb-5 text-foreground">{{T "login.story.heading1"}}<br>{{T "login.story.heading2"}}<br><em class="not-italic text-primary">{{T "login.story.heading3"}}</em></h2>
-      <p class="text-sm text-muted-foreground leading-[1.8]">{{T "auth.story.description1"}}<br>{{T "auth.story.description2"}}</p>
+{{define "authtitle"}}{{T "login.document.title"}}{{end}}
+{{define "content"}}<div class="w-full max-w-sm">
+  <div class="mb-6 text-center">
+    <img src="{{asset "logo.svg"}}" alt="" class="mx-auto size-12" width="48" height="48">
+    <h1 class="h-page mt-4">{{if .Need2FA}}{{T "login.code.heading"}}{{else}}{{T "login.heading"}}{{end}}</h1>
+    <p class="text-muted-foreground mt-1.5 text-sm">{{if .Need2FA}}{{T "login.code.hint"}}{{else}}{{T "login.description"}}{{end}}</p>
+  </div>
+  <div class="card p-6">
+    {{if .Error}}
+    <div class="alert-error mb-4" role="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      <span>{{.Error}}</span>
     </div>
-    <div class="auth-illustration h-[250px] relative mt-6" aria-hidden="true">
-      <div class="auth-orbit absolute w-[240px] h-[240px] border border-border rounded-full left-[20%] top-0"></div>
-      <div class="absolute left-[9%] top-[30px] w-[220px] bg-primary/10 border border-primary/20 rounded-[7px] p-6 shadow-[0_16px_22px_rgba(0,0,0,0.1)] -rotate-[7deg]">
-        <span class="text-[8px] tracking-[1.5px] text-primary uppercase">{{T "auth.server"}}</span>
-        <strong class="block text-[28px] tracking-[-1px] leading-[1.15] mt-4 mb-6 font-[500] text-foreground">Mini<br>Panel.</strong>
-        <div class="h-1 bg-primary/30 w-[60%] mt-1.5 rounded-sm"></div>
-        <div class="h-1 bg-primary/30 w-[40%] mt-1.5 rounded-sm"></div>
-        <span class="absolute right-5 bottom-5 w-7 h-7 leading-7 text-center bg-primary text-primary-foreground rounded-full text-sm">✓</span>
+    {{end}}
+    {{if .Need2FA}}
+    <form method="post" action="/login/2fa" class="space-y-4">
+      <input type="hidden" name="pending" value="{{.Pending}}">
+      <div>
+        <label class="label" for="code">{{T "auth.code"}}</label>
+        <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus class="field text-center text-lg tracking-[0.3em]" placeholder="000000">
       </div>
-      <div class="absolute left-[48%] top-[168px] whitespace-nowrap bg-card px-4 py-3.5 shadow-[0_8px_20px_rgba(0,0,0,0.06)] border border-border rounded-md text-xs rotate-[6deg]"><span class="mr-2">↗</span> {{T "auth.online"}}</div>
-      <div class="absolute right-[3%] top-[18px] text-[66px] text-primary/40">✳</div>
-    </div>
-    <footer class="auth-story-footer flex justify-between items-center mt-auto pt-10 text-[11px] text-muted-foreground">
-      <span>{{T "auth.tagline"}}</span>
-      <span class="text-[28px]">✳</span>
-    </footer>
-  </aside>
-  <section class="auth-content">
-    <header class="flex items-center justify-between gap-4 text-xs">
-      {{template "language" .}}
-      <span class="badge-gray">{{T "login.badge"}}</span>
-    </header>
-    <main id="main" class="w-full max-w-[410px] mx-auto mt-[60px] mb-[38px] outline-none" tabindex="-1">
-      <p class="text-[10px] font-bold tracking-[2px] text-muted-foreground uppercase mb-5">{{T "login.step"}}</p>
-      <h1 class="text-[36px] tracking-[-1.4px] font-[550] leading-[1.13] mb-3.5 text-foreground">{{if .Need2FA}}{{T "login.code.heading"}}{{else}}{{T "login.heading"}}{{end}}</h1>
-      <p class="text-muted-foreground mb-[30px] text-sm leading-[1.75]">{{if .Need2FA}}{{T "login.code.hint"}}{{else}}{{T "login.description"}}{{end}}</p>
-      {{if .Error}}
-      <div class="alert-error mb-5" role="alert">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-        {{.Error}}
+      <button class="btn-primary w-full py-2.5" type="submit">{{T "auth.confirm"}}</button>
+    </form>
+    {{else}}
+    <form method="post" action="/login" class="space-y-4">
+      <div>
+        <label class="label" for="user">{{T "auth.username"}}</label>
+        <input id="user" name="user" type="text" autocomplete="username" required autofocus class="field">
       </div>
-      {{end}}
-      {{if .Need2FA}}
-      <form method="post" action="/login/2fa">
-        <input type="hidden" name="pending" value="{{.Pending}}">
-        <div class="mb-5">
-          <label class="label mb-2" for="code">{{T "auth.code"}}</label>
-          <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus class="field text-lg tracking-[0.3em] text-center" placeholder="000000">
+      <div>
+        <label class="label" for="password">{{T "auth.password"}}</label>
+        <div class="relative">
+          <input id="password" name="password" type="password" autocomplete="current-password" required class="field pr-16">
+          <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="pw-toggle">{{T "auth.password.show"}}</button>
         </div>
-        <button class="btn-primary w-full py-3.5 text-sm min-h-[51px] justify-between" type="submit">{{T "auth.confirm"}} <span aria-hidden="true">↗</span></button>
-      </form>
-      {{else}}
-      <form method="post" action="/login">
-        <div class="mb-5">
-          <label class="label mb-2" for="user">{{T "auth.username"}}</label>
-          <input id="user" name="user" type="text" autocomplete="username" required autofocus class="field">
-        </div>
-        <div class="mb-5">
-          <label class="label mb-2" for="password">{{T "auth.password"}}</label>
-          <div class="relative">
-            <input id="password" name="password" type="password" autocomplete="current-password" required class="field pr-16">
-            <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="absolute right-2 top-1.5 h-[34px] px-2.5 rounded text-xs font-semibold text-primary bg-transparent hover:bg-secondary border-0 cursor-pointer">{{T "auth.password.show"}}</button>
-          </div>
-        </div>
-        <button class="btn-primary w-full py-3.5 text-sm min-h-[51px] justify-between" type="submit">{{T "auth.signin"}} <span aria-hidden="true">↗</span></button>
-      </form>
-      {{end}}
-    </main>
-    <footer class="mt-auto w-full max-w-[410px] self-center">
-      <p class="text-[10px] text-muted-foreground text-center mt-7">{{T "app.name"}}</p>
-    </footer>
-  </section>
-</div>
-<script src="{{asset "app.js"}}" defer></script>
-</body>
-</html>
-{{end}}
+      </div>
+      <button class="btn-primary w-full py-2.5" type="submit">{{T "auth.signin"}}</button>
+    </form>
+    {{end}}
+  </div>
+  {{if .Need2FA}}<p class="mt-4 text-center text-sm"><a class="link" href="/login">{{T "login.2fa.back"}}</a></p>{{end}}
+</div>{{end}}

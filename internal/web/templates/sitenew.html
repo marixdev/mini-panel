@@ -1,6 +1,6 @@
 {{define "content"}}
 <div class="mx-auto max-w-3xl">
-  <h1 class="h-page">{{T "new.title"}}{{if .Kind}} Â· {{T (printf "kind.%s" .Kind)}}{{end}}</h1>
+  <h1 class="h-page">{{T "new.title"}}{{if .Kind}} · {{T (printf "kind.%s" .Kind)}}{{end}}</h1>
   {{if not .Kind}}
   <p class="mt-1 text-sm text-muted-foreground">{{T "new.sub"}}</p>
   <div class="mt-6 grid gap-4 sm:grid-cols-2">

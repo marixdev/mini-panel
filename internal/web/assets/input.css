@@ -369,43 +369,13 @@
   .viz-track { fill: var(--viz-track); }
   .viz-fill-ok { fill: var(--viz-ok); } .viz-fill-warn { fill: var(--viz-warn); } .viz-fill-crit { fill: var(--viz-crit); }
 
-  /* Sign-in and first-run pages: two columns that collapse to one on a narrow screen. The page policy forbids inline style,
-     so the layout lives here and not in a style element. */
-  .auth-shell {
-    display: grid;
-    grid-template-columns: minmax(0, 46%) minmax(0, 54%);
-    min-height: 100svh;
+  /* The show/hide button inside a password field. */
+  .pw-toggle {
+    @apply text-primary focus-visible:ring-ring absolute inset-y-0 right-0 rounded-md px-3 text-xs font-semibold hover:underline focus-visible:ring-2 focus:outline-none;
   }
-  .auth-story {
-    @apply bg-secondary flex flex-col overflow-hidden;
-    padding: 44px 11%;
-    min-height: 880px;
-  }
-  .auth-content {
-    @apply flex flex-col;
-    padding: 42px clamp(28px, 5vw, 86px);
-  }
-  .auth-orbit {
-    box-shadow:
-      0 0 0 27px color-mix(in oklch, var(--secondary) 60%, transparent),
-      0 0 0 28px color-mix(in oklch, var(--border) 90%, transparent);
-  }
-  @media (min-width: 1500px) {
-    .auth-story { padding-left: 16%; padding-right: 16%; }
-  }
-  @media (max-width: 950px) {
-    .auth-story { padding: 34px 9%; min-height: 850px; }
-    .auth-content { padding: 34px 28px 22px; }
-  }
-  @media (max-width: 700px) {
-    .auth-shell { display: block; }
-    .auth-story { min-height: 0; padding: 21px 24px; overflow: visible; }
-    .auth-story-copy, .auth-illustration, .auth-story-footer { display: none; }
-    .auth-content { padding: 24px; min-height: calc(100svh - 74px); }
-  }
-  @media (max-width: 360px) {
-    .auth-content { padding: 20px; }
-    .auth-story { padding: 18px 20px; }
+  /* The language menu is narrower than the one under the person's name. */
+  .lang-panel {
+    width: 11rem;
   }
 
   /* File manager */

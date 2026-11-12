@@ -1,89 +1,40 @@
-{{define "content"}}<!doctype html>
-<html lang="{{lang}}" class="h-full">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex">
-<title>{{T "setup.document.title"}}</title>
-<link rel="icon" type="image/svg+xml" href="{{asset "logo.svg"}}">
-<link rel="preload" href="{{asset "jbmono-latin.woff2"}}" as="font" type="font/woff2" crossorigin>
-<script src="{{asset "theme.js"}}"></script>
-<link rel="stylesheet" href="{{asset "app.css"}}">
-</head>
-<body class="bg-background text-foreground">
-<a href="#main" class="fixed -top-20 left-4 z-50 bg-card px-3 py-3 text-sm font-medium rounded-md shadow-sm border border-border focus:top-4 outline-none">{{T "auth.skip"}}</a>
-<div class="auth-shell">
-  <aside class="auth-story" aria-label="Mini Panel">
-    <a class="flex items-center gap-2.5 no-underline w-max" href="/setup">
-      <img src="{{asset "logo.svg"}}" alt="" class="size-9" width="36" height="36">
-      <span class="text-lg font-bold tracking-tight text-foreground">{{T "app.name"}}</span>
-    </a>
-    <div class="auth-story-copy mt-[70px]">
-      <p class="text-[10px] font-bold tracking-[2px] text-primary uppercase">{{T "setup.story.label"}}</p>
-      <h2 class="text-[clamp(38px,4.1vw,62px)] leading-[1.09] tracking-[-2.5px] font-[500] mt-[18px] mb-5 text-foreground">{{T "setup.story.heading1"}}<br>{{T "setup.story.heading2"}}<br><em class="not-italic text-primary">{{T "setup.story.heading3"}}</em></h2>
-      <p class="text-sm text-muted-foreground leading-[1.8]">{{T "setup.story.description1"}}<br>{{T "setup.story.description2"}}</p>
+{{define "authtitle"}}{{T "setup.document.title"}}{{end}}
+{{define "content"}}<div class="w-full max-w-sm">
+  <div class="mb-6 text-center">
+    <img src="{{asset "logo.svg"}}" alt="" class="mx-auto size-12" width="48" height="48">
+    <p class="mt-4"><span class="badge-teal">{{T "setup.badge"}}</span></p>
+    <h1 class="h-page mt-3">{{T "setup.heading"}}</h1>
+    <p class="text-muted-foreground mt-1.5 text-sm">{{T "setup.description"}}</p>
+  </div>
+  <div class="card p-6">
+    {{if .Error}}
+    <div class="alert-error mb-4" role="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+      <span>{{.Error}}</span>
     </div>
-    <div class="auth-illustration h-[250px] relative mt-6" aria-hidden="true">
-      <div class="auth-orbit absolute w-[240px] h-[240px] border border-border rounded-full left-[20%] top-0"></div>
-      <div class="absolute left-[9%] top-[30px] w-[220px] bg-primary/10 border border-primary/20 rounded-[7px] p-6 shadow-[0_16px_22px_rgba(0,0,0,0.1)] -rotate-[7deg]">
-        <span class="text-[8px] tracking-[1.5px] text-primary uppercase">{{T "setup.server.ready"}}</span>
-        <strong class="block text-[28px] tracking-[-1px] leading-[1.15] mt-4 mb-6 font-[500] text-foreground">{{T "setup.server.heading1"}}<br>{{T "setup.server.heading2"}}</strong>
-        <div class="h-1 bg-primary/30 w-[60%] mt-1.5 rounded-sm"></div>
-        <div class="h-1 bg-primary/30 w-[40%] mt-1.5 rounded-sm"></div>
-        <span class="absolute right-5 bottom-5 w-7 h-7 leading-7 text-center bg-primary text-primary-foreground rounded-full text-sm">✓</span>
+    {{end}}
+    <form method="post" action="/setup" class="space-y-4">
+      <div>
+        <label class="label" for="user">{{T "auth.username"}}</label>
+        <input id="user" name="user" type="text" autocomplete="username" required autofocus pattern="[a-z][a-z0-9_\-]{0,31}" placeholder="admin" class="field">
+        <p class="hint">{{T "setup.username.hint"}}</p>
       </div>
-      <div class="absolute left-[48%] top-[168px] whitespace-nowrap bg-card px-4 py-3.5 shadow-[0_8px_20px_rgba(0,0,0,0.06)] border border-border rounded-md text-xs rotate-[6deg]"><span class="mr-2">↗</span> {{T "auth.online"}}</div>
-      <div class="absolute right-[3%] top-[18px] text-[66px] text-primary/40">✳</div>
-    </div>
-    <footer class="auth-story-footer flex justify-between items-center mt-auto pt-10 text-[11px] text-muted-foreground">
-      <span>{{T "auth.tagline"}}</span>
-      <span class="text-[28px]">✳</span>
-    </footer>
-  </aside>
-  <section class="auth-content">
-    <header class="flex items-center justify-between gap-4 text-xs">
-      {{template "language" .}}
-      <span class="badge-gray">{{T "setup.badge"}}</span>
-    </header>
-    <main id="main" class="w-full max-w-[410px] mx-auto mt-[60px] mb-[38px] outline-none" tabindex="-1">
-      <p class="text-[10px] font-bold tracking-[2px] text-muted-foreground uppercase mb-5">{{T "setup.step"}}</p>
-      <h1 class="text-[36px] tracking-[-1.4px] font-[550] leading-[1.13] mb-3.5 text-foreground">{{T "setup.heading"}}</h1>
-      <p class="text-muted-foreground mb-[30px] text-sm leading-[1.75]">{{T "setup.description"}}</p>
-      {{if .Error}}
-      <div class="alert-error mb-5" role="alert">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-        {{.Error}}
+      <div>
+        <label class="label" for="password">{{T "auth.password"}}</label>
+        <div class="relative">
+          <input id="password" name="password" type="password" autocomplete="new-password" required minlength="12" class="field pr-16">
+          <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="pw-toggle">{{T "auth.password.show"}}</button>
+        </div>
+        <p class="hint">{{T "setup.password.hint"}}</p>
       </div>
-      {{end}}
-      <form method="post" action="/setup">
-        <div class="mb-5">
-          <label class="label mb-2" for="user">{{T "auth.username"}} <span class="text-[11px] font-normal text-muted-foreground ml-1.5">{{T "setup.username.hint"}}</span></label>
-          <input id="user" name="user" type="text" autocomplete="username" required autofocus pattern="[a-z][a-z0-9_\-]{0,31}" placeholder="admin" class="field">
+      <div>
+        <label class="label" for="password2">{{T "setup.password.confirm"}}</label>
+        <div class="relative">
+          <input id="password2" name="password2" type="password" autocomplete="new-password" required minlength="12" class="field pr-16">
+          <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password2" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="pw-toggle">{{T "auth.password.show"}}</button>
         </div>
-        <div class="mb-1">
-          <label class="label mb-2" for="password">{{T "auth.password"}}</label>
-          <div class="relative">
-            <input id="password" name="password" type="password" autocomplete="new-password" required minlength="12" class="field pr-16">
-            <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="absolute right-2 top-1.5 h-[34px] px-2.5 rounded text-xs font-semibold text-primary bg-transparent hover:bg-secondary border-0 cursor-pointer">{{T "auth.password.show"}}</button>
-          </div>
-        </div>
-        <p class="hint mb-5">{{T "setup.password.hint"}}</p>
-        <div class="mb-5">
-          <label class="label mb-2" for="password2">{{T "setup.password.confirm"}}</label>
-          <div class="relative">
-            <input id="password2" name="password2" type="password" autocomplete="new-password" required minlength="12" class="field pr-16">
-            <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password2" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="absolute right-2 top-1.5 h-[34px] px-2.5 rounded text-xs font-semibold text-primary bg-transparent hover:bg-secondary border-0 cursor-pointer">{{T "auth.password.show"}}</button>
-          </div>
-        </div>
-        <button class="btn-primary w-full py-3.5 text-sm min-h-[51px] justify-between" type="submit">{{T "setup.submit"}} <span aria-hidden="true">↗</span></button>
-      </form>
-    </main>
-    <footer class="mt-auto w-full max-w-[410px] self-center">
-      <p class="text-[10px] text-muted-foreground text-center mt-7">{{T "app.name"}}</p>
-    </footer>
-  </section>
-</div>
-<script src="{{asset "app.js"}}" defer></script>
-</body>
-</html>
-{{end}}
+      </div>
+      <button class="btn-primary w-full py-2.5" type="submit">{{T "setup.submit"}}</button>
+    </form>
+  </div>
+</div>{{end}}

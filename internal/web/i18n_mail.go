@@ -4,7 +4,7 @@ package web
 func init() {
 	for k, v := range map[string]string{
 		"nav.email": "Email", "page.email": "Email", "tab.email": "Email",
-		"se.err.notyours": "Tên miền này không thuộc website này.",
+		"se.err.notyours":    "Tên miền này không thuộc website này.",
 		"mail.sites.title":   "Tên miền, hộp thư và bí danh",
 		"mail.sites.desc":    "Phần này nằm trong từng website, như cPanel: mở website, chọn thẻ Email để thêm hộp thư, bí danh và xem bản ghi DNS của tên miền đó. Trang này chỉ giữ phần của cả máy chủ: bật tắt, chứng chỉ và web mail.",
 		"mail.sites.go":      "Mở danh sách website",
@@ -16,8 +16,8 @@ func init() {
 		"se.no.domains":      "Website này không có tên miền hợp lệ để làm tên miền thư.",
 		"se.domain.off":      "Chưa bật",
 		"se.domain.enable":   "Bật thư cho tên miền này",
-		"mail.title": "Email",
-		"mail.sub":   "Máy chủ thư của riêng bạn: nhận và gửi thư cho tên miền của các website, hộp thư đọc qua IMAP. Chỉ cài khi bạn bật.",
+		"mail.title":         "Email",
+		"mail.sub":           "Máy chủ thư của riêng bạn: nhận và gửi thư cho tên miền của các website, hộp thư đọc qua IMAP. Chỉ cài khi bạn bật.",
 
 		"mail.off.title": "Máy chủ thư đang tắt",
 		"mail.off.desc":  "Bật để panel cài Postfix (nhận và gửi), Dovecot (hộp thư, IMAP) và OpenDKIM (ký thư). Ba dịch vụ này tốn khoảng 40 đến 80 MB RAM khi chạy. Tắt lại thì dịch vụ dừng, hộp thư và khóa vẫn được giữ.",

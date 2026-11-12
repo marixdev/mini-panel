@@ -7,7 +7,7 @@
 <section class="card p-6">
   <dl class="grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
     <div><dt class="text-muted-foreground">{{T "ov.type"}}</dt><dd class="mt-0.5 font-medium">{{T (printf "kind.%s" .Site.Kind)}}</dd></div>
-    <div><dt class="text-muted-foreground">{{T "ov.detail"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.Detail}}{{.Site.Detail}}{{else}}â€“{{end}}</dd></div>
+    <div><dt class="text-muted-foreground">{{T "ov.detail"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.Detail}}{{.Site.Detail}}{{else}}–{{end}}</dd></div>
     <div><dt class="text-muted-foreground">{{T "ov.hosts"}}</dt><dd class="mt-0.5 font-medium">{{range .Site.Hostnames}}<div>{{.}}</div>{{end}}</dd></div>
     <div><dt class="text-muted-foreground">{{T "ov.https"}}</dt><dd class="mt-0.5 font-medium">{{if .Site.TLS}}{{T "ov.https.on"}}{{else}}{{T "ov.https.off"}}{{end}}</dd></div>
     <div><dt class="text-muted-foreground">{{T "ov.user"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium">{{.Site.User}}</dd></div>

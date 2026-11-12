@@ -42,6 +42,7 @@ func init() {
 		"set.2fa.off.wrong": "Mật khẩu hoặc mã không đúng.",
 		"set.2fa.off.done":  "Đã tắt xác thực hai bước",
 		"set.2fa.lost":      "Mất ứng dụng xác thực? Đăng nhập vào máy chủ bằng SSH rồi chạy lệnh dưới đây để tắt 2FA, sau đó đăng nhập chỉ bằng mật khẩu.",
+		"set.2fa.cmd":       "lệnh",
 		"set.save":          "Không lưu được thay đổi. Xem nhật ký của mpn-web trên máy chủ.",
 		"set.unavailable":   "Máy chủ chưa cho phép đổi cài đặt này.",
 

@@ -23,10 +23,14 @@ var Watched = []struct{ Unit, Label string }{
 	{"cron.service", "cron"},
 	{"ssh.service", "SSH"},
 	{"sshd.service", "SSH"},
-	{"mpn-root.service", "Mini Panel (trình hỗ trợ)"},
-	{"mpn-web.service", "Mini Panel (giao diện)"},
-	{"mpn-firewall.service", "Tường lửa"},
+	{"mpn-root.service", "svc.unit.mpn-root"},
+	{"mpn-web.service", "svc.unit.mpn-web"},
+	{"mpn-firewall.service", "svc.unit.mpn-firewall"},
 }
+
+// A Label that starts with LabelKeyPrefix is a message key of the web interface, translated there; any other Label is a
+// proper name (nginx, MariaDB) shown as it is.
+const LabelKeyPrefix = "svc.unit."
 
 // UnitState asks systemd about one unit and returns its real name and its state. The name is "" when no such unit exists. It is
 // the real name, not the one asked for, because several names can lead to one unit: mysql.service is another name of

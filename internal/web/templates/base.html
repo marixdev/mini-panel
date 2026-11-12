@@ -10,7 +10,7 @@
 <script src="{{asset "theme.js"}}"></script>
 <link rel="stylesheet" href="{{asset "app.css"}}">
 </head>
-<body class="min-h-screen">
+<body class="flex min-h-screen flex-col">
 <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">{{T "nav.skip"}}</a>
 
 <!-- One bar that stays at the top: the brand, the links, and the person's controls. On a narrow screen the links drop to a row of their own. -->
@@ -63,9 +63,10 @@
   </div>
 </header>
 
-<main id="main" class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+<main id="main" class="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
 {{template "content" .}}
 </main>
+{{template "footer" .}}
 <script src="{{asset "app.js"}}" defer></script>
 </body>
 </html>{{end}}

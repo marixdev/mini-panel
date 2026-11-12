@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 
 	"mpn/internal/monitor"
@@ -131,6 +132,12 @@ func (s *Server) monitorPage(w http.ResponseWriter, r *http.Request, ss webauth.
 		state = monitor.SystemdState
 	}
 	v.Services = monitor.Services(state, s.installedPHP())
+	tr := translatorForRequest(r)
+	for i := range v.Services {
+		if strings.HasPrefix(v.Services[i].Label, monitor.LabelKeyPrefix) {
+			v.Services[i].Label = tr(v.Services[i].Label)
+		}
+	}
 
 	pts := monitor.Downsample(raw, from, to, 240)
 	if len(pts) > 0 {

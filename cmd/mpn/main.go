@@ -8,7 +8,8 @@ import (
 	"mpn/internal/tune"
 )
 
-const version = "0.0.1-dev"
+// version is set at build time with -ldflags "-X main.version=x.y.z"; the release workflow uses the tag.
+var version = "1.0.0"
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "usage: mpn <version|tune|plan|site|db|backup|cron|firewall|security|panel|cloud|app|wp|mail|services|root|web> [flags]")
