@@ -1,0 +1,52 @@
+package web
+
+// Vietnamese text of the Cron tab.
+func init() {
+	for k, v := range map[string]string{
+		"tab.cron":         "Cron",
+		"cr.col.when":      "Khi nào",
+		"cr.col.command":   "Lệnh",
+		"cr.col.state":     "Trạng thái",
+		"cr.on":            "Đang chạy",
+		"cr.off":           "Tạm dừng",
+		"cr.pause":         "Tạm dừng",
+		"cr.resume":        "Bật lại",
+		"cr.delete":        "Xóa",
+		"cr.empty":         "Chưa có công việc định kỳ nào",
+		"cr.empty.d":       "Thêm một lệnh để nó tự chạy theo lịch, ví dụ gửi email hằng ngày hoặc dọn bộ nhớ đệm.",
+		"cr.add.title":     "Thêm công việc định kỳ",
+		"cr.add.sub":       "Lệnh chạy bằng tài khoản %s của website, không có quyền root, và không gửi email báo kết quả.",
+		"cr.when":          "Chạy",
+		"cr.custom":        "Hoặc lịch tự viết",
+		"cr.custom.hint":   "Năm trường cách nhau một dấu cách: phút giờ ngày tháng thứ. Nếu điền ô này thì nó được dùng thay cho lựa chọn bên trái.",
+		"cr.command":       "Lệnh",
+		"cr.command.hint":  "Chạy bằng /bin/sh từ thư mục chính của %s. Kết quả bị bỏ đi; muốn giữ lại thì thêm  >> ~/cron.log 2>&1  ở cuối lệnh.",
+		"cr.add.btn":       "Thêm",
+		"cr.max":           "Tối đa %d công việc cho mỗi website.",
+		"cr.p.minute":      "Mỗi phút",
+		"cr.p.5min":        "Mỗi 5 phút",
+		"cr.p.15min":       "Mỗi 15 phút",
+		"cr.p.hour":        "Mỗi giờ (phút 0)",
+		"cr.p.day":         "Hằng ngày lúc 03:00",
+		"cr.p.week":        "Hằng tuần, Chủ nhật 03:00",
+		"cr.p.month":       "Hằng tháng, ngày 1 lúc 03:00",
+		"cr.d.hour":        "Mỗi giờ",
+		"cr.d.midnight":    "Hằng ngày lúc 00:00",
+		"cr.d.week":        "Hằng tuần",
+		"cr.d.month":       "Hằng tháng",
+		"cr.d.year":        "Hằng năm",
+		"cr.d.everyminute": "Mỗi phút",
+		"cr.d.everyn":      "Mỗi %d phút",
+		"cr.d.hourly":      "Mỗi giờ, phút thứ %d",
+		"cr.d.daily":       "Hằng ngày lúc %02d:%02d",
+		"act.cron.add":     "Thêm công việc định kỳ cho website %s",
+		"act.cron.toggle":  "Bật hoặc tạm dừng công việc định kỳ của website %s",
+		"act.cron.del":     "Xóa công việc định kỳ của website %s",
+		"cr.fail":          "Chưa thực hiện",
+		"cr.err.schedule":  "Lịch không hợp lệ: %s.",
+		"cr.err.command":   "Lệnh không hợp lệ: %s.",
+		"cr.err.id":        "Công việc không hợp lệ.",
+	} {
+		vi[k] = v
+	}
+}

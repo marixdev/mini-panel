@@ -1,0 +1,53 @@
+package web
+
+// Vietnamese text of the menu under the name of the signed-in person, the Settings page and the code step of the sign-in.
+func init() {
+	for k, v := range map[string]string{
+		"user.menu":         "Tài khoản",
+		"user.signedin":     "Đang đăng nhập với",
+		"user.settings":     "Cài đặt",
+		"page.settings":     "Cài đặt",
+		"set.title":         "Cài đặt tài khoản",
+		"set.sub":           "Mật khẩu và xác thực hai bước của tài khoản quản trị.",
+		"set.pw.title":      "Đổi mật khẩu",
+		"set.pw.sub":        "Sau khi đổi, các trình duyệt khác đang đăng nhập bằng mật khẩu cũ sẽ bị đăng xuất.",
+		"set.pw.current":    "Mật khẩu hiện tại",
+		"set.pw.new":        "Mật khẩu mới",
+		"set.pw.again":      "Nhập lại mật khẩu mới",
+		"set.pw.hint":       "Ít nhất %d ký tự. Dùng một mật khẩu mà bạn không dùng ở nơi khác.",
+		"set.pw.btn":        "Đổi mật khẩu",
+		"set.pw.done":       "Đã đổi mật khẩu",
+		"set.pw.wrong":      "Mật khẩu hiện tại không đúng.",
+		"set.pw.short":      "Mật khẩu mới phải có từ %d đến 256 ký tự.",
+		"set.pw.mismatch":   "Hai lần nhập mật khẩu mới không giống nhau.",
+		"set.pw.same":       "Mật khẩu mới phải khác mật khẩu hiện tại.",
+		"set.2fa.title":     "Xác thực hai bước (2FA)",
+		"set.2fa.sub":       "Ngoài mật khẩu, đăng nhập còn cần mã 6 số từ ứng dụng xác thực trên điện thoại như Google Authenticator, Microsoft Authenticator hoặc Authy.",
+		"set.2fa.on":        "Đang bật",
+		"set.2fa.off":       "Đang tắt",
+		"set.2fa.enable":    "Bật 2FA",
+		"set.2fa.step1":     "Quét mã QR bằng ứng dụng xác thực, hoặc nhập khóa bên dưới vào ứng dụng.",
+		"set.2fa.qr.alt":    "Mã QR để thêm tài khoản vào ứng dụng xác thực",
+		"set.2fa.secret":    "Khóa nhập tay",
+		"set.2fa.step2":     "Nhập mã 6 số mà ứng dụng đang hiện để xác nhận.",
+		"set.2fa.code":      "Mã xác thực",
+		"set.2fa.confirm":   "Xác nhận và bật",
+		"set.2fa.cancel":    "Hủy",
+		"set.2fa.wrong":     "Mã không đúng hoặc đã hết hạn. Hãy nhập mã mới đang hiện trong ứng dụng.",
+		"set.2fa.done":      "Đã bật xác thực hai bước",
+		"set.2fa.off.title": "Tắt 2FA",
+		"set.2fa.off.sub":   "Cần cả mật khẩu và mã hiện tại, để người khác lấy được phiên đăng nhập của bạn cũng không tắt được.",
+		"set.2fa.off.btn":   "Tắt 2FA",
+		"set.2fa.off.wrong": "Mật khẩu hoặc mã không đúng.",
+		"set.2fa.off.done":  "Đã tắt xác thực hai bước",
+		"set.2fa.lost":      "Mất ứng dụng xác thực? Đăng nhập vào máy chủ bằng SSH rồi chạy lệnh dưới đây để tắt 2FA, sau đó đăng nhập chỉ bằng mật khẩu.",
+		"set.2fa.cmd":       "lệnh",
+		"set.save":          "Không lưu được thay đổi. Xem nhật ký của mpn-web trên máy chủ.",
+		"set.unavailable":   "Máy chủ chưa cho phép đổi cài đặt này.",
+		"login.2fa.back":    "Quay lại đăng nhập",
+		"login.2fa.wrong":   "Mã không đúng hoặc đã hết hạn.",
+		"login.2fa.expired": "Phiên đăng nhập đã hết hạn hoặc nhập sai quá nhiều lần. Hãy đăng nhập lại.",
+	} {
+		vi[k] = v
+	}
+}

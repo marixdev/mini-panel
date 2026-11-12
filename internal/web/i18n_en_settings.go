@@ -1,0 +1,53 @@
+package web
+
+// English text of the menu under the name of the signed-in person, the Settings page and the code step of the sign-in.
+func init() {
+	for k, v := range map[string]string{
+		"user.menu":         "Account",
+		"user.signedin":     "Signed in as",
+		"user.settings":     "Settings",
+		"page.settings":     "Settings",
+		"set.title":         "Account settings",
+		"set.sub":           "Password and two-factor authentication for the administrator account.",
+		"set.pw.title":      "Change password",
+		"set.pw.sub":        "Other browsers signed in with the old password will be signed out.",
+		"set.pw.current":    "Current password",
+		"set.pw.new":        "New password",
+		"set.pw.again":      "Confirm new password",
+		"set.pw.hint":       "At least %d characters. Use a password you do not use elsewhere.",
+		"set.pw.btn":        "Change password",
+		"set.pw.done":       "Password changed",
+		"set.pw.wrong":      "The current password is incorrect.",
+		"set.pw.short":      "The new password must contain %d–256 characters.",
+		"set.pw.mismatch":   "New passwords do not match.",
+		"set.pw.same":       "The new password must differ from the current password.",
+		"set.2fa.title":     "Two-factor authentication (2FA)",
+		"set.2fa.sub":       "Sign-in requires your password and a 6-digit code from an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy.",
+		"set.2fa.on":        "Enabled",
+		"set.2fa.off":       "Disabled",
+		"set.2fa.enable":    "Enable 2FA",
+		"set.2fa.step1":     "Scan the QR code with your authenticator app or enter the key below.",
+		"set.2fa.qr.alt":    "QR code to add this account to an authenticator app",
+		"set.2fa.secret":    "Manual setup key",
+		"set.2fa.step2":     "Enter the 6-digit code shown in the app to confirm.",
+		"set.2fa.code":      "Verification code",
+		"set.2fa.confirm":   "Confirm and enable",
+		"set.2fa.cancel":    "Cancel",
+		"set.2fa.wrong":     "Incorrect or expired code. Enter the current code from the app.",
+		"set.2fa.done":      "Two-factor authentication enabled",
+		"set.2fa.off.title": "Disable 2FA",
+		"set.2fa.off.sub":   "Both your password and the current code are required so someone with access to your session cannot disable it.",
+		"set.2fa.off.btn":   "Disable 2FA",
+		"set.2fa.off.wrong": "Incorrect password or code.",
+		"set.2fa.off.done":  "Two-factor authentication disabled",
+		"set.2fa.lost":      "Lost your authenticator app? Connect to the server over SSH and run the command below to disable 2FA, then sign in with your password.",
+		"set.2fa.cmd":       "command",
+		"set.save":          "Could not save changes. Check the mpn-web log on the server.",
+		"set.unavailable":   "This setting cannot be changed on this server yet.",
+		"login.2fa.back":    "Back to sign in",
+		"login.2fa.wrong":   "Incorrect or expired code.",
+		"login.2fa.expired": "The sign-in session expired or there were too many failed attempts. Sign in again.",
+	} {
+		en[k] = v
+	}
+}

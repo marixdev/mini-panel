@@ -1,0 +1,53 @@
+package web
+
+// English text of the monitoring page.
+func init() {
+	for k, v := range map[string]string{
+		"nav.monitor":           "Monitoring",
+		"page.monitor":          "Monitoring",
+		"mon.title":             "Server monitoring",
+		"mon.sub":               "CPU, memory, disk and network status. Sampled every 30 seconds and kept for 24 hours.",
+		"mon.range":             "Time range",
+		"mon.r.1h":              "1 hour",
+		"mon.r.6h":              "6 hours",
+		"mon.r.24h":             "24 hours",
+		"mon.now":               "Now",
+		"mon.empty":             "No measurements yet",
+		"mon.empty.d":           "The panel has just started collecting data. Return in a few minutes.",
+		"mon.nochart":           "Charts appear after at least two samples (about one minute).",
+		"mon.cpu":               "CPU",
+		"mon.cpu.sub":           "%d cores",
+		"mon.mem":               "Memory",
+		"mon.mem.sub":           "Total %s, excluding reclaimable system cache",
+		"mon.mem.used":          "Used",
+		"mon.swap":              "swap %s MB",
+		"mon.load":              "Load average",
+		"mon.load.sub":          "Over 1 minute, on %d cores. A load equal to the core count means full capacity.",
+		"mon.load.ok":           "Normal",
+		"mon.load.warn":         "High",
+		"mon.load.crit":         "Overloaded",
+		"mon.uptime":            "Uptime",
+		"mon.uptime.sub":        "Since last boot",
+		"mon.up.dh":             "%d days %d hours",
+		"mon.up.hm":             "%d hours %d minutes",
+		"mon.up.m":              "%d minutes",
+		"mon.disk":              "Disk",
+		"mon.disk.warn":         "Almost full",
+		"mon.disk.crit":         "Very little space left",
+		"mon.net":               "Network",
+		"mon.net.sub":           "Transfer rate across physical network interfaces",
+		"mon.net.rx":            "Received",
+		"mon.net.tx":            "Sent",
+		"mon.services":          "Services",
+		"mon.svc.on":            "Running",
+		"mon.svc.off":           "Stopped",
+		"mon.svc.failed":        "Failed",
+		"svc.unit.mpn-root":     "Mini Panel (root helper)",
+		"svc.unit.mpn-web":      "Mini Panel (web interface)",
+		"svc.unit.mpn-firewall": "Firewall",
+		"mon.table":             "View as table",
+		"mon.t.time":            "Time",
+	} {
+		en[k] = v
+	}
+}

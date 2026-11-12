@@ -1,0 +1,52 @@
+package web
+
+// English text of the Cron tab.
+func init() {
+	for k, v := range map[string]string{
+		"tab.cron":         "Cron",
+		"cr.col.when":      "Schedule",
+		"cr.col.command":   "Command",
+		"cr.col.state":     "Status",
+		"cr.on":            "Running",
+		"cr.off":           "Paused",
+		"cr.pause":         "Pause",
+		"cr.resume":        "Resume",
+		"cr.delete":        "Delete",
+		"cr.empty":         "No scheduled jobs yet",
+		"cr.empty.d":       "Add a command to run on a schedule, such as daily emails or cache cleanup.",
+		"cr.add.title":     "Add scheduled job",
+		"cr.add.sub":       "Commands run as website account %s, without root privileges or email notifications.",
+		"cr.when":          "Run",
+		"cr.custom":        "Or enter a custom schedule",
+		"cr.custom.hint":   "Five space-separated fields: minute hour day month weekday. Overrides the selection on the left.",
+		"cr.command":       "Command",
+		"cr.command.hint":  "Runs with /bin/sh from %s's home directory. Output is discarded; append >> ~/cron.log 2>&1 to keep it.",
+		"cr.add.btn":       "Add",
+		"cr.max":           "Maximum %d jobs per website.",
+		"cr.p.minute":      "Every minute",
+		"cr.p.5min":        "Every 5 minutes",
+		"cr.p.15min":       "Every 15 minutes",
+		"cr.p.hour":        "Every hour (minute 0)",
+		"cr.p.day":         "Daily at 03:00",
+		"cr.p.week":        "Weekly, Sunday at 03:00",
+		"cr.p.month":       "Monthly, day 1 at 03:00",
+		"cr.d.hour":        "Every hour",
+		"cr.d.midnight":    "Daily at 00:00",
+		"cr.d.week":        "Weekly",
+		"cr.d.month":       "Monthly",
+		"cr.d.year":        "Yearly",
+		"cr.d.everyminute": "Every minute",
+		"cr.d.everyn":      "Every %d minutes",
+		"cr.d.hourly":      "Hourly at minute %d",
+		"cr.d.daily":       "Daily at %02d:%02d",
+		"act.cron.add":     "Add scheduled job for website %s",
+		"act.cron.toggle":  "Toggle scheduled job for website %s",
+		"act.cron.del":     "Delete scheduled job for website %s",
+		"cr.fail":          "Action not completed",
+		"cr.err.schedule":  "Invalid schedule: %s.",
+		"cr.err.command":   "Invalid command: %s.",
+		"cr.err.id":        "Invalid job.",
+	} {
+		en[k] = v
+	}
+}
