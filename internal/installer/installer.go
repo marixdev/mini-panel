@@ -108,7 +108,8 @@ type Options struct {
 
 // Build returns the plan. It fails on an unknown engine or MySQL series.
 func Build(o Options) (Plan, error) {
-	plan := Plan{{"base packages", []Action{aptUpdate(), aptInstall("ca-certificates", "curl", "xz-utils", "openssl", "logrotate")}}}
+	// cron runs the jobs of the Cron tab; minimal images (Debian 13 on some providers) come without it.
+	plan := Plan{{"base packages", []Action{aptUpdate(), aptInstall("ca-certificates", "curl", "xz-utils", "openssl", "logrotate", "cron"), Run("systemctl", "enable", "--now", "cron")}}}
 	// The kernel reports a swap file a little smaller than its size, so small gaps are ignored.
 	if need := o.Profile.SwapMB - o.CurrentSwapMB; need >= 64 {
 		plan = append(plan, Step{"swap", []Action{

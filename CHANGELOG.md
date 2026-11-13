@@ -2,6 +2,18 @@
 
 Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.0.3] - 2026-11-13
+
+### Thêm
+
+- Chạy trên máy ARM (arm64, aarch64). Bộ cài nhận máy aarch64 và tải `mpn_linux_arm64`. Module PageSpeed và ModSecurity cho arm64 lấy từ bản [nginx-1.28.3-r2](https://github.com/marixdev/mpn-nginx-modules/releases/tag/nginx-1.28.3-r2) (build trên runner ARM của GitHub, ghim SHA-256 theo từng hệ điều hành và kiến trúc). Web mail lên [mpn-mail 1.0.2](https://github.com/marixdev/mpn-mail/releases/tag/v1.0.2), có bản `mpn-mail_linux_arm64`.
+- Bật mail tự gỡ các máy chủ thư có sẵn sẽ chiếm cổng 25 (Exim, Sendmail, OpenSMTPD) trước khi cài Postfix, thay vì dừng lại và bắt gỡ bằng tay.
+
+### Sửa
+
+- Mail bật được trên Debian 13 (và Ubuntu 26.04): panel nhận ra Dovecot 2.4 và viết `dovecot.conf` theo cú pháp mới (`dovecot_config_version`, `mail_driver`, hạn mức `quota_storage_size`). Dovecot 2.3 giữ cấu hình cũ.
+- Bước gói cơ bản cài `cron` và bật nó: một số bản Debian 13 không có sẵn, nên tab Cron không chạy được việc nào.
+
 ## [1.0.2] - 2026-11-12
 
 ### Thêm

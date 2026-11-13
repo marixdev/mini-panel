@@ -126,9 +126,13 @@ postlog   unix-dgram n  -       n       -       1       postlogd
 
 // Dovecot is dovecot.conf. Mailboxes are Maildir folders under MailRoot, one per address; the password list is a file, so no database
 // is needed. Port 143 listens on the loopback only, for the web mail on this machine; from outside only IMAPS (993) is open.
-func Dovecot(host string) (string, error) {
+// v24 asks for the syntax of Dovecot 2.4 (Debian 13, Ubuntu 26.04), which renamed most settings and refuses the 2.3 file.
+func Dovecot(host string, v24 bool) (string, error) {
 	if err := ValidDomain(host); err != nil {
 		return "", fmt.Errorf("mail host: %w", err)
+	}
+	if v24 {
+		return dovecot24(), nil
 	}
 	var b strings.Builder
 	w := func(format string, a ...any) { fmt.Fprintf(&b, format+"\n", a...) }
@@ -201,6 +205,91 @@ func Dovecot(host string) (string, error) {
 	return b.String(), nil
 }
 
+// dovecot24 is the same configuration as Dovecot writes for 2.3, in the syntax of 2.4: the first setting must name the version, the
+// mail location is split in driver and path, variables are %{user | domain}, and quota is a named block. Checked with doveconf 2.4.1.
+func dovecot24() string {
+	home := MailRoot + "/%{user | domain}/%{user | username}"
+	var b strings.Builder
+	w := func(format string, a ...any) { fmt.Fprintf(&b, format+"\n", a...) }
+	w("dovecot_config_version = 2.4.0")
+	w("dovecot_storage_version = 2.4.0")
+	w("# Written by mpn. Do not edit; the panel rewrites this file.")
+	w("protocols = imap lmtp")
+	w("listen = *")
+	w("mail_driver = maildir")
+	w("mail_home = %s", home)
+	w("mail_path = ~")
+	w("mail_uid = %s", MailUser)
+	w("mail_gid = %s", MailUser)
+	w("first_valid_uid = 100")
+	w("auth_allow_cleartext = no")
+	w("auth_mechanisms = plain login")
+	w("auth_username_format = %%{user | lower}")
+	w("ssl = required")
+	w("ssl_server_cert_file = %s", CertFile)
+	w("ssl_server_key_file = %s", KeyFile)
+	w("ssl_min_protocol = TLSv1.2")
+	w("mail_plugins {")
+	w("  quota = yes")
+	w("}")
+	w("")
+	w("passdb passwd-file {")
+	w("  passwd_file_path = %s", UsersFile)
+	w("}")
+	w("userdb passwd-file {")
+	w("  passwd_file_path = %s", UsersFile)
+	w("  fields {")
+	w("    uid:default = %s", MailUser)
+	w("    gid:default = %s", MailUser)
+	w("    home:default = %s", home)
+	w("  }")
+	w("}")
+	w("")
+	w("namespace inbox {")
+	w("  inbox = yes")
+	for _, m := range [][2]string{{"Drafts", `\Drafts`}, {"Sent", `\Sent`}, {"Trash", `\Trash`}, {"Junk", `\Junk`}} {
+		w("  mailbox %s {", m[0])
+		w("    special_use = %s", m[1])
+		w("    auto = subscribe")
+		w("  }")
+	}
+	w("}")
+	w("")
+	w("service imap-login {")
+	w("  inet_listener imap {")
+	w("    listen = 127.0.0.1")
+	w("    port = 143")
+	w("  }")
+	w("  inet_listener imaps {")
+	w("    port = 993")
+	w("    ssl = yes")
+	w("  }")
+	w("}")
+	w("service lmtp {")
+	w("  unix_listener /var/spool/postfix/private/dovecot-lmtp {")
+	w("    mode = 0600")
+	w("    user = postfix")
+	w("    group = postfix")
+	w("  }")
+	w("}")
+	w("service auth {")
+	w("  unix_listener /var/spool/postfix/private/auth {")
+	w("    mode = 0660")
+	w("    user = postfix")
+	w("    group = postfix")
+	w("  }")
+	w("}")
+	w("protocol imap {")
+	w("  mail_plugins {")
+	w("    imap_quota = yes")
+	w("  }")
+	w("}")
+	w(`quota "User quota" {`)
+	w("  driver = maildir")
+	w("}")
+	return b.String()
+}
+
 // User is one mailbox as the Dovecot password list holds it.
 type User struct {
 	Address string
@@ -210,7 +299,7 @@ type User struct {
 
 // UsersText is the password list. Each line is address:hash:uid:gid:gecos:home:shell:extra, and only the first two fields and the
 // extra one are filled. A hash that is not exactly what HashPassword makes is refused, so no stored value can add a field or a line.
-func UsersText(users []User) (string, error) {
+func UsersText(users []User, v24 bool) (string, error) {
 	sorted := append([]User(nil), users...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Address < sorted[j].Address })
 	var b strings.Builder
@@ -228,6 +317,9 @@ func UsersText(users []User) (string, error) {
 		extra := ""
 		if u.QuotaMB > 0 {
 			extra = "userdb_quota_rule=*:storage=" + strconv.Itoa(u.QuotaMB) + "M"
+			if v24 { // 2.4 replaced quota rules with a size setting of the named quota
+				extra = "userdb_quota_storage_size=" + strconv.Itoa(u.QuotaMB) + "M"
+			}
 		}
 		// user:password:uid:gid:gecos:home:shell:extra is eight fields, seven colons; uid, gid and home come from the userdb defaults.
 		fmt.Fprintf(&b, "%s:%s::::::%s\n", u.Address, u.Hash, extra)

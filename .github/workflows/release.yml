@@ -30,12 +30,15 @@ jobs:
         run: |
           set -euo pipefail
           ver=$(sed -n 's/^\s*WebmailVersion *= *"\(.*\)"/\1/p' internal/mail/webmail.go)
-          sum=$(sed -n 's/^\s*WebmailSHA256 *= *"\(.*\)"/\1/p' internal/mail/webmail.go)
-          url="https://github.com/marixdev/mpn-mail/releases/download/v${ver}/mpn-mail_linux_amd64"
-          curl -fsSL -o /tmp/mpn-mail "$url"
-          got=$(sha256sum /tmp/mpn-mail | cut -d' ' -f1)
-          [ "$got" = "$sum" ] || { echo "::error::$url has SHA-256 $got, the panel pins $sum"; exit 1; }
-          echo "web mail v${ver} matches the pin"
+          for arch in amd64 arm64; do
+            A=$(echo "$arch" | tr a-z A-Z)
+            sum=$(sed -n "s/^\s*webmailSHA256${A} *= *\"\(.*\)\"/\1/p" internal/mail/webmail.go)
+            url="https://github.com/marixdev/mpn-mail/releases/download/v${ver}/mpn-mail_linux_${arch}"
+            curl -fsSL -o "/tmp/mpn-mail-${arch}" "$url"
+            got=$(sha256sum "/tmp/mpn-mail-${arch}" | cut -d' ' -f1)
+            [ -n "$sum" ] && [ "$got" = "$sum" ] || { echo "::error::$url has SHA-256 $got, the panel pins '$sum'"; exit 1; }
+            echo "web mail v${ver} ${arch} matches the pin"
+          done
 
       - name: Build
         run: |

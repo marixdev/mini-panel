@@ -20,7 +20,31 @@ type State struct {
 	Users   []User              // mailboxes
 	Aliases map[string][]string // address -> targets
 	Keys    map[string]string   // domain -> private DKIM key (PEM); a domain without a key is not signed
+	// Dovecot24 is set when the machine runs Dovecot 2.4, whose configuration has another syntax (see DovecotIs24).
+	Dovecot24 bool
 }
+
+// DovecotIs24 reads the output of "dovecot --version", such as "2.4.1-4 (7d8c0e5759)".
+func DovecotIs24(version string) bool {
+	v := strings.TrimSpace(version)
+	return strings.HasPrefix(v, "2.4") || (len(v) > 2 && v[0] >= '3' && v[0] <= '9' && v[1] == '.')
+}
+
+// ConflictingPackages are the mail servers that other images install by default. Each one would hold port 25 next to Postfix, so
+// they are removed before mail is installed.
+var ConflictingPackages = []string{"exim4-base", "exim4-config", "exim4-daemon-light", "exim4-daemon-heavy", "sendmail", "sendmail-bin", "opensmtpd"}
+
+// removeConflictsScript removes the packages above that are installed, and only those, and tells which ones it removed. A machine
+// without any of them changes nothing.
+const removeConflictsScript = `set -e
+found=
+for p in ` + "exim4-base exim4-config exim4-daemon-light exim4-daemon-heavy sendmail sendmail-bin opensmtpd" + `; do
+  if dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed'; then found="$found $p"; fi
+done
+[ -n "$found" ] || exit 0
+echo "removing mail servers that would hold port 25:$found"
+systemctl stop exim4 sendmail opensmtpd 2>/dev/null || true
+DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 purge -y $found`
 
 // Check refuses a state the files could not express safely: a mailbox or an alias on a domain this machine does not handle would be
 // accepted by Dovecot but never receive anything, and would hide a typing mistake.
@@ -85,6 +109,7 @@ func PackagesPlan(host string) (installer.Plan, error) {
 		return nil, fmt.Errorf("mail host: %w", err)
 	}
 	return installer.Plan{{Name: "mail packages", Actions: []installer.Action{
+		installer.Run("sh", "-c", removeConflictsScript),
 		installer.Run("sh", "-c", "printf '%s\\n' 'postfix postfix/main_mailer_type select Internet Site' 'postfix postfix/mailname string "+host+"' | debconf-set-selections"),
 		installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
 		installer.AptInstall("postfix", "dovecot-core", "dovecot-imapd", "dovecot-lmtpd", "opendkim", "opendkim-tools", "openssl"),
@@ -114,11 +139,11 @@ func SetupPlan(s State) (installer.Plan, error) {
 	if err != nil {
 		return nil, err
 	}
-	dove, err := Dovecot(s.Host)
+	dove, err := Dovecot(s.Host, s.Dovecot24)
 	if err != nil {
 		return nil, err
 	}
-	users, err := UsersText(s.Users)
+	users, err := UsersText(s.Users, s.Dovecot24)
 	if err != nil {
 		return nil, err
 	}

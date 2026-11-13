@@ -211,6 +211,7 @@ func mailApplyState(st *store.Store) error {
 	if err != nil {
 		return err
 	}
+	state.Dovecot24 = dovecot24()
 	plan, err := mail.UpdatePlan(state)
 	if err != nil {
 		return err
@@ -307,6 +308,7 @@ func runMail(args []string) {
 			fail(err)
 			state, _ := st.MailState()
 			state.Host = h
+			state.Dovecot24 = dovecot24()
 			setup, err := mail.SetupPlan(state)
 			fail(err)
 			printPlans(pk, setup)
@@ -314,15 +316,17 @@ func runMail(args []string) {
 			return
 		}
 		requireLinuxRoot()
-		if c := conflictingMTA(); c != "" {
-			fail(fmt.Errorf("mail-conflict: %s is already running on port 25; remove it first", c))
-		}
 		fail(st.SetMailHost(h))
+		// The packages step removes Exim, Sendmail and OpenSMTPD first (see mail.ConflictingPackages).
 		pk, err := mail.PackagesPlan(h)
 		fail(err)
 		fail(runPlanQuiet(pk))
+		if c := conflictingMTA(); c != "" {
+			fail(fmt.Errorf("mail-conflict: %s is still running on port 25 after the packages were removed; remove it by hand", c))
+		}
 		state, err := st.MailState()
 		fail(err)
+		state.Dovecot24 = dovecot24() // known only now that Dovecot is installed
 		setup, err := mail.SetupPlan(state)
 		fail(err)
 		fail(runPlanQuiet(setup))
@@ -509,6 +513,11 @@ func runMail(args []string) {
 	default:
 		mailUsage()
 	}
+}
+
+// dovecot24 says whether the Dovecot installed here is 2.4, whose configuration has another syntax. Without Dovecot it is false.
+func dovecot24() bool {
+	return mail.DovecotIs24(out(5*time.Second, "dovecot", "--version"))
 }
 
 // conflictingMTA names a mail server other than the ones mpn manages that is listening on port 25. Installing Postfix next to Exim

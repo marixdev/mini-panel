@@ -2,6 +2,7 @@ package installer
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"mpn/internal/osinfo"
@@ -16,7 +17,7 @@ const (
 	// nginxSigningFPR is a fingerprint in the signing key nginx.org publishes; the key is refused when it is not there.
 	nginxSigningFPR = "573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62"
 
-	modulesRelease = "nginx-1.28.3-r1"
+	modulesRelease = "nginx-1.28.3-r2"
 	modulesBase    = "https://github.com/marixdev/mpn-nginx-modules/releases/download/" + modulesRelease
 
 	nginxModuleDir      = "/usr/lib/nginx/modules"
@@ -30,19 +31,28 @@ const (
 	ModModSecurity = "modsecurity"
 )
 
-// moduleSums are the SHA-256 of the files of the release above. A file that does not match is never installed.
+// moduleSums are the SHA-256 of the files of the release above, by system and CPU (see moduleKey). A file that does not match is never
+// installed. The x86-64 files are the same as in nginx-1.28.3-r1.
 var moduleSums = map[string]map[string]string{
 	ModPageSpeed: {
-		"jammy":    "76dd04c59dbe853d199a2c0d8e977811a0ff99fa832e7f900373d65b00e1c431",
-		"noble":    "1a54e8c592294a835b1adda9a972c216ba62ad4996df08f996174debf4528da5",
-		"bookworm": "7b7732689562a0264e7c59de23c378f2bd30d1880c45238e1122710718e21721",
-		"trixie":   "2a16561a51188766326749aa9e87d119e33a5e8446375e1a26e660ef65587d5b",
+		"jammy":          "76dd04c59dbe853d199a2c0d8e977811a0ff99fa832e7f900373d65b00e1c431",
+		"noble":          "1a54e8c592294a835b1adda9a972c216ba62ad4996df08f996174debf4528da5",
+		"bookworm":       "7b7732689562a0264e7c59de23c378f2bd30d1880c45238e1122710718e21721",
+		"trixie":         "2a16561a51188766326749aa9e87d119e33a5e8446375e1a26e660ef65587d5b",
+		"jammy-arm64":    "829b9b7d9d5f9514a2388d993872f472bb36911350bc4b51c4d7f9c1458c7f03",
+		"noble-arm64":    "be9f8e166e41cb4c87f8d02c5c10b108d569a0a5169093d0e5bfb74119567cb2",
+		"bookworm-arm64": "d7fef1067121ab774f5a5fd29464ac87895b50002d4405e772624fe8cb8b55fc",
+		"trixie-arm64":   "f7eed16b513637083cd41a288f549cd8d2a7322e2a33ecaa7918aefbee918bd4",
 	},
 	ModModSecurity: {
-		"jammy":    "97c36e71bf8d896461ee37c74b7fc9496c758dfa247c0d6f640c22a59a94256d",
-		"noble":    "3cd94b8e89db382d0dd4de7b6cfdf08a98b1b3137115d51cb5cf473f6511d2f6",
-		"bookworm": "6ccb5f5b45bff0cdfe4e96e7940fecdc3e629b112891adea123dda9547fcf391",
-		"trixie":   "e33ee1a9b4c2d5c4d18bd37f7ee38d530d5a573715827430840469eac5883e25",
+		"jammy":          "97c36e71bf8d896461ee37c74b7fc9496c758dfa247c0d6f640c22a59a94256d",
+		"noble":          "3cd94b8e89db382d0dd4de7b6cfdf08a98b1b3137115d51cb5cf473f6511d2f6",
+		"bookworm":       "6ccb5f5b45bff0cdfe4e96e7940fecdc3e629b112891adea123dda9547fcf391",
+		"trixie":         "e33ee1a9b4c2d5c4d18bd37f7ee38d530d5a573715827430840469eac5883e25",
+		"jammy-arm64":    "0541c98268f45bf04a2e8f5ed91b5c18bbf13d6e6ad772802b2993ddcccbb9b8",
+		"noble-arm64":    "3ea21c9457cf4269baea6371c46c1951cd73f237e9a48a82d3b2c62e0d0e5eb4",
+		"bookworm-arm64": "496c1ee02512c3e7ae096037388f6a4bedddf2a101e6d455dd640a686e09e955",
+		"trixie-arm64":   "61acb1d77dcedb3941701850131545251aa24ded104b371b6b4f2be2fae1e0fb",
 	},
 }
 
@@ -51,9 +61,22 @@ var moduleNames = map[string]struct{ file, so, snippet string }{
 	ModModSecurity: {"ngx_http_modsecurity_module", "ngx_http_modsecurity_module.so", "50-mod-http-modsecurity.conf"},
 }
 
-// ModuleFile is the name of the release file of a module for a system.
-func ModuleFile(kind, codename string) string {
-	return fmt.Sprintf("%s-%s-nginx%s.so", moduleNames[kind].file, codename, NginxVersion)
+// moduleKey is the key of moduleSums for a system and a CPU: the codename on x86-64, and the codename with -arm64 on arm64.
+func moduleKey(codename, arch string) string {
+	if arch == "arm64" {
+		return codename + "-arm64"
+	}
+	return codename
+}
+
+// ModuleFile is the name of the release file of a module for a system and a CPU ("amd64" or "arm64", as runtime.GOARCH says):
+// ngx_pagespeed_module-trixie-nginx1.28.3.so on x86-64, ngx_pagespeed_module-trixie-nginx1.28.3-arm64.so on arm64.
+func ModuleFile(kind, codename, arch string) string {
+	suffix := ""
+	if arch == "arm64" {
+		suffix = "-arm64"
+	}
+	return fmt.Sprintf("%s-%s-nginx%s%s.so", moduleNames[kind].file, codename, NginxVersion, suffix)
 }
 
 // fetchScript downloads a file, compares it with a checksum fixed in this program and only then puts it in place. A file that is
@@ -69,16 +92,17 @@ install -d -m 0755 "$(dirname "$dest")"
 install -m 0644 -o root -g root "$t" "$dest"`
 }
 
-// moduleActions puts a module for the pinned nginx in place and makes nginx load it. The caller runs nginx -t and the reload.
+// moduleActions puts a module for the pinned nginx in place and makes nginx load it. The caller runs nginx -t and the reload. The file
+// is the one built for the CPU of this program, which is the CPU of the machine it runs on.
 func moduleActions(t osinfo.Target, kind string) ([]Action, error) {
-	sum, ok := moduleSums[kind][t.Codename]
+	sum, ok := moduleSums[kind][moduleKey(t.Codename, runtime.GOARCH)]
 	if !ok {
-		return nil, fmt.Errorf("there is no %s module for nginx %s on %s %s", kind, NginxVersion, t.ID, t.Version)
+		return nil, fmt.Errorf("there is no %s module for nginx %s on %s %s (%s)", kind, NginxVersion, t.ID, t.Version, runtime.GOARCH)
 	}
 	n := moduleNames[kind]
 	dest := nginxModuleDir + "/" + n.so
 	return []Action{
-		Run("sh", "-c", fetchScript(modulesBase+"/"+ModuleFile(kind, t.Codename), sum, dest)),
+		Run("sh", "-c", fetchScript(modulesBase+"/"+ModuleFile(kind, t.Codename, runtime.GOARCH), sum, dest)),
 		Run("install", "-d", "-m", "0755", nginxModulesEnabled),
 		WriteFile(nginxModulesEnabled+"/"+n.snippet, "# Written by mpn.\nload_module "+dest+";\n", 0o644),
 	}, nil

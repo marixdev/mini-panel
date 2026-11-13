@@ -3,6 +3,7 @@ package mail
 import (
 	"fmt"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"mpn/internal/installer"
@@ -30,11 +31,28 @@ const (
 )
 
 // The release the panel installs. The program is downloaded once, from the release of the project that publishes it, and compared with
-// the checksum fixed here; a file that does not match is never installed.
+// the checksum fixed here; a file that does not match is never installed. There is one file per CPU, and this program picks the one for
+// its own CPU, which is the machine's.
 const (
-	WebmailVersion = "1.0.1"
-	WebmailURL     = "https://github.com/marixdev/mpn-mail/releases/download/v" + WebmailVersion + "/mpn-mail_linux_amd64"
-	WebmailSHA256  = "baa6ef9eee515631b240705fd173e94caefa6d79a61cf521e365db27da5e86af"
+	WebmailVersion       = "1.0.2"
+	webmailSHA256AMD64   = "22bcdaed0017ba626654591b9347de859ecd737eec827c40de8a6c13440ea5bd"
+	webmailSHA256ARM64   = "0fe47af6794b41faf762472dfcab2ac677af545346af485456a28d53c3490db7"
+	webmailReleaseFolder = "https://github.com/marixdev/mpn-mail/releases/download/v" + WebmailVersion + "/"
+)
+
+// WebmailArch is the CPU the web mail is downloaded for: arm64 on arm64, amd64 everywhere else.
+var WebmailArch = func() string {
+	if runtime.GOARCH == "arm64" {
+		return "arm64"
+	}
+	return "amd64"
+}()
+
+var (
+	// WebmailURL is the file of the release for this CPU.
+	WebmailURL = webmailReleaseFolder + "mpn-mail_linux_" + WebmailArch
+	// WebmailSHA256 is the checksum of that file.
+	WebmailSHA256 = map[string]string{"amd64": webmailSHA256AMD64, "arm64": webmailSHA256ARM64}[WebmailArch]
 )
 
 // WebmailPort is the port of the web mail: the second one after the panel's (the first is the database browser's).

@@ -25,7 +25,7 @@ Cài xong, mở địa chỉ được in ra (`https://<IP>:2610/setup`) để t�
 
 Tùy chọn: `MPN_VERSION=1.0.2` để cài một bản cố định, `MPN_PANEL_PORT=2610` để đổi cổng panel.
 
-**Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13, kiến trúc x86_64.
+**Hệ điều hành:** Ubuntu 22.04, 24.04, 26.04 và Debian 12, 13, kiến trúc x86_64 hoặc arm64 (aarch64).
 
 ## Tính năng
 
