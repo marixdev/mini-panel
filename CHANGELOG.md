@@ -2,12 +2,15 @@
 
 Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+Bản dịch: [English](CHANGELOG.en.md) · [中文](CHANGELOG.zh.md).
+
 ## [1.1.1] - 2026-11-14
 
 ### Sửa
 
 - Sao lưu giờ chép cả thư mục `htdocs` khi thư mục gốc web nằm bên dưới nó, ví dụ `htdocs/public` của Laravel, Flarum hay Symfony. Trước đây bản sao lưu chỉ có `public/` và thiếu `config.php`/`.env`, `storage` (tệp tải lên) và `vendor`, nên khôi phục từ đó không chạy lại được site. Site có thư mục gốc là `htdocs` không đổi gì.
 - MANIFEST của các bản sao lưu đó có thêm dòng `files_root=htdocs`, và khôi phục dựa vào dòng này: bản sao lưu cũ (chỉ có thư mục gốc web) vẫn được bung về thư mục gốc web như trước. mpn 1.1.0 trở về trước không đọc được MANIFEST mới, nên hãy nâng cấp trước khi khôi phục các bản sao lưu mới.
+
 ## [1.1.0] - 2026-11-13
 
 ### Thêm
@@ -17,11 +20,11 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 - SELinux vẫn bật: panel gán nhãn cho thư mục website, log, socket PHP-FPM, venv của site Python, Node.js, hộp thư và cổng của panel, và bật `httpd_can_network_connect` để site gọi được cơ sở dữ liệu và mạng ngoài.
 - Bộ cài tắt firewalld, vì panel quản lý tường lửa bằng nftables.
 - Mail trên họ RHEL: mật khẩu hộp thư băm bằng bcrypt (`BLF-CRYPT`), vì Dovecot ở đó không có argon2; OpenDKIM nghe ở cổng 8891 trên loopback, vì chính sách SELinux không cho Postfix nối vào socket của nó.
-- Gói `internal/distro` gom các tên, đường dẫn và lệnh khác nhau giữa họ Debian và họ RHEL.
 
 ### Đổi
 
 - Module nginx giờ nằm ở repo mpn-packages (trước là mpn-nginx-modules; địa chỉ cũ vẫn chuyển tiếp tới đây).
+
 ## [1.0.3] - 2026-11-13
 
 ### Thêm
@@ -62,6 +65,9 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 Bản phát hành đầu tiên: website PHP, Node.js, Python, tĩnh và proxy; SSL Let's Encrypt; MariaDB/MySQL và phpMyAdmin; email và web mail mpn-mail 1.0.0; sao lưu; tường lửa, ModSecurity, fail2ban, 2FA; giám sát; giao diện tiếng Việt và tiếng Anh.
 
+[1.1.1]: https://github.com/marixdev/mini-panel/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/marixdev/mini-panel/compare/v1.0.3...v1.1.0
+[1.0.3]: https://github.com/marixdev/mini-panel/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/marixdev/mini-panel/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/marixdev/mini-panel/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/marixdev/mini-panel/releases/tag/v1.0.0
