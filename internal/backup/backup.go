@@ -28,11 +28,15 @@ func SiteDir(name string) string    { return Base + "/" + name }
 func Dir(name, stamp string) string { return SiteDir(name) + "/" + stamp }
 
 // Manifest says what a backup holds.
+//
+// Htdocs is set when files.tar.gz holds the whole htdocs of a site whose web root lies below it (mpn 1.1.1 and later).
+// Backups made before that hold only the web root, and are put back there.
 type Manifest struct {
-	Site  string
-	Stamp string
-	Files bool
-	DBs   []string
+	Site   string
+	Stamp  string
+	Files  bool
+	Htdocs bool
+	DBs    []string
 }
 
 const header = "mpn backup 1"
@@ -42,6 +46,9 @@ func (m Manifest) String() string {
 	fmt.Fprintf(&b, "%s\nsite=%s\nstamp=%s\n", header, m.Site, m.Stamp)
 	if m.Files {
 		b.WriteString("files=files.tar.gz\n")
+	}
+	if m.Htdocs {
+		b.WriteString("files_root=htdocs\n")
 	}
 	for _, d := range m.DBs {
 		fmt.Fprintf(&b, "db=%s\n", d)
@@ -77,6 +84,11 @@ func ParseManifest(text string) (Manifest, error) {
 				return Manifest{}, fmt.Errorf("manifest has an unexpected files entry %q", v)
 			}
 			m.Files = true
+		case "files_root":
+			if v != "htdocs" {
+				return Manifest{}, fmt.Errorf("manifest has an unexpected files_root %q", v)
+			}
+			m.Htdocs = true
 		case "db":
 			if !dbadmin.ValidName(v) {
 				return Manifest{}, fmt.Errorf("manifest has an invalid database name %q", v)
@@ -138,7 +150,8 @@ func CreatePlan(s site.Site, stamp string, dbs []string, dump string) (installer
 			`umask 077; %[1]s --single-transaction --routines --events --triggers --default-character-set=utf8mb4 %[2]s > %[3]s || { rm -f %[3]s; echo 'dump of %[2]s failed' >&2; exit 1; }; gzip -f %[3]s`,
 			dump, d, sql))}})
 	}
-	m := Manifest{Site: s.Name, Stamp: stamp, Files: true, DBs: dbs}
+	_, below := s.RootSub()
+	m := Manifest{Site: s.Name, Stamp: stamp, Files: true, Htdocs: below && s.Root != site.HtdocsOf(s.User), DBs: dbs}
 	return append(plan, installer.Step{Name: "manifest", Actions: []installer.Action{
 		installer.WriteFile(dir+"/MANIFEST", m.String(), 0o600),
 	}}), nil
@@ -149,6 +162,16 @@ func CreatePlan(s site.Site, stamp string, dbs []string, dump string) (installer
 // beside public and would otherwise be left out. A web root outside htdocs is archived as it is.
 func filesRoot(s site.Site) string {
 	if _, ok := s.RootSub(); ok {
+		return site.HtdocsOf(s.User)
+	}
+	return s.Root
+}
+
+// restoreRoot is where a backup's archive is extracted: htdocs for an archive of the whole htdocs, the web root for one
+// made before 1.1.1 (which holds only the web root). An archive of htdocs is refused below for a site whose web root is
+// no longer under htdocs, by RestorePlan.
+func restoreRoot(s site.Site, m Manifest) string {
+	if m.Htdocs {
 		return site.HtdocsOf(s.User)
 	}
 	return s.Root
@@ -172,6 +195,9 @@ func RestorePlan(s site.Site, m Manifest, files bool, dbs []string, client strin
 	if files && !m.Files {
 		return nil, fmt.Errorf("backup %s has no files", m.Stamp)
 	}
+	if _, below := s.RootSub(); files && m.Htdocs && !below {
+		return nil, fmt.Errorf("backup %s holds the folder htdocs, but the web root of site %q is now outside it (%s)", m.Stamp, s.Name, s.Root)
+	}
 	if len(dbs) > 0 && !site.SafePath(client) {
 		return nil, fmt.Errorf("invalid database client %q", client)
 	}
@@ -189,7 +215,7 @@ func RestorePlan(s site.Site, m Manifest, files bool, dbs []string, client strin
 		f := dir + "/files.tar.gz"
 		plan = append(plan, installer.Step{Name: "files", Actions: []installer.Action{installer.Run("sh", "-c", fmt.Sprintf(
 			`[ -d %[2]s ] || { echo 'site root %[2]s does not exist; apply the site first' >&2; exit 1; }; gzip -t %[3]s && runuser -u %[1]s -- tar -C %[2]s -xzpf - < %[3]s`,
-			s.User, filesRoot(s), f))}})
+			s.User, restoreRoot(s, m), f))}})
 	}
 	for _, d := range dbs {
 		f := fmt.Sprintf("%s/%s.sql.gz", dir, d)

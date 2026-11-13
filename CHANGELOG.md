@@ -2,6 +2,12 @@
 
 Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.1.1] - 2026-11-14
+
+### Sửa
+
+- Sao lưu giờ chép cả thư mục `htdocs` khi thư mục gốc web nằm bên dưới nó, ví dụ `htdocs/public` của Laravel, Flarum hay Symfony. Trước đây bản sao lưu chỉ có `public/` và thiếu `config.php`/`.env`, `storage` (tệp tải lên) và `vendor`, nên khôi phục từ đó không chạy lại được site. Site có thư mục gốc là `htdocs` không đổi gì.
+- MANIFEST của các bản sao lưu đó có thêm dòng `files_root=htdocs`, và khôi phục dựa vào dòng này: bản sao lưu cũ (chỉ có thư mục gốc web) vẫn được bung về thư mục gốc web như trước. mpn 1.1.0 trở về trước không đọc được MANIFEST mới, nên hãy nâng cấp trước khi khôi phục các bản sao lưu mới.
 ## [1.1.0] - 2026-11-13
 
 ### Thêm
