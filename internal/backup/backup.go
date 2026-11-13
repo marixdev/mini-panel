@@ -130,7 +130,7 @@ func CreatePlan(s site.Site, stamp string, dbs []string, dump string) (installer
 		}},
 		{Name: "files", Actions: []installer.Action{installer.Run("sh", "-c", fmt.Sprintf(
 			`[ -d %[2]s ] || { echo 'site root %[2]s does not exist' >&2; exit 1; }; umask 077; runuser -u %[1]s -- tar -C %[2]s -czf - . > %[3]s; rc=$?; [ "$rc" -le 1 ] && gzip -t %[3]s || { echo 'archiving the site files failed' >&2; exit 1; }`,
-			s.User, s.Root, files))}},
+			s.User, filesRoot(s), files))}},
 	}
 	for _, d := range dbs {
 		sql := fmt.Sprintf("%s/%s.sql", dir, d)
@@ -142,6 +142,16 @@ func CreatePlan(s site.Site, stamp string, dbs []string, dump string) (installer
 	return append(plan, installer.Step{Name: "manifest", Actions: []installer.Action{
 		installer.WriteFile(dir+"/MANIFEST", m.String(), 0o600),
 	}}), nil
+}
+
+// filesRoot is the folder a backup archives and a restore extracts into: htdocs when the web root lies below it, so a site
+// whose web root is htdocs/public (Laravel, Flarum, Symfony) keeps its configuration, storage and vendor folders, which sit
+// beside public and would otherwise be left out. A web root outside htdocs is archived as it is.
+func filesRoot(s site.Site) string {
+	if _, ok := s.RootSub(); ok {
+		return site.HtdocsOf(s.User)
+	}
+	return s.Root
 }
 
 // RestorePlan puts back the files and/or the given databases from one backup.
@@ -179,7 +189,7 @@ func RestorePlan(s site.Site, m Manifest, files bool, dbs []string, client strin
 		f := dir + "/files.tar.gz"
 		plan = append(plan, installer.Step{Name: "files", Actions: []installer.Action{installer.Run("sh", "-c", fmt.Sprintf(
 			`[ -d %[2]s ] || { echo 'site root %[2]s does not exist; apply the site first' >&2; exit 1; }; gzip -t %[3]s && runuser -u %[1]s -- tar -C %[2]s -xzpf - < %[3]s`,
-			s.User, s.Root, f))}})
+			s.User, filesRoot(s), f))}})
 	}
 	for _, d := range dbs {
 		f := fmt.Sprintf("%s/%s.sql.gz", dir, d)
