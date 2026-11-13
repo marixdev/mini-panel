@@ -45,7 +45,7 @@ Tùy chọn: `MPN_VERSION=1.0.2` để cài một bản cố định, `MPN_PANEL
 - `mpn root` là trình hỗ trợ chạy bằng root, nghe trên socket Unix và chỉ nhận một danh sách thao tác cố định. Mỗi giá trị được kiểm tra lại trước khi thành đối số dòng lệnh, không qua shell.
 - Mật khẩu, khóa riêng và chứng chỉ đi qua đầu vào chuẩn, không nằm trong đối số, log hay cơ sở dữ liệu.
 - Mọi thay đổi trên máy là một kế hoạch gồm nhiều bước, mặc định chỉ xem thử và chạy thật khi có `-apply`. Nếu `nginx -t` hoặc một bước lỗi, tệp cũ được khôi phục.
-- nginx được ghim ở 1.28.3 trên mọi hệ điều hành (từ nginx.org, `apt-mark hold`), nên `apt upgrade` không làm hỏng các mô-đun đã build cho bản đó ([mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules)). Mọi tệp tải về đều được so với mã SHA-256 ghi sẵn trong mã nguồn.
+- nginx được ghim ở 1.28.3 trên mọi hệ điều hành (từ nginx.org, khoá bằng `apt-mark hold` hoặc `dnf versionlock`), nên `apt upgrade` hay `dnf upgrade` không làm hỏng các mô-đun đã build cho bản đó ([mpn-packages](https://github.com/marixdev/mpn-packages)). Mọi tệp tải về đều được so với mã SHA-256 ghi sẵn trong mã nguồn.
 - Dữ liệu của panel nằm trong SQLite, `/var/lib/mpn/mpn.db` quyền 0600.
 
 ## Các repo đi kèm
@@ -55,7 +55,7 @@ Panel tải các thành phần sau từ bản phát hành của chúng và so m�
 | Repo | Panel dùng để | Ghim ở |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | Web mail ở `/webmail/` (bản tùy biến của lilmail) | `internal/mail/webmail.go` |
-| [marixdev/mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules) | Mô-đun PageSpeed và ModSecurity build cho nginx 1.28.3 | `internal/installer/nginx.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | Mô-đun PageSpeed và ModSecurity build cho nginx 1.28.3; PHP 7.0 đến 7.3 và OWASP CRS cho AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
 
 ## Dòng lệnh
 

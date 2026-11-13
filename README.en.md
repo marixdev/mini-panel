@@ -45,7 +45,7 @@ Options: `MPN_VERSION=1.0.2` installs a fixed version, `MPN_PANEL_PORT=2610` cha
 - `mpn root` is a helper running as root. It listens on a Unix socket and accepts only a fixed list of operations. Every value is checked again before it becomes a command-line argument, and no shell is involved.
 - Passwords, private keys and certificates travel over standard input, never in arguments, logs or the database.
 - Every change to the machine is a plan of steps. By default it is only shown, and it runs with `-apply`. If `nginx -t` or a step fails, the old files are restored.
-- nginx is pinned at 1.28.3 on every operating system (from nginx.org, `apt-mark hold`), so `apt upgrade` does not break the modules built for that version. Every download is compared with a SHA-256 written in the source.
+- nginx is pinned at 1.28.3 on every operating system (from nginx.org, held with `apt-mark hold` or `dnf versionlock`), so `apt upgrade` or `dnf upgrade` does not break the modules built for that version ([mpn-packages](https://github.com/marixdev/mpn-packages)). Every download is compared with a SHA-256 written in the source.
 - The panel's data is in SQLite, `/var/lib/mpn/mpn.db`, mode 0600.
 
 ## Companion repositories
@@ -55,7 +55,7 @@ The panel downloads these components from their releases and checks the SHA-256 
 | Repository | Used by the panel for | Pinned in |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | Web mail at `/webmail/` (a customised lilmail) | `internal/mail/webmail.go` |
-| [marixdev/mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules) | PageSpeed and ModSecurity modules built for nginx 1.28.3 | `internal/installer/nginx.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | PageSpeed and ModSecurity modules built for nginx 1.28.3; PHP 7.0 to 7.3 and the OWASP CRS for AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
 
 ## Command line
 

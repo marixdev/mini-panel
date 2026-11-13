@@ -20,7 +20,7 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 ### Thêm
 
-- Chạy trên máy ARM (arm64, aarch64). Bộ cài nhận máy aarch64 và tải `mpn_linux_arm64`. Module PageSpeed và ModSecurity cho arm64 lấy từ bản [nginx-1.28.3-r2](https://github.com/marixdev/mpn-nginx-modules/releases/tag/nginx-1.28.3-r2) (build trên runner ARM của GitHub, ghim SHA-256 theo từng hệ điều hành và kiến trúc). Web mail lên [mpn-mail 1.0.2](https://github.com/marixdev/mpn-mail/releases/tag/v1.0.2), có bản `mpn-mail_linux_arm64`.
+- Chạy trên máy ARM (arm64, aarch64). Bộ cài nhận máy aarch64 và tải `mpn_linux_arm64`. Module PageSpeed và ModSecurity cho arm64 lấy từ bản [nginx-1.28.3-r2](https://github.com/marixdev/mpn-packages/releases/tag/nginx-1.28.3-r2) (build trên runner ARM của GitHub, ghim SHA-256 theo từng hệ điều hành và kiến trúc). Web mail lên [mpn-mail 1.0.2](https://github.com/marixdev/mpn-mail/releases/tag/v1.0.2), có bản `mpn-mail_linux_arm64`.
 - Bật mail tự gỡ các máy chủ thư có sẵn sẽ chiếm cổng 25 (Exim, Sendmail, OpenSMTPD) trước khi cài Postfix, thay vì dừng lại và bắt gỡ bằng tay.
 
 ### Sửa

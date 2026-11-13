@@ -45,7 +45,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 - `mpn root` 是以 root 运行的辅助进程，监听 Unix 套接字，只接受固定的操作列表。每个值在成为命令行参数之前都会再次检查，不经过 shell。
 - 密码、私钥和证书通过标准输入传递，不会出现在参数、日志或数据库中。
 - 对机器的每项更改都是一个分步骤的计划，默认只预览，加上 `-apply` 才真正执行。如果 `nginx -t` 或某一步失败，会恢复原有文件。
-- nginx 在所有操作系统上固定为 1.28.3（来自 nginx.org，`apt-mark hold`），因此 `apt upgrade` 不会破坏为该版本构建的模块。所有下载的文件都会与源代码中写明的 SHA-256 比对。
+- nginx 在所有操作系统上固定为 1.28.3（来自 nginx.org，用 `apt-mark hold` 或 `dnf versionlock` 锁定），因此 `apt upgrade` 或 `dnf upgrade` 不会破坏为该版本构建的模块（[mpn-packages](https://github.com/marixdev/mpn-packages)）。所有下载的文件都会与源代码中写明的 SHA-256 比对。
 - 面板数据保存在 SQLite 中：`/var/lib/mpn/mpn.db`，权限 0600。
 
 ## 配套仓库
@@ -55,7 +55,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 | 仓库 | 面板用途 | 固定位置 |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | `/webmail/` 网页邮件（lilmail 的定制版） | `internal/mail/webmail.go` |
-| [marixdev/mpn-nginx-modules](https://github.com/marixdev/mpn-nginx-modules) | 为 nginx 1.28.3 构建的 PageSpeed 和 ModSecurity 模块 | `internal/installer/nginx.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | 为 nginx 1.28.3 构建的 PageSpeed 和 ModSecurity 模块；适用于 AlmaLinux、Rocky Linux、CentOS Stream 的 PHP 7.0 至 7.3 与 OWASP CRS | `internal/installer/nginx.go`、`internal/installer/el.go` |
 
 ## 命令行
 
