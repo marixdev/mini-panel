@@ -2,6 +2,20 @@
 
 Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phiên bản theo [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.1.0] - 2026-11-13
+
+### Thêm
+
+- Chạy trên AlmaLinux, Rocky Linux và CentOS Stream 9 và 10, cả x86_64 lẫn arm64. Nginx 1.28.3 lấy từ nginx.org và khoá bằng `dnf versionlock`; PHP 7.4 trở lên từ Remi (kèm EPEL); PHP 7.0 đến 7.3, module ModSecurity và OWASP CRS 4.25.2 lấy từ bản [el-r1](https://github.com/marixdev/mpn-packages/releases/tag/el-r1) của mpn-packages; PageSpeed từ bản [nginx-1.28.3-r3](https://github.com/marixdev/mpn-packages/releases/tag/nginx-1.28.3-r3). Mọi tệp tải về đều được kiểm SHA-256 đã ghim.
+- MariaDB lấy từ rpm.mariadb.org và MySQL từ repo.mysql.com; khoá ký của hai kho được kiểm theo fingerprint. EL10 chỉ có MySQL 8.4.
+- SELinux vẫn bật: panel gán nhãn cho thư mục website, log, socket PHP-FPM, venv của site Python, Node.js, hộp thư và cổng của panel, và bật `httpd_can_network_connect` để site gọi được cơ sở dữ liệu và mạng ngoài.
+- Bộ cài tắt firewalld, vì panel quản lý tường lửa bằng nftables.
+- Mail trên họ RHEL: mật khẩu hộp thư băm bằng bcrypt (`BLF-CRYPT`), vì Dovecot ở đó không có argon2; OpenDKIM nghe ở cổng 8891 trên loopback, vì chính sách SELinux không cho Postfix nối vào socket của nó.
+- Gói `internal/distro` gom các tên, đường dẫn và lệnh khác nhau giữa họ Debian và họ RHEL.
+
+### Đổi
+
+- Module nginx giờ nằm ở repo mpn-packages (trước là mpn-nginx-modules; địa chỉ cũ vẫn chuyển tiếp tới đây).
 ## [1.0.3] - 2026-11-13
 
 ### Thêm

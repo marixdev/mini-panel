@@ -64,7 +64,7 @@ func init() {
 		"ov.python.version":         "Python 版本",
 		"ov.python.entry":           "入口文件",
 		"ov.python.entry.hint":      "相对于网站根目录的路径，例如 app.py；或 -m 加模块名，例如 -m myapp。应用使用该网站的 ~/venv 虚拟环境运行。",
-		"ov.python.notinstalled":    "仅显示本服务器已安装的版本（python3.x 和 python3.x-venv 软件包）。",
+		"ov.python.notinstalled":    "仅显示本服务器已安装的版本（Debian 和 Ubuntu 上为 python3.x 与 python3.x-venv 软件包，AlmaLinux、Rocky Linux 与 CentOS Stream 上为 python3.x）。",
 		"ov.proxy.title":            "反向代理",
 		"ov.proxy.upstream":         "目标地址",
 		"ov.proxy.hint":             "nginx 转发请求的 http 或 https 地址。",

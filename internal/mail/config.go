@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"mpn/internal/distro"
 )
 
 // TLS files of the mail host. Postfix and Dovecot read the same pair.
@@ -74,10 +76,16 @@ func PostfixMain(host string) (string, error) {
 	w("smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination")
 	w("smtpd_recipient_restrictions = reject_non_fqdn_recipient, reject_unknown_recipient_domain, permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination")
 	w("")
-	w("smtpd_milters = unix:opendkim/opendkim.sock")
+	w("smtpd_milters = %s", PostfixMilter())
 	w("non_smtpd_milters = $smtpd_milters")
 	w("milter_default_action = accept")
 	w("milter_protocol = 6")
+	if distro.IsEL() {
+		// The Postfix of EL looks up hash:/etc/aliases by default and is built without the hash type ("unsupported dictionary type:
+		// hash", seen on Rocky Linux 10). Local delivery is not used, so there is no alias table.
+		w("alias_maps =")
+		w("alias_database =")
+	}
 	return b.String(), nil
 }
 
@@ -386,12 +394,32 @@ func AliasesText(aliases map[string][]string) (string, error) {
 	return b.String(), nil
 }
 
+// DKIMPortEL is where OpenDKIM listens on the RHEL family, on the loopback only. The policy of EL has no domain for OpenDKIM, so it
+// runs as unconfined_service_t, and Postfix may not connect to a unix socket of that domain ("connectto ... denied", seen on Rocky
+// Linux 10); it may connect to milter_port_t, which 8891 is. The packages of Fedora and EL use this port too.
+const DKIMPortEL = 8891
+
+func openDKIMSocket() string {
+	if distro.IsEL() {
+		return "inet:" + strconv.Itoa(DKIMPortEL) + "@127.0.0.1"
+	}
+	return "local:" + DKIMSocket
+}
+
+// PostfixMilter is the address Postfix hands mail to OpenDKIM at.
+func PostfixMilter() string {
+	if distro.IsEL() {
+		return "inet:127.0.0.1:" + strconv.Itoa(DKIMPortEL)
+	}
+	return "unix:opendkim/opendkim.sock"
+}
+
 // OpenDKIMConf is opendkim.conf: it signs mail that leaves, with the key of the sender's domain, over a socket Postfix can reach.
 func OpenDKIMConf() string {
 	return "# Written by mpn. Do not edit; the panel rewrites this file.\n" +
 		"Syslog yes\nUMask 007\nMode s\nCanonicalization relaxed/simple\nOversignHeaders From\n" +
 		"KeyTable " + DKIMKeyTable + "\nSigningTable refile:" + DKIMSigningTable + "\n" +
-		"Socket local:" + DKIMSocket + "\nPidFile /run/opendkim/opendkim.pid\n" +
+		"Socket " + openDKIMSocket() + "\nPidFile /run/opendkim/opendkim.pid\n" +
 		// The group postfix makes the socket reachable by Postfix without putting Postfix in the group that owns the keys.
 		"UserID opendkim:postfix\n"
 }

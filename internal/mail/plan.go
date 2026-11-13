@@ -49,6 +49,15 @@ systemctl stop exim4 exim sendmail opensmtpd 2>/dev/null || true
 ` + strings.Join(distro.RemoveCommand(), " ") + ` $found`
 }
 
+// Packages are the three servers in the names of the family. On EL Dovecot is one package with IMAP and LMTP in it, and OpenDKIM
+// comes from EPEL.
+func Packages() []string {
+	if distro.IsEL() {
+		return []string{"epel-release", "postfix", "dovecot", "opendkim", "opendkim-tools", "openssl"}
+	}
+	return []string{"postfix", "dovecot-core", "dovecot-imapd", "dovecot-lmtpd", "opendkim", "opendkim-tools", "openssl"}
+}
+
 // Check refuses a state the files could not express safely: a mailbox or an alias on a domain this machine does not handle would be
 // accepted by Dovecot but never receive anything, and would hide a typing mistake.
 func (s State) Check() error {
@@ -118,9 +127,8 @@ func PackagesPlan(host string) (installer.Plan, error) {
 		acts = append(acts, installer.Run("sh", "-c", "printf '%s\\n' 'postfix postfix/main_mailer_type select Internet Site' 'postfix postfix/mailname string "+host+"' | debconf-set-selections"))
 	}
 	acts = append(acts,
-		// EL: the packages are named postfix, dovecot and opendkim (EPEL) there; the RHEL work adds those names.
-		installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
-		installer.AptInstall("postfix", "dovecot-core", "dovecot-imapd", "dovecot-lmtpd", "opendkim", "opendkim-tools", "openssl"),
+		installer.Run("sh", "-c", distro.RefreshScript()+" || true"),
+		installer.Run(distro.InstallCommand(Packages()...)...),
 		// The servers start on their own after the packages are installed, with a configuration that is not ours. They are stopped
 		// until SetupPlan has written the real one.
 		installer.Run("sh", "-c", "systemctl stop postfix dovecot opendkim 2>/dev/null || true"),
@@ -216,12 +224,17 @@ func SetupPlan(s State) (installer.Plan, error) {
 	setup := []installer.Action{
 		installer.Run("sh", "-c", "getent passwd "+MailUser+" >/dev/null || useradd --system --uid 5000 --user-group --home-dir "+MailRoot+" --shell /usr/sbin/nologin "+MailUser),
 		installer.Run("install", "-d", "-m", "0750", "-o", MailUser, "-g", MailUser, MailRoot),
+	}
+	if distro.IsEL() {
+		setup = append(setup, elMailActions()...)
+	}
+	setup = append(setup,
 		installer.Run("install", "-d", "-m", "0755", "-o", "root", "-g", "root", Dir),
 		installer.Run("install", "-d", "-m", "0750", "-o", "opendkim", "-g", "opendkim", DKIMDir),
 		// The socket lives in a folder Postfix can enter: opendkim runs with the group postfix (see OpenDKIMConf).
 		installer.Run("install", "-d", "-m", "0750", "-o", "opendkim", "-g", "postfix", DKIMSocketDir),
 		installer.Run("sh", "-c", selfSignedScript(s.Host)),
-	}
+	)
 	start := []installer.Action{
 		installer.Run("postfix", "check"),
 		installer.Run("sh", "-c", "doveconf -n >/dev/null"),
@@ -234,6 +247,19 @@ func SetupPlan(s State) (installer.Plan, error) {
 		{Name: "mail configuration", Actions: slices.Concat(files, keys, perms)},
 		{Name: "start the mail servers", Actions: start},
 	}, nil
+}
+
+// elMailActions give the mail folders the SELinux labels Dovecot may write: the maildirs under /var/vmail were var_t, which Dovecot
+// may not write ("mkdir ... Permission denied", seen on Rocky Linux 10). OpenDKIM listens on a loopback port there (DKIMPortEL).
+func elMailActions() []installer.Action {
+	return []installer.Action{
+		installer.Run("sh", "-c", `command -v semanage >/dev/null || exit 0
+[ "$(getenforce 2>/dev/null)" != Disabled ] || exit 0
+semanage fcontext -a -t mail_spool_t '`+MailRoot+`(/.*)?' 2>/dev/null || semanage fcontext -m -t mail_spool_t '`+MailRoot+`(/.*)?'
+restorecon -R `+MailRoot+`
+semanage fcontext -a -t dovecot_etc_t '`+UsersFile+`' 2>/dev/null || semanage fcontext -m -t dovecot_etc_t '`+UsersFile+`'
+restorecon -R `+Dir),
+	}
 }
 
 // staleKeysScript deletes the key folder of every domain that is not in keep. A folder in DKIMDir is named for a domain, so a name

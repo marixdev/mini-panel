@@ -194,7 +194,9 @@ func elPHPActions(t osinfo.Target, v string, exts []string) ([]Action, error) {
 		return nil, err
 	}
 	// The libraries the build links against, which a minimal system may lack.
-	libs := []string{"libxml2", "libcurl", "sqlite-libs", "oniguruma", "libzip", "bzip2-libs", "libpng", "libjpeg-turbo", "libwebp", "freetype", "xz"}
+	// libcurl is asked for as libcurl.so.4 (the file, not a package): the images ship libcurl-minimal, which provides it, and asking for
+	// the package libcurl conflicts with that one (seen in Rocky Linux 9 and CentOS Stream 9 and 10 containers).
+	libs := []string{"libxml2", "libcurl.so.4()(64bit)", "sqlite-libs", "oniguruma", "libzip", "bzip2-libs", "libpng", "libjpeg-turbo", "libwebp", "freetype", "xz"}
 	if t.Codename == "el9" {
 		libs = append(libs, "libicu")
 	}
@@ -287,6 +289,11 @@ label httpd_exec_t '/opt/mpn/php/[^/]+/sbin/php-fpm'
 # semanage takes only one spelling, because an equivalency rule maps the other to it: /var/run on EL9, /run on EL10.
 label httpd_var_run_t '/run/php(/.*)?' 2>/dev/null || label httpd_var_run_t '/var/run/php(/.*)?'
 [ ! -d /run/php ] || restorecon -R /run/php
+# systemd may start a program only from a path labelled as one: the interpreter of a python site's virtual environment is in the
+# home of the site, user_home_t ("Unable to locate executable .../venv/bin/python: Permission denied", seen on Rocky Linux 10).
+label bin_t '/home/[^/]+/venv/bin(/.*)?'
+label bin_t '/opt/node/[^/]+/bin(/.*)?'
+[ ! -d /opt/node ] || restorecon -R /opt/node
 [ ! -d /opt/mpn/php ] || restorecon -R /opt/mpn/php
 install -d -m 0755 /var/log/mpn/sites
 restorecon -R /var/log/mpn /home 2>/dev/null || true
@@ -396,7 +403,7 @@ func elWAFActions(t osinfo.Target) ([]Action, error) {
 	n := moduleNames[ModModSecurity]
 	return []Action{
 		// libmodsecurity is linked into the module; these are the system libraries it still loads.
-		Run(distro.InstallCommand("pcre2", "libxml2", "libcurl")...),
+		Run(distro.InstallCommand("pcre2", "libxml2", "libcurl.so.4()(64bit)")...),
 		fetchMod,
 		Run("install", "-d", "-m", "0755", nginxModulesEnabled),
 		WriteFile(nginxModulesEnabled+"/"+n.snippet, "# Written by mpn.\nload_module "+distro.NginxModuleDir()+"/"+n.so+";\n", 0o644),

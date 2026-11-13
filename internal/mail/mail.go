@@ -16,7 +16,20 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/crypto/argon2"
+	"golang.org/x/crypto/bcrypt"
+
+	"mpn/internal/distro"
 )
+
+// hashBcrypt is the {BLF-CRYPT} form Dovecot reads: bcrypt with the $2y$ prefix, which the crypt() of libxcrypt accepts. Go writes
+// $2a$, which is the same algorithm for passwords of valid UTF-8 (ValidPassword).
+func hashBcrypt(pw string) (string, error) {
+	b, err := bcrypt.GenerateFromPassword([]byte(pw), bcryptCost)
+	if err != nil {
+		return "", err
+	}
+	return "{BLF-CRYPT}$2y$" + strings.TrimPrefix(string(b), "$2a$"), nil
+}
 
 // Where everything lives. The directory belongs to root; the lists in it are read by Postfix and Dovecot, which never write to it.
 const (
@@ -45,6 +58,9 @@ var (
 	// hashRe is the only shape of password hash that may reach the Dovecot user list; it has no colon, no space and no newline, so a
 	// stored value can never add a field or a line.
 	hashRe = regexp.MustCompile(`^\{ARGON2ID\}\$argon2id\$v=19\$m=\d{4,6},t=\d{1,2},p=\d{1}\$[A-Za-z0-9+/]{16,64}\$[A-Za-z0-9+/]{32,128}$`)
+	// bcryptRe is the hash used on the RHEL family, whose Dovecot is built without argon2 ("Unknown scheme ARGON2ID", seen on Rocky
+	// Linux 10 and AlmaLinux 10); bcrypt is in its list (doveadm pw -l) through the crypt() of libxcrypt.
+	bcryptRe = regexp.MustCompile(`^\{BLF-CRYPT\}\$2y\$1[0-4]\$[./A-Za-z0-9]{53}$`)
 )
 
 // ValidDomain accepts a lower-case host name of two or more labels, as a mail domain or the name of the mail host.
@@ -115,8 +131,11 @@ func ValidPassword(pw string) error {
 	return nil
 }
 
-// ValidHash reports whether h is a hash made by HashPassword.
-func ValidHash(h string) bool { return hashRe.MatchString(h) }
+// ValidHash reports whether h is a hash made by HashPassword, on either family.
+func ValidHash(h string) bool { return hashRe.MatchString(h) || bcryptRe.MatchString(h) }
+
+// bcryptCost keeps one login near 50 ms on one small core.
+const bcryptCost = 10
 
 // The cost of one login. Dovecot checks a password with this much memory, so it is the OWASP minimum, not the strongest setting: on a
 // 1 GB machine several people signing in at once must not exhaust it.
@@ -129,10 +148,14 @@ const (
 
 var b64 = base64.RawStdEncoding
 
-// HashPassword returns the hash of pw in the form Dovecot reads: {ARGON2ID}, then the standard encoded string of argon2id.
+// HashPassword returns the hash of pw in the form Dovecot reads: {ARGON2ID}, then the standard encoded string of argon2id, on Debian
+// and Ubuntu; {BLF-CRYPT} and bcrypt on the RHEL family (see bcryptRe).
 func HashPassword(pw string) (string, error) {
 	if err := ValidPassword(pw); err != nil {
 		return "", err
+	}
+	if distro.IsEL() {
+		return hashBcrypt(pw)
 	}
 	salt := make([]byte, 16)
 	if _, err := rand.Read(salt); err != nil {

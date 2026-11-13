@@ -64,7 +64,7 @@ func init() {
 		"ov.python.version":         "Python version",
 		"ov.python.entry":           "Entry file",
 		"ov.python.entry.hint":      "Path relative to the document root, e.g. app.py, or -m followed by a module name, e.g. -m myapp. Uses this website's ~/venv virtual environment.",
-		"ov.python.notinstalled":    "Only versions installed on this server are shown (python3.x and python3.x-venv packages).",
+		"ov.python.notinstalled":    "Only versions installed on this server are shown (python3.x and python3.x-venv packages on Debian and Ubuntu, python3.x on AlmaLinux, Rocky Linux and CentOS Stream).",
 		"ov.proxy.title":            "Reverse proxy",
 		"ov.proxy.upstream":         "Upstream address",
 		"ov.proxy.hint":             "The HTTP or HTTPS address nginx forwards requests to.",

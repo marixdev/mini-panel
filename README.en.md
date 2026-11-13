@@ -25,7 +25,7 @@ When it finishes, open the address it prints (`https://<IP>:2610/setup`) to crea
 
 Options: `MPN_VERSION=1.0.2` installs a fixed version, `MPN_PANEL_PORT=2610` changes the panel port.
 
-**Operating systems:** Ubuntu 22.04, 24.04, 26.04 and Debian 12, 13, on x86_64 or arm64 (aarch64).
+**Operating systems:** Ubuntu 22.04, 24.04, 26.04, Debian 12, 13, and AlmaLinux, Rocky Linux, CentOS Stream 9, 10, on x86_64 or arm64 (aarch64). On the RHEL family SELinux stays on and firewalld is turned off (the panel manages the firewall with nftables).
 
 ## Features
 

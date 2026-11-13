@@ -145,6 +145,10 @@ func wafLoadPlan(mode string) (installer.Plan, error) {
 		// A panel written by an older mpn has no exemption yet; without it the rules would block saving code in the editor.
 		installer.Run("sh", "-c", security.ExemptScript),
 		installer.Run("sh", "-c", "[ -f "+security.AuditLog+" ] || install -m 0640 -o "+distro.WebUser()+" -g "+distro.LogGroup()+" /dev/null "+security.AuditLog),
+		// On EL the log is var_log_t when made, which nginx may not open ("modsec_audit.log ... denied", seen on Rocky Linux 10).
+		installer.Run("sh", "-c", `command -v semanage >/dev/null && [ "$(getenforce 2>/dev/null)" != Disabled ] || exit 0
+semanage fcontext -a -t httpd_log_t '`+security.AuditLog+`.*' 2>/dev/null || semanage fcontext -m -t httpd_log_t '`+security.AuditLog+`.*'
+restorecon `+security.AuditLog),
 		installer.WriteFile(security.LogrotateFile, security.LogrotateText, 0o644),
 		installer.Run("logrotate", "-d", security.LogrotateFile),
 		installer.WriteFile(security.MainConf, conf, 0o644),
@@ -171,9 +175,10 @@ func f2bPlan(ignore []string) (installer.Plan, error) {
 	}
 	return installer.Plan{
 		{Name: "fail2ban packages", Actions: []installer.Action{
-			// EL: fail2ban comes from EPEL there, and python3-systemd is fail2ban-systemd; the RHEL work adds that branch.
-			installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
-			installer.AptInstall("fail2ban", "python3-systemd", "nftables"),
+			installer.Run("sh", "-c", distro.RefreshScript()+" || true"),
+			installer.Run(distro.InstallCommand(f2bPackages()...)...),
+			// On EL, fail2ban-firewalld would ban through firewalld, which the panel turns off; jail.d/mpn.conf names nftables.
+			installer.Run("sh", "-c", "rm -f /etc/fail2ban/jail.d/00-firewalld.conf"),
 		}},
 		{Name: "fail2ban jails", Actions: []installer.Action{
 			installer.WriteFile(security.PanelFilterFile, security.PanelFilter, 0o644),
@@ -184,6 +189,16 @@ func f2bPlan(ignore []string) (installer.Plan, error) {
 			installer.Run("systemctl", "restart", "fail2ban"),
 		}},
 	}, nil
+}
+
+// f2bPackages are fail2ban, its systemd backend and nftables. On EL fail2ban comes from EPEL, and "fail2ban" there pulls in
+// fail2ban-firewalld, so only the parts the jails of mpn use are asked for.
+func f2bPackages() []string {
+	if distro.IsEL() {
+		// fail2ban-selinux lets fail2ban read the journal and change nftables while SELinux is on.
+		return []string{"epel-release", "fail2ban-server", "fail2ban-systemd", "fail2ban-selinux", "python3-systemd", "nftables"}
+	}
+	return []string{"fail2ban", "python3-systemd", "nftables"}
 }
 
 func f2bOffPlan() installer.Plan {

@@ -25,7 +25,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 
 可选项：`MPN_VERSION=1.0.2` 安装指定版本，`MPN_PANEL_PORT=2610` 修改面板端口。
 
-**操作系统：** Ubuntu 22.04、24.04、26.04 和 Debian 12、13，x86_64 或 arm64（aarch64）架构。
+**操作系统：** Ubuntu 22.04、24.04、26.04，Debian 12、13，以及 AlmaLinux、Rocky Linux、CentOS Stream 9、10，x86_64 或 arm64（aarch64）架构。在 RHEL 系列上 SELinux 保持开启，firewalld 会被关闭（面板用 nftables 管理防火墙）。
 
 ## 功能
 

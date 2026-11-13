@@ -224,6 +224,7 @@ func Plan(s site.Site, o Options) (installer.Plan, error) {
 		}
 		plan = append(plan, installer.Step{Name: "python service", Actions: []installer.Action{
 			installer.Run("sh", "-c", venvScript(s)),
+			installer.RestoreconHome(site.VenvDir(s.User)), // on EL the interpreter needs the label of a program (see installer.selinuxScript)
 			installer.WriteFile("/etc/systemd/system/"+unit.Name(s), content, 0o644),
 			installer.Run("systemctl", "daemon-reload"),
 			installer.Run("systemctl", "enable", unit.Name(s)),
@@ -248,15 +249,31 @@ func Plan(s site.Site, o Options) (installer.Plan, error) {
 func venvScript(s site.Site) string {
 	py, venv := "/usr/bin/python"+s.PyVersion, site.VenvDir(s.User)
 	return fmt.Sprintf(`py=%[1]s; venv=%[2]s
-[ -x "$py" ] || { echo "Python %[3]s is not installed on this machine (install the package python%[3]s)" >&2; exit 2; }
+[ -x "$py" ] || { echo "Python %[3]s is not installed on this machine (install the package %[5]s)" >&2; exit 2; }
 if [ -x "$venv/bin/python" ]; then
   [ "$("$venv/bin/python" -c 'import sys; print("%%d.%%d" %% sys.version_info[:2])')" = %[3]s ] && exit 0
   action=--upgrade
 else
   action=
 fi
-runuser -u %[4]s -- "$py" -m venv $action "$venv" || { echo "the virtual environment could not be made (install the package python%[3]s-venv)" >&2; exit 2; }`,
-		py, venv, s.PyVersion, s.User)
+runuser -u %[4]s -- "$py" -m venv $action "$venv" || { echo "the virtual environment could not be made (install the package %[6]s)" >&2; exit 2; }`,
+		py, venv, s.PyVersion, s.User, pyPackage(s.PyVersion), pyVenvPackage(s.PyVersion))
+}
+
+// pyPackage and pyVenvPackage name what to install for a Python version. On EL venv is part of the interpreter, and the system
+// version is the package python3 (3.9 on EL9, 3.12 on EL10); other versions are python3.N.
+func pyPackage(v string) string {
+	if distro.IsEL() {
+		return "python" + v + " (or python3 for the version of the system)"
+	}
+	return "python" + v
+}
+
+func pyVenvPackage(v string) string {
+	if distro.IsEL() {
+		return pyPackage(v)
+	}
+	return "python" + v + "-venv"
 }
 
 // dropPHPPoolActions take a site's pool out of one PHP version. The master stays only while another pool still uses it.

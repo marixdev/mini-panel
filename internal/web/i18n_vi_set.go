@@ -64,7 +64,7 @@ func init() {
 		"ov.python.version":         "Phiên bản Python",
 		"ov.python.entry":           "Tệp khởi động",
 		"ov.python.entry.hint":      "Đường dẫn từ thư mục gốc, ví dụ app.py, hoặc -m và tên module, ví dụ -m myapp. Ứng dụng chạy bằng môi trường ảo ~/venv của website.",
-		"ov.python.notinstalled":    "Chỉ hiện các phiên bản đã cài trên máy này (gói python3.x và python3.x-venv).",
+		"ov.python.notinstalled":    "Chỉ hiện các phiên bản đã cài trên máy này (gói python3.x và python3.x-venv trên Debian và Ubuntu, python3.x trên AlmaLinux, Rocky Linux và CentOS Stream).",
 		"ov.proxy.title":            "Proxy ngược",
 		"ov.proxy.upstream":         "Địa chỉ đích",
 		"ov.proxy.hint":             "Địa chỉ http hoặc https mà nginx chuyển yêu cầu tới.",
