@@ -26,7 +26,22 @@ var (
 	}
 )
 
-func (t Target) key() string { return t.ID + "-" + t.Version }
+// On the RHEL family the series come from rpm.mariadb.org and repo.mysql.com (checked 2026-11-13 for both CPUs). AlmaLinux, Rocky
+// Linux and CentOS Stream share the key, because they share the repositories. repo.mysql.com has no MySQL 8.0 for el10.
+func init() {
+	for _, el := range []string{"el9", "el10"} {
+		mariadbSeries[el] = []string{"10.11", "11.4", "11.8"}
+	}
+	mysqlSeries["el9"] = []string{"8.0", "8.4"}
+	mysqlSeries["el10"] = []string{"8.4"}
+}
+
+func (t Target) key() string {
+	if t.EL() {
+		return t.Codename
+	}
+	return t.ID + "-" + t.Version
+}
 
 // Series returns the series offered for an engine ("mariadb" or "mysql") on this release, oldest first.
 func (t Target) Series(engine string) []string {

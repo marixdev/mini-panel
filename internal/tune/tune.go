@@ -7,6 +7,8 @@ package tune
 import (
 	"fmt"
 	"strings"
+
+	"mpn/internal/distro"
 )
 
 // phpWorkerMB is an assumed average size of one PHP-FPM worker.
@@ -113,8 +115,8 @@ func LegacyAuthConf(series string) string {
 	return ""
 }
 
-// PHPPool renders one per-site pool with the machine's own memory limit. The socket is owned by www-data, which nginx runs
-// as on Debian and Ubuntu.
+// PHPPool renders one per-site pool with the machine's own memory limit. The socket is owned by the account nginx runs as
+// (www-data on Debian and Ubuntu, nginx on the RHEL family; see distro.WebUser).
 func (p Profile) PHPPool(name, user, socket string) string {
 	return p.PHPPoolWith(name, user, socket, []string{fmt.Sprintf("php_admin_value[memory_limit] = %dM", p.PHPMemoryLimitMB)}, 300)
 }
@@ -127,14 +129,14 @@ func (p Profile) PHPPoolWith(name, user, socket string, settings []string, termi
 user = %s
 group = %s
 listen = %s
-listen.owner = www-data
-listen.group = www-data
+listen.owner = %s
+listen.group = %s
 pm = ondemand
 pm.max_children = %d
 pm.process_idle_timeout = 10s
 pm.max_requests = 500
 request_terminate_timeout = %ds
-`, name, user, user, socket, p.PHPMaxChildren, terminateSeconds)
+`, name, user, user, socket, distro.WebUser(), distro.WebUser(), p.PHPMaxChildren, terminateSeconds)
 	for _, l := range settings {
 		b.WriteString(l + "\n")
 	}

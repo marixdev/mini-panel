@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"mpn/internal/distro"
 	"mpn/internal/installer"
 	"mpn/internal/osinfo"
 	"mpn/internal/security"
@@ -25,8 +26,19 @@ const (
 	settingWAF       = "waf"
 	settingF2B       = "f2b"
 	settingF2BIgnore = "f2b_ignore"
-	modsecModule     = "/usr/lib/nginx/modules/ngx_http_modsecurity_module.so"
 )
+
+func modsecModule() string { return distro.NginxModuleDir() + "/ngx_http_modsecurity_module.so" }
+
+// crsVersionScript prints the version of the installed package of the OWASP rules.
+// EL: the rules come from mpn-packages there, not from a package; their version is read in the RHEL work.
+func crsVersionScript() string {
+	if distro.IsEL() {
+		// The panel puts the rules there itself on EL and writes their version next to them (see installer.elWAFActions).
+		return "cat /usr/share/modsecurity-crs/.mpn-version 2>/dev/null || true"
+	}
+	return "dpkg-query -W -f='${Version}' modsecurity-crs 2>/dev/null || true"
+}
 
 type jailInfo struct {
 	Name        string   `json:"name"`
@@ -88,9 +100,9 @@ func currentSecurity(st *store.Store) secStatus {
 	mode, _ := st.Setting(settingWAF, security.ModeOff)
 	f2b, _ := st.Setting(settingF2B, "off")
 	s := secStatus{WAFMode: mode, F2BOn: f2b == "on", Ignore: ignoreList(st), Jails: []jailInfo{}}
-	s.WAFInstalled = fileExists(modsecModule) && fileExists(security.CRSRules)
+	s.WAFInstalled = fileExists(modsecModule()) && fileExists(security.CRSRules)
 	if s.WAFInstalled {
-		s.CRSVersion = strings.TrimSpace(out(5*time.Second, "dpkg-query", "-W", "-f=${Version}", "modsecurity-crs"))
+		s.CRSVersion = strings.TrimSpace(out(5*time.Second, "sh", "-c", crsVersionScript()))
 	}
 	if _, err := os.Stat("/usr/bin/fail2ban-client"); err == nil {
 		s.F2BInstalled = true
@@ -132,7 +144,7 @@ func wafLoadPlan(mode string) (installer.Plan, error) {
 		installer.WriteFile(security.OffFile, security.OffContent, 0o644),
 		// A panel written by an older mpn has no exemption yet; without it the rules would block saving code in the editor.
 		installer.Run("sh", "-c", security.ExemptScript),
-		installer.Run("sh", "-c", "[ -f "+security.AuditLog+" ] || install -m 0640 -o www-data -g adm /dev/null "+security.AuditLog),
+		installer.Run("sh", "-c", "[ -f "+security.AuditLog+" ] || install -m 0640 -o "+distro.WebUser()+" -g "+distro.LogGroup()+" /dev/null "+security.AuditLog),
 		installer.WriteFile(security.LogrotateFile, security.LogrotateText, 0o644),
 		installer.Run("logrotate", "-d", security.LogrotateFile),
 		installer.WriteFile(security.MainConf, conf, 0o644),
@@ -159,6 +171,7 @@ func f2bPlan(ignore []string) (installer.Plan, error) {
 	}
 	return installer.Plan{
 		{Name: "fail2ban packages", Actions: []installer.Action{
+			// EL: fail2ban comes from EPEL there, and python3-systemd is fail2ban-systemd; the RHEL work adds that branch.
 			installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
 			installer.AptInstall("fail2ban", "python3-systemd", "nftables"),
 		}},

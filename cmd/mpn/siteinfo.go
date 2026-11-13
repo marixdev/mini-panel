@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"mpn/internal/backup"
+	"mpn/internal/distro"
 	"mpn/internal/provision"
 	"mpn/internal/site"
 	"mpn/internal/tune"
@@ -100,11 +101,12 @@ func lastBackup(name string) string {
 func running(s site.Site) (bool, string) {
 	switch s.Kind {
 	case site.PHP:
-		if _, err := os.Stat("/run/php/" + s.Name + ".sock"); err != nil {
-			return false, "php" + s.PHPVersion + "-fpm"
+		svc := distro.PHPService(s.PHPVersion)
+		if _, err := os.Stat(provision.PHPSocket(s.Name)); err != nil {
+			return false, svc
 		}
-		out, _ := sh(3*time.Second, "systemctl", "is-active", "php"+s.PHPVersion+"-fpm")
-		return out == "active", "php" + s.PHPVersion + "-fpm"
+		out, _ := sh(3*time.Second, "systemctl", "is-active", svc)
+		return out == "active", svc
 	case site.Node, site.Python:
 		out, _ := sh(3*time.Second, "systemctl", "is-active", unit.Name(s))
 		return out == "active", unit.Name(s)
@@ -116,7 +118,7 @@ func running(s site.Site) (bool, string) {
 func buildInfo(s site.Site, ramMB int) siteInfo {
 	p := tune.New(tune.Input{RAMMB: ramMB, CPUs: 1})
 	in := siteInfo{Name: s.Name, Kind: string(s.Kind), User: s.User, Hostnames: s.Hostnames, Root: s.Root, TLS: s.TLS,
-		InstalledPHP: site.InstalledPHP("/usr/sbin"), InstalledNode: site.InstalledNode(unit.NodeRoot), InstalledPy: site.InstalledPython("/usr/bin")}
+		InstalledPHP: site.InstalledPHP(), InstalledNode: site.InstalledNode(unit.NodeRoot), InstalledPy: site.InstalledPython("/usr/bin")}
 	if sub, ok := s.RootSub(); ok {
 		in.RootSub = sub
 	} else {

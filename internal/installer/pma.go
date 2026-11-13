@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"mpn/internal/aptsrc"
+	"mpn/internal/distro"
 	"mpn/internal/security"
 	"mpn/internal/site"
 )
@@ -71,8 +72,8 @@ func pmaPool() string {
 user = ` + pmaAccount + `
 group = ` + pmaAccount + `
 listen = /run/php/mpn-pma.sock
-listen.owner = www-data
-listen.group = www-data
+listen.owner = ` + distro.WebUser() + `
+listen.group = ` + distro.WebUser() + `
 pm = ondemand
 pm.max_children = 3
 pm.process_idle_timeout = 20s
@@ -307,11 +308,7 @@ func pmaStep(o Options) (Step, error) {
 	src := aptsrc.PHP(o.Target)
 	acts := []Action{}
 	if !slices.Contains(o.PHPVersions, pmaPHP) { // the PHP step has not installed it
-		exts := []string{"fpm", "cli", "mysql", "mbstring", "xml", "curl", "zip", "gd"}
-		pkgs := make([]string, len(exts))
-		for i, e := range exts {
-			pkgs[i] = "php" + pmaPHP + "-" + e
-		}
+		pkgs := distro.PHPPackages(pmaPHP, []string{"fpm", "cli", "mysql", "mbstring", "xml", "curl", "zip", "gd"})
 		if len(o.PHPVersions) == 0 { // nothing has set the repository up
 			acts = append(acts,
 				Run("curl", "-fsSL", "--retry", "3", "-o", src.KeyFile, src.KeyURL),
@@ -328,10 +325,10 @@ func pmaStep(o Options) (Step, error) {
 		WriteFile(pmaDir+"/config.inc.php", pmaConfig(), 0o644),
 		WriteFile(pmaDir+"/signon.php", repl.Replace(pmaSignon), 0o644),
 		WriteFile(pmaDir+"/logout.php", repl.Replace(pmaLogout), 0o644),
-		WriteFile("/etc/php/"+pmaPHP+"/fpm/pool.d/mpn-pma.conf", pmaPool(), 0o644),
-		Run("php-fpm"+pmaPHP, "-t"),
-		Run("systemctl", "enable", "php"+pmaPHP+"-fpm"),
-		Run("systemctl", "restart", "php"+pmaPHP+"-fpm"),
+		WriteFile(distro.PHPPoolDir(pmaPHP)+"mpn-pma.conf", pmaPool(), 0o644),
+		Run(distro.PHPFPMBinary(pmaPHP), "-t"),
+		Run("systemctl", "enable", distro.PHPService(pmaPHP)),
+		Run("systemctl", "restart", distro.PHPService(pmaPHP)),
 		WriteFile("/etc/nginx/conf.d/02-mpn-pma.conf", pmaNginx(port), 0o644),
 		Run("nginx", "-t"),
 		ReloadNginx(),

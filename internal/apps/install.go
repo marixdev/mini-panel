@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"mpn/internal/distro"
 	"mpn/internal/installer"
 	"mpn/internal/provision"
 	"mpn/internal/site"
@@ -69,7 +70,7 @@ func (p Params) Check() error {
 // shq quotes a value for a shell script, whatever it holds.
 func shq(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
 
-func phpBin(p Params) string { return "/usr/bin/php" + p.Site.PHPVersion }
+func phpBin(p Params) string { return distro.PHPCLIBinary(p.Site.PHPVersion) }
 
 // asUser runs a PHP program as the site's own account, with a home directory for the caches of Composer and WP-CLI. It is an argument list,
 // not a shell line, so no value is ever read as shell syntax.
@@ -121,14 +122,14 @@ func ExtensionsStep(p Params) (installer.Step, bool) {
 	if len(p.Recipe.Needs) == 0 {
 		return installer.Step{}, false
 	}
-	var pkgs []string
-	for _, n := range p.Recipe.Needs {
-		pkgs = append(pkgs, "php"+p.Site.PHPVersion+"-"+n)
+	// EL: PHP 7.0 to 7.3 come from mpn-packages with their extensions built in, so they need no package (PHPPackages is empty).
+	pkgs := distro.PHPPackages(p.Site.PHPVersion, p.Recipe.Needs)
+	acts := []installer.Action{}
+	if len(pkgs) > 0 {
+		acts = append(acts, installer.AptInstall(pkgs...))
 	}
-	return installer.Step{Name: "php extensions", Actions: []installer.Action{
-		installer.AptInstall(pkgs...),
-		installer.Run("systemctl", "reload-or-restart", "php"+p.Site.PHPVersion+"-fpm"),
-	}}, true
+	acts = append(acts, installer.Run("systemctl", "reload-or-restart", distro.PHPService(p.Site.PHPVersion)))
+	return installer.Step{Name: "php extensions", Actions: acts}, true
 }
 
 // cleanRootScript removes the welcome page mpn made and stops when anything else is in the web root: an application is never put over a

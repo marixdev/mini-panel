@@ -96,7 +96,7 @@ func syncFront(st *store.Store) error {
 	})
 	acts = append(acts, installer.Run("nginx", "-t"), installer.ReloadNginx())
 	if phpReload {
-		acts = append(acts, installer.Run("systemctl", "reload", installer.PMAPHPService))
+		acts = append(acts, installer.Run("systemctl", "reload", installer.PMAPHPService()))
 	}
 	return runPlanQuiet(installer.Plan{{Name: "addresses of the panel without a port", Actions: acts}})
 }

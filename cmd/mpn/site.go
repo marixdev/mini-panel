@@ -8,6 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"mpn/internal/distro"
+	"mpn/internal/provision"
 	"mpn/internal/site"
 	"mpn/internal/store"
 	"mpn/internal/tune"
@@ -245,7 +247,7 @@ func printArtifacts(s site.Site, r renderFlags) error {
 	switch s.Kind {
 	case site.PHP:
 		p := tune.New(tune.Input{RAMMB: *r.ram, CPUs: 1})
-		fmt.Printf("# --- /etc/php/%s/fpm/pool.d/%s.conf\n%s", s.PHPVersion, s.Name, p.PHPPool(s.Name, s.User, "/run/php/"+s.Name+".sock"))
+		fmt.Printf("# --- %s%s.conf\n%s", distro.PHPPoolDir(s.PHPVersion), s.Name, p.PHPPool(s.Name, s.User, provision.PHPSocket(s.Name)))
 	case site.Node:
 		u, err := unit.Node(s, *r.nodeMem)
 		if err != nil {

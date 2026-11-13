@@ -38,9 +38,10 @@ type Server struct {
 	LoginCheck func(user string) error
 	// PasswdFile is where the shell of an account is read from; /etc/passwd when empty.
 	PasswdFile string
-	// PHPDir (where php-fpm<version> programs are, /usr/sbin) and NodeRoot (/opt/node) tell which versions are installed, so
-	// the form to add a website offers only those. When empty, every version mpn knows is offered.
-	PHPDir, NodeRoot string
+	// InstalledPHP (site.InstalledPHP on a server) and NodeRoot (/opt/node) tell which versions are installed, so the form to
+	// add a website offers only those. When nil or empty, every version mpn knows is offered.
+	InstalledPHP func() []string
+	NodeRoot     string
 	// Mon takes the measurements the monitoring page draws; nil leaves the page empty. UnitState asks systemd about a service;
 	// the real systemd when nil.
 	Mon       *monitor.Collector

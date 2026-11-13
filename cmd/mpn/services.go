@@ -111,14 +111,14 @@ func installPlan(key, series string) (installer.Plan, error) {
 		if kind == services.GroupNode {
 			return installer.NodePlan(v)
 		}
-		if v < "7.4" && unitOf("database") == "mysql.service" {
+		if db := unitOf("database"); v < "7.4" && (db == "mysql.service" || db == "mysqld.service") {
 			return nil, fmt.Errorf("PHP %s cannot sign in to MySQL 8 unless the server was set up for it when it was installed", v)
 		}
 		return installer.PHPPlan(installer.Options{Target: t, Profile: hostProfile(), PHPVersions: []string{v}})
 	}
 	switch key {
 	case "mariadb", "mysql":
-		return installer.DatabasePlan(installer.Options{Target: t, Profile: hostProfile(), Engine: key, DBSeries: series, PHPVersions: site.InstalledPHP("/usr/sbin")})
+		return installer.DatabasePlan(installer.Options{Target: t, Profile: hostProfile(), Engine: key, DBSeries: series, PHPVersions: site.InstalledPHP()})
 	case services.PhpMyAdmin:
 		l := lockedPorts()
 		if len(l.Panel) == 0 {
@@ -133,7 +133,7 @@ func installPlan(key, series string) (installer.Plan, error) {
 		default:
 			engine = "mysql"
 		}
-		return installer.PMAPlan(installer.Options{Target: t, Engine: engine, PanelPort: l.Panel[0], PHPVersions: site.InstalledPHP("/usr/sbin")})
+		return installer.PMAPlan(installer.Options{Target: t, Engine: engine, PanelPort: l.Panel[0], PHPVersions: site.InstalledPHP()})
 	}
 	return nil, fmt.Errorf("the panel cannot install %q", key)
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"mpn/internal/aptsrc"
+	"mpn/internal/distro"
 	"mpn/internal/osinfo"
 	"mpn/internal/site"
 	"mpn/internal/tune"
@@ -56,11 +57,9 @@ exit 0`
 // ReloadNginx is the step every plan uses to make nginx read its configuration again.
 func ReloadNginx() Action { return Run("sh", "-c", nginxReloadScript) }
 
-// aptUpdateScript retries "apt-get update". A freshly created server often runs unattended-upgrades or cloud-init
-// package work for the first minutes, and "update" then fails at once on the lists lock. Waiting for a process by
+// The package lists are read again with retries (distro.RefreshScript). A freshly created server often runs unattended-upgrades
+// or cloud-init package work for the first minutes, and "update" then fails at once on the lists lock. Waiting for a process by
 // name does not work: unattended-upgrade-shutdown is a permanent daemon on Debian and Ubuntu.
-const aptUpdateScript = `for i in $(seq 1 30); do apt-get -o DPkg::Lock::Timeout=300 update && exit 0; sleep 10; done
-echo "apt-get update kept failing for about 5 minutes" >&2; exit 1`
 
 // pagespdAptScript adds the We-Amp mod_pagespeed apt repository (packages.modpagespeed.com) so that
 // nginx-module-pagespeed can be installed. The repo ships builds matched to the distro's nginx package.
@@ -77,12 +76,11 @@ mv "$keyring.tmp" "$keyring"
 . /etc/os-release
 echo "deb [arch=$(dpkg --print-architecture) signed-by=$keyring] https://packages.modpagespeed.com/apt $VERSION_CODENAME main" > /etc/apt/sources.list.d/modpagespeed.list`
 
-// aptUpdate retries on failure; aptInstall waits up to 5 minutes for the dpkg lock instead of failing at once.
-func aptUpdate() Action { return Run("sh", "-c", aptUpdateScript) }
+// aptUpdate retries on failure; aptInstall waits up to 5 minutes for the dpkg lock instead of failing at once. Both use the
+// package manager of the system (apt on Debian and Ubuntu, dnf on the RHEL family); the names stay for the callers.
+func aptUpdate() Action { return Run("sh", "-c", distro.RefreshScript()) }
 
-func aptInstall(pkgs ...string) Action {
-	return Run(append([]string{"env", "DEBIAN_FRONTEND=noninteractive", "apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y"}, pkgs...)...)
-}
+func aptInstall(pkgs ...string) Action { return Run(distro.InstallCommand(pkgs...)...) }
 
 type Step struct {
 	Name    string
@@ -109,7 +107,19 @@ type Options struct {
 // Build returns the plan. It fails on an unknown engine or MySQL series.
 func Build(o Options) (Plan, error) {
 	// cron runs the jobs of the Cron tab; minimal images (Debian 13 on some providers) come without it.
-	plan := Plan{{"base packages", []Action{aptUpdate(), aptInstall("ca-certificates", "curl", "xz-utils", "openssl", "logrotate", "cron"), Run("systemctl", "enable", "--now", "cron")}}}
+	base := Step{"base packages", []Action{aptUpdate(), aptInstall("ca-certificates", "curl", "xz-utils", "openssl", "logrotate", distro.CronPackage()), Run("systemctl", "enable", "--now", distro.CronService())}}
+	nginxActs := nginxInstallActions(o.Target)
+	if o.Target.EL() {
+		base = Step{"base packages", []Action{
+			Run("sh", "-c", distro.RefreshScript()),
+			elEPEL(),
+			Run(distro.InstallCommand(elBasePackages()...)...),
+			Run("systemctl", "enable", "--now", distro.CronService()),
+			elFirewallAction(),
+		}}
+		nginxActs = elNginxInstallActions()
+	}
+	plan := Plan{base}
 	// The kernel reports a swap file a little smaller than its size, so small gaps are ignored.
 	if need := o.Profile.SwapMB - o.CurrentSwapMB; need >= 64 {
 		plan = append(plan, Step{"swap", []Action{
@@ -129,7 +139,7 @@ func Build(o Options) (Plan, error) {
 			WriteFile("/etc/systemd/journald.conf.d/mpn.conf", fmt.Sprintf("[Journal]\nSystemMaxUse=%dM\n", o.Profile.JournalMaxMB), 0o644),
 			Run("systemctl", "restart", "systemd-journald"),
 		}},
-		Step{"nginx", slices.Concat(nginxInstallActions(o.Target), []Action{
+		Step{"nginx", slices.Concat(nginxActs, []Action{
 			Run("systemctl", "enable", "--now", "nginx"),
 			WriteFile("/etc/nginx/nginx.conf", nginxConf(o.Profile), 0o644),
 			// Debian and Ubuntu enable a default site that would clash with the catch-all below.
@@ -147,6 +157,9 @@ func Build(o Options) (Plan, error) {
 		})},
 		psStep,
 	)
+	if o.Target.EL() {
+		plan = append(plan, SELinuxStep(elPanelPorts(o)))
+	}
 	if o.SelfPath != "" {
 		plan = append(plan, serviceStep(o.SelfPath))
 	}
@@ -191,6 +204,9 @@ func Build(o Options) (Plan, error) {
 // phpStep adds the Sury repo and installs each PHP version. The FPM service is stopped afterwards:
 // a version only runs once a site uses it, which keeps idle masters out of RAM.
 func phpStep(o Options) (Step, error) {
+	if o.Target.EL() {
+		return elPHPStep(o)
+	}
 	src := aptsrc.PHP(o.Target)
 	acts := []Action{
 		Run("curl", "-fsSL", "--retry", "3", "-o", src.KeyFile, src.KeyURL),
@@ -205,13 +221,11 @@ func phpStep(o Options) (Step, error) {
 		if v < "8.0" {
 			exts = append(exts, "opcache") // built in from 8.0 on
 		}
-		pkgs := make([]string, len(exts))
-		for i, e := range exts {
-			pkgs[i] = "php" + v + "-" + e
-		}
+		// EL: PHP 7.0 to 7.3 have no packages (distro.OwnPHP); their tarballs from mpn-packages are added in the RHEL work.
+		pkgs := distro.PHPPackages(v, exts)
 		acts = append(acts,
 			aptInstall(pkgs...),
-			WriteFile("/etc/php/"+v+"/fpm/conf.d/99-mpn.ini", o.Profile.OpcacheINI(), 0o644),
+			WriteFile(distro.PHPConfDir(v)+"99-mpn.ini", o.Profile.OpcacheINI(), 0o644),
 			Run("sh", "-c", stopUnusedFPM(v)),
 		)
 	}
@@ -221,7 +235,7 @@ func phpStep(o Options) (Step, error) {
 // stopUnusedFPM stops a PHP-FPM service that has no site pool. Any pool other than the package's own www.conf means
 // a site uses this version, and stopping the service would take that site down every time the plan is applied again.
 func stopUnusedFPM(v string) string {
-	return fmt.Sprintf("if ls /etc/php/%[1]s/fpm/pool.d/*.conf 2>/dev/null | grep -qv '/www\\.conf$'; then echo 'php%[1]s-fpm has a site pool, left running'; else systemctl disable --now php%[1]s-fpm; fi", v)
+	return fmt.Sprintf("if ls %[1]s*.conf 2>/dev/null | grep -qv '/www\\.conf$'; then echo '%[2]s has a site pool, left running'; else systemctl disable --now %[2]s; fi", distro.PHPPoolDir(v), distro.PHPService(v))
 }
 
 // nodeScript installs the newest release of one major version from nodejs.org into /opt/node/<release>
@@ -270,22 +284,23 @@ func database(o Options) (Step, error) {
 	if series == "" {
 		series = osinfo.DefaultSeries(o.Engine)
 	}
+	if o.Target.EL() {
+		return elDatabaseStep(o, series)
+	}
 	var src aptsrc.Source
-	var pkg, svc, conf string
 	var err error
 	switch o.Engine {
 	case "mariadb":
 		src, err = aptsrc.MariaDB(o.Target, series)
-		pkg, svc, conf = "mariadb-server", "mariadb", "/etc/mysql/mariadb.conf.d/99-mpn.cnf"
 	case "mysql":
 		src, err = aptsrc.MySQL(o.Target, series)
-		pkg, svc, conf = "mysql-community-server", "mysql", "/etc/mysql/conf.d/99-mpn.cnf"
 	default:
 		return Step{}, fmt.Errorf("unknown engine %q (want mariadb or mysql)", o.Engine)
 	}
 	if err != nil {
 		return Step{}, err
 	}
+	pkg, svc, conf := distro.DBPackage(o.Engine), distro.DBService(o.Engine), distro.DBConfFile(o.Engine)
 	cnf, err := o.Profile.DBConf(o.Engine)
 	if err != nil {
 		return Step{}, err
@@ -407,7 +422,7 @@ const (
 )
 
 func nginxConf(p tune.Profile) string {
-	return fmt.Sprintf(`user www-data;
+	return fmt.Sprintf(`user `+distro.WebUser()+`;
 worker_processes %d;
 pid /run/nginx.pid;
 include /etc/nginx/modules-enabled/*.conf;

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"mpn/internal/distro"
 	"mpn/internal/firewall"
 	"mpn/internal/installer"
 	"mpn/internal/store"
@@ -146,7 +147,7 @@ func loadPlan(rules []firewall.Rule) installer.Plan {
 
 func enablePlan(rules []firewall.Rule) installer.Plan {
 	plan := installer.Plan{{Name: "nftables", Actions: []installer.Action{
-		installer.Run("sh", "-c", "[ -x "+nftBin+" ] || DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 install -y nftables"),
+		installer.Run("sh", "-c", "[ -x "+nftBin+" ] || "+strings.Join(distro.InstallCommand("nftables"), " ")),
 		installer.WriteFile(fwOffFile, firewall.Unload, 0o600),
 		installer.WriteFile(fwUnitFile, fwUnitSource, 0o644),
 		installer.Run("systemctl", "daemon-reload"),

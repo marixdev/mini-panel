@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"mpn/internal/distro"
 	"mpn/internal/installer"
 	"mpn/internal/monitor"
 	"mpn/internal/osinfo"
@@ -48,7 +49,7 @@ type Def struct {
 // stopping them would lock the person out, and the Monitor page already shows them.
 var Defs = []Def{
 	{Key: "nginx", Label: "nginx", Group: GroupService, Units: []string{"nginx.service"}, Actions: []string{Start, Restart, Reload}},
-	{Key: "database", Label: "MariaDB / MySQL", Group: GroupDatabase, Units: []string{"mariadb.service", "mysql.service"}, Actions: []string{Start, Stop, Restart}},
+	{Key: "database", Label: "MariaDB / MySQL", Group: GroupDatabase, Units: []string{"mariadb.service", "mysql.service", "mysqld.service"}, Actions: []string{Start, Stop, Restart}},
 	{Key: "fail2ban", Label: "fail2ban", Group: GroupService, Units: []string{"fail2ban.service"}, Actions: []string{Start, Stop, Restart, Reload}, Link: "/security", Absent: true},
 	{Key: "postfix", Label: "Postfix", Group: GroupService, Units: []string{"postfix.service"}, Actions: []string{Start, Stop, Restart, Reload}, Link: "/email", Absent: true},
 	{Key: "dovecot", Label: "Dovecot", Group: GroupService, Units: []string{"dovecot.service"}, Actions: []string{Start, Stop, Restart, Reload}, Link: "/email"},
@@ -64,7 +65,7 @@ var phpActions = []string{Start, Stop, Restart, Reload}
 func PHPKey(v string) string  { return "php-" + v }
 func NodeKey(v string) string { return "node-" + v }
 
-func phpUnit(v string) string { return "php" + v + "-fpm.service" }
+func phpUnit(v string) string { return distro.PHPService(v) + ".service" }
 
 func find(key string) (Def, bool) {
 	for _, d := range Defs {
@@ -203,7 +204,7 @@ func Status(p Probe) []Item {
 			label := d.Label
 			if d.Key == "database" {
 				dbID = id
-				if l := map[string]string{"mariadb.service": "MariaDB", "mysql.service": "MySQL"}[id]; l != "" {
+				if l := map[string]string{"mariadb.service": "MariaDB", "mysql.service": "MySQL", "mysqld.service": "MySQL"}[id]; l != "" {
 					label = l // the server that is there, not both names
 				}
 			}
@@ -225,7 +226,7 @@ func Status(p Probe) []Item {
 		it := Item{Key: PHPKey(v), Label: "PHP-FPM " + v, Group: GroupPHP}
 		if id, st := p.State(phpUnit(v)); id != "" {
 			it.Installed, it.Unit, it.State, it.Active, it.Actions = true, id, st, st == "active", phpActions
-		} else if v < "7.4" && dbID == "mysql.service" {
+		} else if v < "7.4" && (dbID == "mysql.service" || dbID == "mysqld.service") {
 			// PHP before 7.4 cannot sign in to MySQL 8 unless the server is set up for the old password plugin, which the installer
 			// does only together with the database. Adding that later is not done from here.
 			it.Needs = "legacyauth"

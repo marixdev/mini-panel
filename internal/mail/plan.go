@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"mpn/internal/distro"
 	"mpn/internal/installer"
 )
 
@@ -36,15 +37,17 @@ var ConflictingPackages = []string{"exim4-base", "exim4-config", "exim4-daemon-l
 
 // removeConflictsScript removes the packages above that are installed, and only those, and tells which ones it removed. A machine
 // without any of them changes nothing.
-const removeConflictsScript = `set -e
+func removeConflictsScript() string {
+	return `set -e
 found=
-for p in ` + "exim4-base exim4-config exim4-daemon-light exim4-daemon-heavy sendmail sendmail-bin opensmtpd" + `; do
-  if dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'install ok installed'; then found="$found $p"; fi
+for p in ` + strings.Join(ConflictingPackages, " ") + `; do
+  if [ "$(` + distro.InstalledScript(`"$p"`) + `)" = yes ]; then found="$found $p"; fi
 done
 [ -n "$found" ] || exit 0
 echo "removing mail servers that would hold port 25:$found"
-systemctl stop exim4 sendmail opensmtpd 2>/dev/null || true
-DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 purge -y $found`
+systemctl stop exim4 exim sendmail opensmtpd 2>/dev/null || true
+` + strings.Join(distro.RemoveCommand(), " ") + ` $found`
+}
 
 // Check refuses a state the files could not express safely: a mailbox or an alias on a domain this machine does not handle would be
 // accepted by Dovecot but never receive anything, and would hide a typing mistake.
@@ -108,15 +111,21 @@ func PackagesPlan(host string) (installer.Plan, error) {
 	if err := ValidDomain(host); err != nil {
 		return nil, fmt.Errorf("mail host: %w", err)
 	}
-	return installer.Plan{{Name: "mail packages", Actions: []installer.Action{
-		installer.Run("sh", "-c", removeConflictsScript),
-		installer.Run("sh", "-c", "printf '%s\\n' 'postfix postfix/main_mailer_type select Internet Site' 'postfix postfix/mailname string "+host+"' | debconf-set-selections"),
+	acts := []installer.Action{
+		installer.Run("sh", "-c", removeConflictsScript()),
+	}
+	if !distro.IsEL() { // only the Debian package of Postfix asks questions
+		acts = append(acts, installer.Run("sh", "-c", "printf '%s\\n' 'postfix postfix/main_mailer_type select Internet Site' 'postfix postfix/mailname string "+host+"' | debconf-set-selections"))
+	}
+	acts = append(acts,
+		// EL: the packages are named postfix, dovecot and opendkim (EPEL) there; the RHEL work adds those names.
 		installer.Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true"),
 		installer.AptInstall("postfix", "dovecot-core", "dovecot-imapd", "dovecot-lmtpd", "opendkim", "opendkim-tools", "openssl"),
 		// The servers start on their own after the packages are installed, with a configuration that is not ours. They are stopped
 		// until SetupPlan has written the real one.
 		installer.Run("sh", "-c", "systemctl stop postfix dovecot opendkim 2>/dev/null || true"),
-	}}}, nil
+	)
+	return installer.Plan{{Name: "mail packages", Actions: acts}}, nil
 }
 
 // selfSignedScript makes the first certificate of the mail host, only when there is none, so the servers can start before a real

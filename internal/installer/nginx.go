@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"strings"
 
+	"mpn/internal/distro"
 	"mpn/internal/osinfo"
 )
 
@@ -18,12 +19,21 @@ const (
 	nginxSigningFPR = "573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62"
 
 	modulesRelease = "nginx-1.28.3-r2"
-	modulesBase    = "https://github.com/marixdev/mpn-nginx-modules/releases/download/" + modulesRelease
+	// The repository was called mpn-nginx-modules until 2026-11-13; GitHub sends the old address to this one.
+	modulesBase = "https://github.com/marixdev/mpn-packages/releases/download/" + modulesRelease
 
-	nginxModuleDir      = "/usr/lib/nginx/modules"
 	nginxModulesEnabled = "/etc/nginx/modules-enabled"
 	nginxKeyring        = "/usr/share/keyrings/nginx-archive-keyring.gpg"
 )
+
+// moduleRelease is the release that holds the PageSpeed module of a system: nginx-1.28.3-r2 for Debian and Ubuntu, nginx-1.28.3-r3 for
+// the RHEL family, whose modules were built later. The ModSecurity module of EL is in el-r1 (see elWAFActions).
+func moduleRelease(t osinfo.Target) string {
+	if t.EL() {
+		return "https://github.com/marixdev/mpn-packages/releases/download/nginx-1.28.3-r3"
+	}
+	return modulesBase
+}
 
 // Module kinds.
 const (
@@ -43,6 +53,11 @@ var moduleSums = map[string]map[string]string{
 		"noble-arm64":    "be9f8e166e41cb4c87f8d02c5c10b108d569a0a5169093d0e5bfb74119567cb2",
 		"bookworm-arm64": "d7fef1067121ab774f5a5fd29464ac87895b50002d4405e772624fe8cb8b55fc",
 		"trixie-arm64":   "f7eed16b513637083cd41a288f549cd8d2a7322e2a33ecaa7918aefbee918bd4",
+		// EL 9 and 10 (AlmaLinux, Rocky Linux, CentOS Stream), from the nginx-1.28.3-r3 release (see moduleRelease).
+		"el9":       "d8044660816aad93820f29c26690e0a2875cb09ffacbc93902a24fe135627f34",
+		"el9-arm64": "9eef851a12143e53ea0676198deb3e00b7bec2c3823c458e5e8ebb32ac07442b",
+		"el10":       "7c040f22cc623e5447d7c8e7ebfc34aae33880e7ac9ba38e0bfd3d0d6d8a13a4",
+		"el10-arm64": "84f7921b683f42ec4658a3ab2c19697decaff711d85b086b07cd027a4867e0a3",
 	},
 	ModModSecurity: {
 		"jammy":          "97c36e71bf8d896461ee37c74b7fc9496c758dfa247c0d6f640c22a59a94256d",
@@ -53,6 +68,7 @@ var moduleSums = map[string]map[string]string{
 		"noble-arm64":    "3ea21c9457cf4269baea6371c46c1951cd73f237e9a48a82d3b2c62e0d0e5eb4",
 		"bookworm-arm64": "496c1ee02512c3e7ae096037388f6a4bedddf2a101e6d455dd640a686e09e955",
 		"trixie-arm64":   "61acb1d77dcedb3941701850131545251aa24ded104b371b6b4f2be2fae1e0fb",
+		// The ModSecurity module of EL comes from el-r1 with the rules (see elWAFActions and elSums).
 	},
 }
 
@@ -100,9 +116,9 @@ func moduleActions(t osinfo.Target, kind string) ([]Action, error) {
 		return nil, fmt.Errorf("there is no %s module for nginx %s on %s %s (%s)", kind, NginxVersion, t.ID, t.Version, runtime.GOARCH)
 	}
 	n := moduleNames[kind]
-	dest := nginxModuleDir + "/" + n.so
+	dest := distro.NginxModuleDir() + "/" + n.so
 	return []Action{
-		Run("sh", "-c", fetchScript(modulesBase+"/"+ModuleFile(kind, t.Codename, runtime.GOARCH), sum, dest)),
+		Run("sh", "-c", fetchScript(moduleRelease(t)+"/"+ModuleFile(kind, t.Codename, runtime.GOARCH), sum, dest)),
 		Run("install", "-d", "-m", "0755", nginxModulesEnabled),
 		WriteFile(nginxModulesEnabled+"/"+n.snippet, "# Written by mpn.\nload_module "+dest+";\n", 0o644),
 	}, nil
@@ -159,7 +175,7 @@ func pageSpeedStep(t osinfo.Target) (Step, error) {
 			aptInstall("nginx-module-pagespeed"),
 			Run("nginx", "-t"),
 			ReloadNginx(),
-			Run("install", "-d", "-o", "www-data", "-g", "www-data", "-m", "0755", "/var/cache/ngx_pagespeed"),
+			pageSpeedCacheDir(),
 		}}, nil
 	}
 	acts, err := moduleActions(t, ModPageSpeed)
@@ -169,9 +185,15 @@ func pageSpeedStep(t osinfo.Target) (Step, error) {
 	acts = append(acts,
 		Run("nginx", "-t"),
 		ReloadNginx(),
-		Run("install", "-d", "-o", "www-data", "-g", "www-data", "-m", "0755", "/var/cache/ngx_pagespeed"),
+		pageSpeedCacheDir(),
 	)
 	return Step{"nginx pagespeed", acts}, nil
+}
+
+// pageSpeedCacheDir is the cache of PageSpeed, which nginx's workers write.
+func pageSpeedCacheDir() Action {
+	u := distro.WebUser()
+	return Run("install", "-d", "-o", u, "-g", u, "-m", "0755", "/var/cache/ngx_pagespeed")
 }
 
 // ModsecBaseline is /etc/nginx/modsecurity.conf for a system whose nginx comes from nginx.org: the settings the OWASP rules assume,
@@ -196,6 +218,13 @@ SecStatusEngine Off
 // ("" when unknown): the module built for nginx.org is used only on a machine that really runs that version, so a machine installed
 // before the version was fixed keeps getting the module of its distribution.
 func WAFPackagesPlan(t osinfo.Target, nginxVersion string) (Plan, error) {
+	if t.EL() {
+		acts, err := elWAFActions(t)
+		if err != nil {
+			return nil, err
+		}
+		return Plan{{Name: "ModSecurity packages", Actions: acts}}, nil
+	}
 	update := Run("sh", "-c", "apt-get -o DPkg::Lock::Timeout=300 update || true")
 	if !t.NginxOrg() || nginxVersion != NginxVersion {
 		return Plan{{Name: "ModSecurity packages", Actions: []Action{update, AptInstall("libnginx-mod-http-modsecurity", "modsecurity-crs")}}}, nil

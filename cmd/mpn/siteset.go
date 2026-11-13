@@ -128,7 +128,7 @@ func siteSet(args []string) {
 		cur.Upstream = *upstream
 	}
 	fail(cur.Validate())
-	if cur.Kind == site.PHP && cur.PHPVersion != old.PHPVersion && !slices.Contains(site.InstalledPHP("/usr/sbin"), cur.PHPVersion) {
+	if cur.Kind == site.PHP && cur.PHPVersion != old.PHPVersion && !slices.Contains(site.InstalledPHP(), cur.PHPVersion) {
 		fail(fmt.Errorf("php %s is not installed on this machine; install it first with: mpn plan -php %s -apply", cur.PHPVersion, cur.PHPVersion))
 	}
 	if cur.Kind == site.Node && cur.NodeVersion != old.NodeVersion && !slices.Contains(site.InstalledNode(unit.NodeRoot), cur.NodeVersion) {

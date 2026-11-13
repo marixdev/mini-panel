@@ -4,6 +4,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"mpn/internal/distro"
 )
 
 // Service is a program the websites depend on, and whether it is running.
@@ -20,7 +22,9 @@ var Watched = []struct{ Unit, Label string }{
 	{"nginx.service", "nginx"},
 	{"mariadb.service", "MariaDB"},
 	{"mysql.service", "MySQL"},
+	{"mysqld.service", "MySQL"}, // the name of the MySQL unit on the RHEL family
 	{"cron.service", "cron"},
+	{"crond.service", "cron"}, // the name on the RHEL family
 	{"ssh.service", "SSH"},
 	{"sshd.service", "SSH"},
 	{"mpn-root.service", "svc.unit.mpn-root"},
@@ -76,7 +80,7 @@ func Services(state UnitState, phpVersions []string) []Service {
 		items = append(items, item{w.Unit, w.Label})
 	}
 	for _, v := range phpVersions {
-		items = append(items, item{"php" + v + "-fpm.service", "PHP-FPM " + v})
+		items = append(items, item{distro.PHPService(v) + ".service", "PHP-FPM " + v})
 	}
 	var out []Service
 	seenID, seenLabel := map[string]bool{}, map[string]bool{}

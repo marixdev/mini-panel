@@ -193,10 +193,10 @@ var siteKinds = []string{"php", "node", "python", "static", "proxy"}
 // installedPHP and installedNode are the versions the form may offer: the ones on this machine, or every known one when the
 // server was not told where to look (a test, or a build that does not know the machine).
 func (s *Server) installedPHP() []string {
-	if s.PHPDir == "" {
+	if s.InstalledPHP == nil {
 		return site.PHPVersions
 	}
-	return site.InstalledPHP(s.PHPDir)
+	return s.InstalledPHP()
 }
 
 func (s *Server) installedNode() []string {

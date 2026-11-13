@@ -83,7 +83,7 @@ func appInstall(args []string) {
 	if s.Kind != site.PHP {
 		fail(errors.New("app-kind: applications are installed in PHP sites only"))
 	}
-	if !slices.Contains(site.InstalledPHP("/usr/sbin"), s.PHPVersion) && *apply {
+	if !slices.Contains(site.InstalledPHP(), s.PHPVersion) && *apply {
 		fail(fmt.Errorf("php %s is not installed on this machine", s.PHPVersion))
 	}
 

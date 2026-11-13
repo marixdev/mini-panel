@@ -3,6 +3,8 @@ package installer
 import (
 	"fmt"
 	"strings"
+
+	"mpn/internal/distro"
 )
 
 // PMAFiles are the files of the database browser that depend on how this machine is set up: its configuration and the two pages of the
@@ -18,4 +20,4 @@ func PMAFiles(panelPort int) map[string]string {
 }
 
 // PMAPHPService is the service of PHP-FPM that runs the browser; it is told to read the files again after they are replaced.
-const PMAPHPService = "php" + pmaPHP + "-fpm"
+func PMAPHPService() string { return distro.PHPService(pmaPHP) }

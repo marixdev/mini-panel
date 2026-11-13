@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"mpn/internal/distro"
 	"mpn/internal/installer"
 	"mpn/internal/site"
 	"mpn/internal/tune"
@@ -34,7 +35,7 @@ func logDirAction(s site.Site) installer.Action {
 // later apply must never touch it. A dangling symlink counts as present.
 func createRootScript(user, root string) string {
 	one := func(p string) string {
-		return fmt.Sprintf("if [ ! -e %[2]s ] && [ ! -L %[2]s ]; then install -d -o %[1]s -g www-data %[2]s && chmod 2750 %[2]s; fi", user, p)
+		return fmt.Sprintf("if [ ! -e %[2]s ] && [ ! -L %[2]s ]; then install -d -o %[1]s -g %[3]s %[2]s && chmod 2750 %[2]s; fi", user, p, distro.WebUser())
 	}
 	// A root below htdocs (public, for Laravel) needs every folder on the way, and htdocs itself first.
 	base := site.HtdocsOf(user)
@@ -71,6 +72,10 @@ func removeAccountScript(user, siteName string) string {
 	return fmt.Sprintf(`if [ "$(getent passwd %[1]s | cut -d: -f5)" = '%[2]s' ]; then loginctl terminate-user %[1]s >/dev/null 2>&1 || true; pkill -u %[1]s || true; for i in 1 2 3 4 5 6 7 8 9 10; do pgrep -u %[1]s >/dev/null || break; [ "$i" -lt 4 ] || pkill -KILL -u %[1]s || true; sleep 0.5; done; userdel -r %[1]s; else echo 'account %[1]s was not created by mpn for this site, left alone'; fi`,
 		user, accountMark(siteName))
 }
+
+// PHPSocket is the socket of a site's PHP pool. It is the same for every PHP version and both families: /run/php is made by
+// mpn on EL (see installer.RunPHPDir), where the packages put their sockets elsewhere.
+func PHPSocket(name string) string { return "/run/php/" + name + ".sock" }
 
 // CertDir is where a site's certificate files live.
 func CertDir(name string) string { return "/etc/mpn/certs/" + name }
@@ -135,12 +140,8 @@ func RemovePlan(s site.Site, purge bool) (installer.Plan, error) {
 	plan[0].Actions = append([]installer.Action{installer.Run("rm", "-f", "/etc/cron.d/mpn-"+s.Name)}, plan[0].Actions...)
 	switch s.Kind {
 	case site.PHP:
-		v, dir := s.PHPVersion, "/etc/php/"+s.PHPVersion+"/fpm/pool.d/"
-		plan = append(plan, installer.Step{Name: "php-fpm pool", Actions: []installer.Action{
-			installer.Run("rm", "-f", dir+s.Name+".conf"),
-			// The master stays only while another pool still uses this PHP version.
-			installer.Run("sh", "-c", fmt.Sprintf("if ls %[1]s*.conf >/dev/null 2>&1; then systemctl reload-or-restart php%[2]s-fpm; else systemctl disable --now php%[2]s-fpm; fi", dir, v)),
-		}})
+		// The master stays only while another pool still uses this PHP version.
+		plan = append(plan, installer.Step{Name: "php-fpm pool", Actions: dropPHPPoolActions(s, s.PHPVersion)})
 	case site.Node, site.Python:
 		plan = append(plan, installer.Step{Name: string(s.Kind) + " service", Actions: []installer.Action{
 			installer.Run("systemctl", "disable", "--now", unit.Name(s)),
@@ -175,6 +176,10 @@ func Plan(s site.Site, o Options) (installer.Plan, error) {
 		installer.Run("sh", "-c", createRootScript(s.User, s.Root)),
 		logDirAction(s),
 	}}}
+	if distro.IsEL() {
+		// SELinux labels the new web root and log folder for nginx and PHP-FPM (the rules were set when the panel was installed).
+		plan[0].Actions = append(plan[0].Actions, installer.RestoreconHome(site.HtdocsOf(s.User)), installer.RestoreconHome(LogDir(s.Name)))
+	}
 	// A node or python site needs its start script before the service starts, so the page comes before the services.
 	if page, ok := defaultPageStep(s); ok {
 		plan = append(plan, page)
@@ -183,14 +188,14 @@ func Plan(s site.Site, o Options) (installer.Plan, error) {
 	switch s.Kind {
 	case site.PHP:
 		v := s.PHPVersion
-		pool := "/etc/php/" + v + "/fpm/pool.d/"
+		pool := distro.PHPPoolDir(v)
 		plan = append(plan, installer.Step{Name: "php-fpm pool", Actions: []installer.Action{
 			// The package's default pool would keep idle workers alive for no site.
 			installer.Run("sh", "-c", fmt.Sprintf("[ ! -e %[1]swww.conf ] || mv %[1]swww.conf %[1]swww.conf.disabled", pool)),
-			installer.WriteFile(pool+s.Name+".conf", o.Profile.PHPPoolWith(s.Name, s.User, "/run/php/"+s.Name+".sock", s.PHPPoolLines(o.Profile.PHPMemoryLimitMB), s.RequestSeconds()), 0o644),
-			installer.Run("php-fpm"+v, "-t"),
-			installer.Run("systemctl", "enable", "php"+v+"-fpm"),
-			installer.Run("systemctl", "reload-or-restart", "php"+v+"-fpm"),
+			installer.WriteFile(pool+s.Name+".conf", o.Profile.PHPPoolWith(s.Name, s.User, PHPSocket(s.Name), s.PHPPoolLines(o.Profile.PHPMemoryLimitMB), s.RequestSeconds()), 0o644),
+			installer.Run(distro.PHPFPMBinary(v), "-t"),
+			installer.Run("systemctl", "enable", distro.PHPService(v)),
+			installer.Run("systemctl", "reload-or-restart", distro.PHPService(v)),
 		}})
 	case site.Node:
 		mem := o.NodeMemMB
@@ -256,10 +261,10 @@ runuser -u %[4]s -- "$py" -m venv $action "$venv" || { echo "the virtual environ
 
 // dropPHPPoolActions take a site's pool out of one PHP version. The master stays only while another pool still uses it.
 func dropPHPPoolActions(s site.Site, version string) []installer.Action {
-	dir := "/etc/php/" + version + "/fpm/pool.d/"
+	dir, svc := distro.PHPPoolDir(version), distro.PHPService(version)
 	return []installer.Action{
 		installer.Run("rm", "-f", dir+s.Name+".conf"),
-		installer.Run("sh", "-c", fmt.Sprintf("if ls %[1]s*.conf >/dev/null 2>&1; then systemctl reload-or-restart php%[2]s-fpm; else systemctl disable --now php%[2]s-fpm; fi", dir, version)),
+		installer.Run("sh", "-c", fmt.Sprintf("if ls %[1]s*.conf >/dev/null 2>&1; then systemctl reload-or-restart %[2]s; else systemctl disable --now %[2]s; fi", dir, svc)),
 	}
 }
 

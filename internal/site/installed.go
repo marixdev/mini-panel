@@ -5,16 +5,18 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"mpn/internal/distro"
 )
 
 // Which versions are really on this machine. The lists in site.go are what mpn knows how to install; a form must only
 // offer what is installed, or choosing a version would fail at the last step with a message about a missing program.
 
-// InstalledPHP returns the PHP versions whose FPM program exists in dir (/usr/sbin), oldest first.
-func InstalledPHP(dir string) []string {
+// InstalledPHP returns the PHP versions whose FPM program is on this machine (see distro.PHPFPMBinary), oldest first.
+func InstalledPHP() []string {
 	var out []string
 	for _, v := range PHPVersions {
-		if fi, err := os.Stat(filepath.Join(dir, "php-fpm"+v)); err == nil && !fi.IsDir() {
+		if fi, err := os.Stat(distro.PHPFPMBinary(v)); err == nil && !fi.IsDir() {
 			out = append(out, v)
 		}
 	}
