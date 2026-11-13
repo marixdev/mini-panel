@@ -54,8 +54,8 @@ var moduleSums = map[string]map[string]string{
 		"bookworm-arm64": "d7fef1067121ab774f5a5fd29464ac87895b50002d4405e772624fe8cb8b55fc",
 		"trixie-arm64":   "f7eed16b513637083cd41a288f549cd8d2a7322e2a33ecaa7918aefbee918bd4",
 		// EL 9 and 10 (AlmaLinux, Rocky Linux, CentOS Stream), from the nginx-1.28.3-r3 release (see moduleRelease).
-		"el9":       "d8044660816aad93820f29c26690e0a2875cb09ffacbc93902a24fe135627f34",
-		"el9-arm64": "9eef851a12143e53ea0676198deb3e00b7bec2c3823c458e5e8ebb32ac07442b",
+		"el9":        "d8044660816aad93820f29c26690e0a2875cb09ffacbc93902a24fe135627f34",
+		"el9-arm64":  "9eef851a12143e53ea0676198deb3e00b7bec2c3823c458e5e8ebb32ac07442b",
 		"el10":       "7c040f22cc623e5447d7c8e7ebfc34aae33880e7ac9ba38e0bfd3d0d6d8a13a4",
 		"el10-arm64": "84f7921b683f42ec4658a3ab2c19697decaff711d85b086b07cd027a4867e0a3",
 	},
