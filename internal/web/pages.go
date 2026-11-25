@@ -161,13 +161,15 @@ func (s *Server) runText(r *http.Request, T translator, title string, reqs ...ct
 
 func (s *Server) show(w http.ResponseWriter, status int, ss webauth.Session, v view) {
 	v.User, v.CSRF = ss.User, ss.CSRF
+	v.Can = s.canFunc(ss, v.Site.Name)
+	v.Admin = s.isAdmin(ss)
 	if v.UpNotice == nil {
 		v.UpNotice = s.noticeFor(v.Page)
 	}
 	s.render(w, status, v)
 }
 
-func (s *Server) sitePages(mux *http.ServeMux) {
+func (s *Server) sitePages(mux routeMux) {
 	mux.HandleFunc("GET /sites/new", s.auth(s.newSitePage))
 	mux.HandleFunc("POST /sites/add", s.auth(s.addSite))
 	mux.HandleFunc("POST /sites/apply", s.auth(s.applySite))
@@ -189,6 +191,14 @@ func (s *Server) sitesPage(w http.ResponseWriter, r *http.Request, ss webauth.Se
 			v.Error = T("err.badanswer")
 		}
 	}
+	// A delegated user sees only the websites a role is given on.
+	shown := v.Sites[:0]
+	for _, row := range v.Sites {
+		if s.siteVisible(ss, row.Name) {
+			shown = append(shown, row)
+		}
+	}
+	v.Sites = shown
 	s.show(w, 200, ss, v)
 }
 

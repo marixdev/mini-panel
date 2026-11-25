@@ -80,6 +80,8 @@ type Server struct {
 	// NotifySocket is the socket of the mpn-notify service, which takes the reports of other machines when this panel is the hub of the
 	// Telegram alerts; "" switches /_notify/ off.
 	NotifySocket string
+	// UsersFile is the file of the delegated accounts (see webauth.LoadUsers). "" switches delegated accounts off entirely.
+	UsersFile string
 	// Updates looks for new releases by itself; nil switches the notice and the changelog off.
 	Updates *UpdateChecker
 	cf      cfCache // what the name servers of mail domains said, for ten minutes
@@ -91,8 +93,19 @@ type Server struct {
 
 const maxBody = 64 << 10
 
+// routeMux is what the route registrars need: *http.ServeMux, or a recorder in tests that lists every pattern.
+type routeMux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+}
+
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	s.routes(mux)
+	return s.guard(mux)
+}
+
+// routes registers every address of the panel. Each authenticated one must also have a rule in accessRules (access.go).
+func (s *Server) routes(mux routeMux) {
 	mux.HandleFunc("GET /language/{language}", s.changeLanguage)
 	s.setupPages(mux)
 	mux.HandleFunc("GET /login", func(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +117,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("POST /login", s.login)
 	s.settingsPages(mux)
+	s.usersPages(mux)
 	mux.HandleFunc("POST /logout", s.auth(s.logout))
 	mux.HandleFunc("GET /{$}", s.auth(s.sitesPage))
 	s.sitePages(mux)
@@ -126,7 +140,6 @@ func (s *Server) Handler() http.Handler {
 	s.assetRoutes(mux)
 	mux.HandleFunc("GET /result", s.auth(s.resultPage))
 	mux.HandleFunc("GET /", s.notFound) // every address no other route owns
-	return s.guard(mux)
 }
 
 // guard runs before every handler: it refuses a Host header the panel does not own (which stops DNS rebinding), refuses
@@ -252,6 +265,10 @@ func (s *Server) auth(h func(http.ResponseWriter, *http.Request, webauth.Session
 			http.Error(w, "invalid form token; go back, reload the page and try again", http.StatusForbidden)
 			return
 		}
+		if !s.allowed(r, ss) {
+			s.deny(w, r, ss)
+			return
+		}
 		h(w, r, ss)
 	}
 }
@@ -271,10 +288,20 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	defer release()
 	user, pw := r.PostFormValue("user"), r.PostFormValue("password")
 	acct, err := s.Account()
+	// Exactly one password check runs per attempt: against the delegated user's hash when the name is one, else against the
+	// administrator's. A disabled delegated user fails after the same check, so the time does not say the name exists.
 	good := false
+	signedAs := acct // the account whose second factor applies
 	if err == nil && len(user) <= 64 && len(pw) <= 256 {
 		var busy error
-		if good, busy = acct.CheckLimited(user, pw); busy != nil {
+		if du, found := s.userRecord(user); found {
+			good, busy = webauth.Account{User: du.Name, Hash: du.Hash}.CheckLimited(user, pw)
+			good = good && !du.Disabled
+			signedAs = du.Account()
+		} else {
+			good, busy = acct.CheckLimited(user, pw)
+		}
+		if busy != nil {
 			locked(2 * time.Second)
 			return
 		}
@@ -287,13 +314,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	remember := r.PostFormValue("remember") == "1"
-	if acct.TOTP != "" { // the password is right; the code of the app is still to come
-		s.render(w, http.StatusOK, view{Page: "login", Need2FA: true, Pending: s.twofa.newLogin(acct.User, remember)})
+	if signedAs.TOTP != "" { // the password is right; the code of the app is still to come
+		s.render(w, http.StatusOK, view{Page: "login", Need2FA: true, Pending: s.twofa.newLogin(signedAs.User, remember)})
 		return
 	}
-	s.note(r, "login.ok", "", "user="+acct.User, false)
+	s.note(r, "login.ok", "", "user="+signedAs.User, false)
 	s.Throttle.Reset(key)
-	s.startSession(w, r, acct.User, remember)
+	s.startSession(w, r, signedAs.User, remember)
 }
 
 // notFound answers an address the panel does not have with a page of its own. It is the same page for a signed-in person and for a
@@ -348,44 +375,50 @@ type view struct {
 	Crumbs                                      []crumb
 	Parent                                      string
 	Site                                        siteRow
-	Tab                                         string
-	SSHEnabled                                  bool
-	KeyStatus                                   string
-	SSHHost                                     string
-	ServerIP                                    string // shown in the header of a site
-	Dom                                         *domainView
-	SSL                                         *sslView
-	VH                                          *vhostView
-	Cron                                        *cronView
-	Log                                         *logView
-	Svc                                         *svcView
-	CF                                          *cfView
-	SM                                          *siteMailView
-	Settings                                    *settingsView
-	Need2FA                                     bool   // the sign-in page asks for the code of the app
-	Pending                                     string // the sign-in that waits for it
-	FW                                          *fwView
-	Audit                                       *auditView
-	Notify                                      *notifyView
-	Sec                                         *secView
-	Mail                                        *mailView
-	Cloud                                       *cloudView
-	CloudList                                   *cloudListView
-	WP                                          *wpView
-	Apps                                        []appOption
-	Locales                                     []string
-	Mon                                         *monView
-	DBs                                         []dbRow
-	DBRemote                                    *dbRemote
-	DBSet                                       *dbSetView
-	Backups                                     []backupRow
-	BackupKeep                                  int // how many backups of the site are kept
-	SiteNames                                   []string
-	PHPVersions                                 []string
-	NodeVersions                                []string
-	Result                                      *result
-	Confirm                                     *confirm
-	Foot                                        *footerView
+	// Can tells a template whether the signed-in user holds at least the named role on the page's website ("view", "manage",
+	// "full"). It only hides controls; the route rules are what refuse a request.
+	Can func(role string) bool
+	// Admin is true for the administrator's account. It hides server-wide controls on pages that have no website.
+	Admin        bool
+	Tab          string
+	SSHEnabled   bool
+	KeyStatus    string
+	SSHHost      string
+	ServerIP     string // shown in the header of a site
+	Dom          *domainView
+	SSL          *sslView
+	VH           *vhostView
+	Cron         *cronView
+	Log          *logView
+	Svc          *svcView
+	CF           *cfView
+	SM           *siteMailView
+	Settings     *settingsView
+	Users        *usersView
+	Need2FA      bool   // the sign-in page asks for the code of the app
+	Pending      string // the sign-in that waits for it
+	FW           *fwView
+	Audit        *auditView
+	Notify       *notifyView
+	Sec          *secView
+	Mail         *mailView
+	Cloud        *cloudView
+	CloudList    *cloudListView
+	WP           *wpView
+	Apps         []appOption
+	Locales      []string
+	Mon          *monView
+	DBs          []dbRow
+	DBRemote     *dbRemote
+	DBSet        *dbSetView
+	Backups      []backupRow
+	BackupKeep   int // how many backups of the site are kept
+	SiteNames    []string
+	PHPVersions  []string
+	NodeVersions []string
+	Result       *result
+	Confirm      *confirm
+	Foot         *footerView
 }
 
 func (s *Server) render(w http.ResponseWriter, status int, v view) {

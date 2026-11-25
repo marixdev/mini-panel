@@ -54,7 +54,7 @@ type monView struct {
 	Table     [][]string
 }
 
-func (s *Server) monitorPages(mux *http.ServeMux) {
+func (s *Server) monitorPages(mux routeMux) {
 	mux.HandleFunc("GET /monitor", s.auth(s.monitorPage))
 }
 

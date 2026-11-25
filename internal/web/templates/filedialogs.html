@@ -1,4 +1,4 @@
-{{define "filedialogs"}}
+{{define "filedialogs"}}{{if call .Can "manage"}}
 {{/* One dialog for each kind of action. The script fills in the title, the target and the names; each one is a plain form that posts to the panel. */}}
 <dialog id="dlg-name" class="fm-dialog" aria-labelledby="dlg-name-title">
   <form method="post" action="" class="p-6" id="dlg-name-form">
@@ -106,4 +106,4 @@
     <div class="mt-6 flex justify-end"><button type="button" class="btn-secondary" data-close id="up-close">{{T "fm.close"}}</button></div>
   </div>
 </dialog>
-{{end}}
+{{end}}{{end}}

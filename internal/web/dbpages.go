@@ -32,7 +32,7 @@ func (s *Server) listText(T translator, req ctl.Request, dst any) string {
 	return ""
 }
 
-func (s *Server) dbPages(mux *http.ServeMux) {
+func (s *Server) dbPages(mux routeMux) {
 	// The list of databases is the Databases tab of each website; only the actions have addresses of their own.
 	mux.HandleFunc("POST /databases/add", s.auth(s.addDB))
 	mux.HandleFunc("GET /databases/passwd", s.auth(s.dbConfirm("passwd")))

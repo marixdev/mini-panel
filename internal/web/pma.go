@@ -75,7 +75,7 @@ func (t *pmaTickets) take(id string, now time.Time) (pmaTicket, bool) {
 	return v, true
 }
 
-func (s *Server) pmaRoutes(mux *http.ServeMux) {
+func (s *Server) pmaRoutes(mux routeMux) {
 	mux.HandleFunc("POST /databases/pma", s.auth(s.pmaOpen))
 	// These three are for the machine itself: nginx's sign-in check, and the sign-on page of the browser. The public nginx
 	// server answers 404 for this whole path.

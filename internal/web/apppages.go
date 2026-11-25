@@ -90,7 +90,7 @@ func appErrorText(T translator, out string) string {
 	return ""
 }
 
-func (s *Server) appRoutes(mux *http.ServeMux) {
+func (s *Server) appRoutes(mux routeMux) {
 	mux.HandleFunc("POST /sites/{name}/app/install", s.auth(s.appInstall))
 }
 

@@ -23,7 +23,7 @@ type svcView struct {
 // svcOrder is the order of the blocks. A group with no rows is not drawn.
 var svcOrder = []string{services.GroupService, services.GroupDatabase, services.GroupPHP, services.GroupNode, services.GroupTool}
 
-func (s *Server) servicesPages(mux *http.ServeMux) {
+func (s *Server) servicesPages(mux routeMux) {
 	mux.HandleFunc("GET /services", s.auth(s.servicesPage))
 	// Stopping a service asks first: a stopped database or PHP-FPM takes the websites that use it down.
 	mux.HandleFunc("GET /services/{key}/stop", s.auth(s.serviceStopConfirm))

@@ -12,7 +12,7 @@ import (
 // What other machines send to the hub (their reports and a pairing) comes to the panel's own port, at /_notify/pair and /_notify/beat,
 // and the panel passes it to the mpn-notify service on this machine. These two addresses need no sign-in: an agent proves itself with
 // its own key, which the service checks. The panel only passes the body through, with the address of the sender, and adds nothing.
-func (s *Server) notifyHubRoutes(mux *http.ServeMux) {
+func (s *Server) notifyHubRoutes(mux routeMux) {
 	if s.NotifySocket == "" {
 		return
 	}

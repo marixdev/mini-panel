@@ -1,5 +1,5 @@
 {{define "wpitems"}}
-{{$kind := .Kind}}{{$site := .Site}}{{$csrf := .CSRF}}
+{{$kind := .Kind}}{{$site := .Site}}{{$csrf := .CSRF}}{{$can := .Can}}
 <div class="table-wrap">
   <table class="tbl">
     <thead><tr><th>{{T "wp.col.name"}}</th><th>{{T "wp.col.version"}}</th><th>{{T "wp.col.status"}}</th><th></th></tr></thead>
@@ -10,7 +10,7 @@
       <td class="align-top">{{if .Active}}<span class="badge-teal">{{T "wp.active"}}</span>{{else}}<span class="badge-gray">{{T "wp.inactive"}}</span>{{end}}</td>
       <td class="align-top">
         <div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 whitespace-nowrap">
-          {{if .HasUpdate}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="update" class="btn-sm">{{T "wp.do.update"}}</button></form>{{end}}
+          {{if call $can "manage"}}{{if .HasUpdate}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="update" class="btn-sm">{{T "wp.do.update"}}</button></form>{{end}}
           {{if .Active}}{{if eq $kind "plugin"}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="plugin"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="deactivate" class="btn-sm">{{T "wp.do.deactivate"}}</button></form>{{end}}
           {{else}}<form method="post" action="/sites/{{$site}}/wp/run"><input type="hidden" name="csrf" value="{{$csrf}}"><input type="hidden" name="kind" value="{{$kind}}"><input type="hidden" name="slug" value="{{.Name}}"><button name="action" value="activate" class="btn-sm">{{T "wp.do.activate"}}</button></form>
           <details class="relative">
@@ -20,7 +20,7 @@
               <p class="text-sm">{{T "wp.delete.ask" .Name}}</p>
               <button name="action" value="delete" class="btn-secondary mt-3 w-full">{{T "wp.delete.btn"}}</button>
             </form>
-          </details>{{end}}
+          </details>{{end}}{{end}}
         </div>
       </td>
     </tr>{{else}}<tr><td colspan="4" class="text-center text-muted-foreground">{{T "wp.empty"}}</td></tr>{{end}}
@@ -40,7 +40,7 @@
       <div><dt class="text-muted-foreground">{{T "wp.url"}}</dt><dd class="mt-0.5 font-mono text-[13px] font-medium break-all">{{$w.URL}}</dd></div>
       <div><dt class="text-muted-foreground">{{T "wp.admin"}}</dt><dd class="mt-0.5 text-sm"><a class="link" href="{{$w.URL}}/wp-admin/" target="_blank" rel="noopener noreferrer">{{T "wp.admin.open"}}</a></dd></div>
     </dl>
-    {{if $w.CoreUpdate}}<form method="post" action="/sites/{{.Site.Name}}/wp/run" class="shrink-0"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="kind" value="core"><button name="action" value="update" class="btn-primary">{{T "wp.core.update" $w.CoreUpdate}}</button></form>{{end}}
+    {{if and $w.CoreUpdate (call .Can "manage")}}<form method="post" action="/sites/{{.Site.Name}}/wp/run" class="shrink-0"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="kind" value="core"><button name="action" value="update" class="btn-primary">{{T "wp.core.update" $w.CoreUpdate}}</button></form>{{end}}
   </div>
   <p class="hint">{{T "wp.note"}}</p>
 </section>
@@ -59,7 +59,7 @@
         <button class="btn-secondary">{{T "wp.search.btn"}}</button>
       </div>
     </form>
-    <form method="post" action="/sites/{{.Site.Name}}/wp/run" autocomplete="off">
+    {{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/wp/run" autocomplete="off">
       <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="install">
       <h3 class="text-sm font-semibold">{{T "wp.slug.title"}}</h3>
       <div class="mt-2 flex flex-wrap items-end gap-3">
@@ -70,7 +70,7 @@
         <button class="btn-primary">{{T "wp.install.btn"}}</button>
       </div>
       <p class="hint">{{T "wp.slug.hint"}}</p>
-    </form>
+    </form>{{end}}
   </div>
   {{if $w.SearchErr}}<p class="alert-error mt-4">{{$w.SearchErr}}</p>
   {{else if $w.Term}}
@@ -81,7 +81,7 @@
       {{range $w.Found}}<tr>
         <td class="align-top"><span class="font-medium">{{.Name}}</span><span class="block font-mono text-[12px] text-muted-foreground">{{.Slug}}</span>{{if .Short}}<span class="mt-1 block text-sm text-muted-foreground">{{.Short}}</span>{{end}}</td>
         <td class="align-top whitespace-nowrap tabular-nums">{{.Version}}</td>
-        <td class="align-top text-right"><form method="post" action="/sites/{{$.Site.Name}}/wp/run" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="kind" value="{{$w.Kind}}"><input type="hidden" name="slug" value="{{.Slug}}"><button name="action" value="install" class="btn-sm">{{T "wp.install.btn"}}</button></form></td>
+        <td class="align-top text-right">{{if call $.Can "manage"}}<form method="post" action="/sites/{{$.Site.Name}}/wp/run" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="kind" value="{{$w.Kind}}"><input type="hidden" name="slug" value="{{.Slug}}"><button name="action" value="install" class="btn-sm">{{T "wp.install.btn"}}</button></form>{{end}}</td>
       </tr>{{else}}<tr><td colspan="3" class="text-center text-muted-foreground">{{T "wp.found.none"}}</td></tr>{{end}}
       </tbody>
     </table>
@@ -92,11 +92,11 @@
 <div class="mt-4 grid gap-4 xl:grid-cols-2">
   <section>
     <h2 class="h-section mb-3">{{T "wp.plugins"}}</h2>
-    {{template "wpitems" (dict "Items" $w.Plugins "Kind" "plugin" "Site" .Site.Name "CSRF" .CSRF)}}
+    {{template "wpitems" (dict "Items" $w.Plugins "Kind" "plugin" "Site" .Site.Name "CSRF" .CSRF "Can" .Can)}}
   </section>
   <section>
     <h2 class="h-section mb-3">{{T "wp.themes"}}</h2>
-    {{template "wpitems" (dict "Items" $w.Themes "Kind" "theme" "Site" .Site.Name "CSRF" .CSRF)}}
+    {{template "wpitems" (dict "Items" $w.Themes "Kind" "theme" "Site" .Site.Name "CSRF" .CSRF "Can" .Can)}}
   </section>
 </div>
 {{end}}

@@ -32,7 +32,7 @@ type notifyNodeRow struct {
 	Rules notify.Rules
 }
 
-func (s *Server) notifyPages(mux *http.ServeMux) {
+func (s *Server) notifyPages(mux routeMux) {
 	mux.HandleFunc("GET /notify", s.auth(s.notifyPage))
 	for _, a := range []string{"hub", "chat", "test", "rules", "pair", "agent", "off", "noderules", "noderemove"} {
 		mux.HandleFunc("POST /notify/"+a, s.auth(s.notifyAction(a)))

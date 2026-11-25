@@ -4,10 +4,10 @@
     <h1 class="h-page">{{T "sites.title"}}</h1>
     <p class="mt-1 text-sm text-muted-foreground">{{T "sites.sub"}}</p>
   </div>
-  <a class="btn-primary" href="/sites/new">
+  {{if .Admin}}<a class="btn-primary" href="/sites/new">
     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
     {{T "sites.new"}}
-  </a>
+  </a>{{end}}
 </div>
 {{if .Error}}
 <div role="alert" class="alert-error mb-6">

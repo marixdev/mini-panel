@@ -1,0 +1,110 @@
+{{define "content"}}
+{{$v := .Users}}
+<div class="mb-6">
+  <h1 class="h-page">{{T "users.title"}}</h1>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "users.sub"}}</p>
+</div>
+{{if $v.Error}}<div role="alert" class="alert-error mb-6"><span>{{$v.Error}}</span></div>{{end}}
+
+<section class="card p-6 mb-6" aria-labelledby="new-h">
+  <h2 id="new-h" class="h-section">{{T "users.new.title"}}</h2>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "users.new.sub" $v.Min}}</p>
+  <form method="post" action="/users/create" class="mt-5 grid gap-4 sm:grid-cols-3" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div>
+      <label for="new-name" class="label">{{T "users.name"}}</label>
+      <input id="new-name" name="name" class="field" maxlength="32" pattern="[a-z][a-z0-9_\-]{2,31}" required>
+      <p class="hint">{{T "users.name.hint"}}</p>
+    </div>
+    <div>
+      <label for="new-pw" class="label">{{T "users.password"}}</label>
+      <input id="new-pw" name="password" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required>
+    </div>
+    <div>
+      <label for="new-again" class="label">{{T "users.again"}}</label>
+      <input id="new-again" name="again" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required>
+    </div>
+    <div class="sm:col-span-3"><button class="btn-primary">{{T "users.new.btn"}}</button></div>
+  </form>
+</section>
+
+{{if not $v.Users}}
+<div class="card p-10 text-center"><p class="font-medium">{{T "users.empty"}}</p></div>
+{{end}}
+
+{{range $v.Users}}
+<section class="card p-6 mb-6" aria-label="{{.Name}}">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 class="h-section">{{.Name}}</h2>
+    <div class="flex flex-wrap gap-1">
+      {{if .Disabled}}<span class="badge-gray">{{T "users.state.disabled"}}</span>{{else}}<span class="badge-teal">{{T "users.state.on"}}</span>{{end}}
+      {{if .TwoStep}}<span class="badge-teal">{{T "users.2fa.on"}}</span>{{end}}
+      {{if .PMA}}<span class="badge-teal">{{T "users.pma.badge"}}</span>{{end}}
+    </div>
+  </div>
+
+  <form method="post" action="/users/sites" class="mt-5 space-y-3">
+    <input type="hidden" name="csrf" value="{{$.CSRF}}">
+    <input type="hidden" name="name" value="{{.Name}}">
+    <h3 class="label">{{T "users.sites.heading"}}</h3>
+    {{range $.Sites}}
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="w-40 truncate font-medium">{{.}}</span>
+      <select name="site.{{.}}" class="field w-40" aria-label="{{T "users.sites.role.for" .}}">
+        <option value="">{{T "users.role.none"}}</option>
+        <option value="view">{{T "users.role.view"}}</option>
+        <option value="manage">{{T "users.role.manage"}}</option>
+        <option value="full">{{T "users.role.full"}}</option>
+      </select>
+    </div>
+    {{end}}
+    {{if $.Sites}}<button class="btn-secondary">{{T "users.sites.save"}}</button>{{else}}<p class="hint">{{T "users.sites.none"}}</p>{{end}}
+  </form>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <form method="post" action="/users/password" class="space-y-3" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="name" value="{{.Name}}">
+      <h3 class="label">{{T "users.reset.heading"}}</h3>
+      <input name="password" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" placeholder="{{T "users.password"}}" required aria-label="{{T "users.password"}}">
+      <input name="again" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" placeholder="{{T "users.again"}}" required aria-label="{{T "users.again"}}">
+      <button class="btn-secondary">{{T "users.reset.btn"}}</button>
+    </form>
+
+    <div class="space-y-3">
+      <h3 class="label">{{T "users.state.heading"}}</h3>
+      {{if .Disabled}}
+      <form method="post" action="/users/enable"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-secondary">{{T "users.enable.btn"}}</button></form>
+      {{else}}
+      <form method="post" action="/users/disable"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-secondary">{{T "users.disable.btn"}}</button></form>
+      {{end}}
+      {{if .TwoStep}}
+      <form method="post" action="/users/2fa-off"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-secondary">{{T "users.2fa.off.btn"}}</button></form>
+      {{end}}
+      <form method="post" action="/users/pma" class="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="name" value="{{.Name}}">
+        {{if .PMA}}
+        <input type="hidden" name="on" value="0">
+        <button class="btn-secondary">{{T "users.pma.off.btn"}}</button>
+        {{else}}
+        <input type="hidden" name="on" value="1">
+        <button class="btn-secondary">{{T "users.pma.on.btn"}}</button>
+        {{end}}
+      </form>
+      <p class="hint">{{T "users.pma.hint"}}</p>
+    </div>
+  </div>
+
+  <form method="post" action="/users/remove" class="mt-6 flex flex-wrap items-end gap-3 border-t pt-4">
+    <input type="hidden" name="csrf" value="{{$.CSRF}}">
+    <input type="hidden" name="name" value="{{.Name}}">
+    <div>
+      <label for="rm-{{.Name}}" class="label">{{T "users.remove.type" .Name}}</label>
+      <input id="rm-{{.Name}}" name="confirm" class="field" autocomplete="off" required>
+    </div>
+    <button class="btn-danger">{{T "users.remove.btn"}}</button>
+  </form>
+</section>
+{{end}}
+{{end}}

@@ -278,6 +278,10 @@ func (s *Server) authStream(h func(http.ResponseWriter, *http.Request, webauth.S
 			http.Error(w, "invalid form token", http.StatusForbidden)
 			return
 		}
+		if !s.allowed(r, ss) {
+			s.deny(w, r, ss)
+			return
+		}
 		h(w, r, ss)
 	}
 }
@@ -353,7 +357,7 @@ func (s *Server) simpleAction(title string, do func(fc *filesCtx, r *http.Reques
 	}
 }
 
-func (s *Server) fileRoutes(mux *http.ServeMux) {
+func (s *Server) fileRoutes(mux routeMux) {
 	mux.HandleFunc("GET /sites/{name}/files", s.auth(s.filesPage))
 	mux.HandleFunc("GET /sites/{name}/files/download", s.auth(s.download))
 	mux.HandleFunc("POST /sites/{name}/files/upload", s.authStream(s.upload))

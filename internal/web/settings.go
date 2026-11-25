@@ -3,6 +3,7 @@ package web
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -146,6 +147,7 @@ type settingsView struct {
 	Version   string // of the program that runs
 	UpdateLog string // the last update, as mpn update wrote it
 	Sessions  int    // browsers signed in now, this one included
+	Delegated bool   // a delegated user is signed in: the page shows its own account only
 }
 
 // updateLog is what the last "mpn update" wrote; the root helper makes the file and gives it to mpn-web.
@@ -258,7 +260,7 @@ func qrSVG(text, label string) (template.HTML, error) {
 	return template.HTML(b.String()), nil
 }
 
-func (s *Server) settingsPages(mux *http.ServeMux) {
+func (s *Server) settingsPages(mux routeMux) {
 	mux.HandleFunc("GET /settings", s.auth(s.settingsPage))
 	mux.HandleFunc("GET /settings/2fa", s.auth(s.twoFASetupPage))
 	mux.HandleFunc("POST /settings/password", s.auth(s.changePassword))
@@ -285,14 +287,54 @@ func (s *Server) sessionToken(r *http.Request) string {
 func (s *Server) showSettings(w http.ResponseWriter, r *http.Request, ss webauth.Session, status int, v settingsView, notice *result) {
 	v.Min = webauth.MinPasswordLen
 	v.Sessions = s.Sessions.Count()
-	if acct, err := s.Account(); err == nil {
-		v.TOTPOn = acct.TOTP != ""
+	if sa, err := s.loadSettingsAccount(ss); err == nil {
+		v.TOTPOn = sa.acct.TOTP != ""
+		v.Delegated = sa.delegated
+		if sa.delegated {
+			v.Sessions = s.Sessions.CountUser(ss.User)
+		}
 	}
 	s.show(w, status, ss, view{Page: "settings", Settings: &v, Notice: notice})
 }
 
 func (s *Server) settingsPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	s.showSettings(w, r, ss, http.StatusOK, settingsView{}, s.takeFlash(s.sessionToken(r)))
+}
+
+// settingsAccount is the account a Settings action works on: the administrator's account file, or one delegated user's record in the
+// users file. The delegated flag says which, and acct is the password side of it.
+type settingsAccount struct {
+	acct      webauth.Account
+	user      webauth.User // the delegated record, when delegated
+	delegated bool
+}
+
+// loadSettingsAccount reads the account of the signed-in session. A session that is not the administrator's is a delegated user.
+func (s *Server) loadSettingsAccount(ss webauth.Session) (settingsAccount, error) {
+	if s.isAdmin(ss) {
+		acct, err := s.Account()
+		return settingsAccount{acct: acct}, err
+	}
+	rec, ok := s.userRecord(ss.User)
+	if !ok {
+		return settingsAccount{}, errors.New("no such delegated user")
+	}
+	return settingsAccount{acct: rec.Account(), user: rec, delegated: true}, nil
+}
+
+// saveSettingsAccount writes the account back: the administrator's file, or the delegated user's record in the users file.
+func (s *Server) saveSettingsAccount(sa settingsAccount) error {
+	if !sa.delegated {
+		return s.SaveAccount(sa.acct)
+	}
+	u := sa.user
+	u.Hash, u.TOTP, u.TOTPStep = sa.acct.Hash, sa.acct.TOTP, sa.acct.TOTPStep
+	return s.saveDelegated(u)
+}
+
+// canSave reports whether the Settings action can write the account at all.
+func (s *Server) canSave(sa settingsAccount) bool {
+	return sa.delegated || s.SaveAccount != nil
 }
 
 // settingsDone remembers the result for this session and goes back to the page, which shows it once.
@@ -326,15 +368,16 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webau
 	}
 	s.accountMu.Lock()
 	defer s.accountMu.Unlock()
-	acct, err := s.Account()
-	if err != nil || s.SaveAccount == nil {
+	sa, err := s.loadSettingsAccount(ss)
+	acct := sa.acct
+	if err != nil || !s.canSave(sa) {
 		fail(http.StatusServiceUnavailable, T("set.unavailable"))
 		return
 	}
 	cur, pw, again := r.PostFormValue("current"), r.PostFormValue("new"), r.PostFormValue("again")
 	if len(cur) > 256 || !acct.Check(acct.User, cur) {
 		s.Throttle.Fail(key)
-		s.note(r, "account.password_fail", "", "", true)
+		s.note(r, "account.password_fail", "", "user="+ss.User, true)
 		log.Printf("login failed from %s", s.clientAddr(r))
 		fail(http.StatusUnauthorized, T("set.pw.wrong"))
 		return
@@ -353,7 +396,8 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webau
 	hash, err := webauth.Hash(pw)
 	if err == nil {
 		acct.Hash = hash
-		err = s.SaveAccount(acct)
+		sa.acct = acct
+		err = s.saveSettingsAccount(sa)
 	}
 	if err != nil {
 		log.Printf("password could not be saved: %v", err)
@@ -362,14 +406,22 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webau
 	}
 	s.Throttle.Reset(key)
 	s.note(r, "account.password", "", "user="+acct.User, false)
-	s.Sessions.DeleteExcept(s.sessionToken(r)) // a browser signed in with the old password does not stay signed in
+	if sa.delegated {
+		s.Sessions.DeleteUserExcept(ss.User, s.sessionToken(r))
+	} else {
+		s.Sessions.DeleteExcept(s.sessionToken(r)) // a browser signed in with the old password does not stay signed in
+	}
 	s.settingsDone(w, r, T("set.pw.done"))
 }
 
 // endOtherSessions signs out every browser but this one, remembered ones too: for a lost laptop or a shared computer left signed in.
 func (s *Server) endOtherSessions(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	T := translatorForWriter(w)
-	s.Sessions.DeleteExcept(s.sessionToken(r))
+	if sa, err := s.loadSettingsAccount(ss); err == nil && sa.delegated {
+		s.Sessions.DeleteUserExcept(ss.User, s.sessionToken(r))
+	} else {
+		s.Sessions.DeleteExcept(s.sessionToken(r))
+	}
 	s.note(r, "account.sessions_end", "", "user="+ss.User, false)
 	s.settingsDone(w, r, T("set.sess.done"))
 }
@@ -378,8 +430,9 @@ func (s *Server) endOtherSessions(w http.ResponseWriter, r *http.Request, ss web
 // proves that the app has it.
 func (s *Server) twoFASetupPage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	T := translatorForWriter(w)
-	acct, err := s.Account()
-	if err != nil || s.SaveAccount == nil {
+	sa, err := s.loadSettingsAccount(ss)
+	acct := sa.acct
+	if err != nil || !s.canSave(sa) {
 		s.showSettings(w, r, ss, http.StatusServiceUnavailable, settingsView{Error: T("set.unavailable"), Which: "2fa"}, nil)
 		return
 	}
@@ -413,9 +466,10 @@ func (s *Server) twoFAEnable(w http.ResponseWriter, r *http.Request, ss webauth.
 	}
 	s.accountMu.Lock()
 	defer s.accountMu.Unlock()
-	acct, err := s.Account()
+	sa, err := s.loadSettingsAccount(ss)
+	acct := sa.acct
 	secret, ok := s.twofa.getSetup(s.sessionToken(r))
-	if err != nil || s.SaveAccount == nil || !ok {
+	if err != nil || !s.canSave(sa) || !ok {
 		http.Redirect(w, r, "/settings/2fa", http.StatusSeeOther) // the secret is gone (a restart, or ten minutes): start again
 		return
 	}
@@ -427,7 +481,8 @@ func (s *Server) twoFAEnable(w http.ResponseWriter, r *http.Request, ss webauth.
 		return
 	}
 	acct.TOTP, acct.TOTPStep = secret, step
-	if err := s.SaveAccount(acct); err != nil {
+	sa.acct = acct
+	if err := s.saveSettingsAccount(sa); err != nil {
 		log.Printf("two-step sign-in could not be saved: %v", err)
 		s.showSetup(w, r, ss, http.StatusInternalServerError, acct.User, secret, T("set.save"))
 		return
@@ -447,8 +502,9 @@ func (s *Server) twoFADisable(w http.ResponseWriter, r *http.Request, ss webauth
 	}
 	s.accountMu.Lock()
 	defer s.accountMu.Unlock()
-	acct, err := s.Account()
-	if err != nil || s.SaveAccount == nil || acct.TOTP == "" {
+	sa, err := s.loadSettingsAccount(ss)
+	acct := sa.acct
+	if err != nil || !s.canSave(sa) || acct.TOTP == "" {
 		http.Redirect(w, r, "/settings", http.StatusSeeOther)
 		return
 	}
@@ -461,7 +517,8 @@ func (s *Server) twoFADisable(w http.ResponseWriter, r *http.Request, ss webauth
 		return
 	}
 	acct.TOTP, acct.TOTPStep = "", 0
-	if err := s.SaveAccount(acct); err != nil {
+	sa.acct = acct
+	if err := s.saveSettingsAccount(sa); err != nil {
 		log.Printf("two-step sign-in could not be saved: %v", err)
 		s.showSettings(w, r, ss, http.StatusInternalServerError, settingsView{Error: T("set.save"), Which: "2fa"}, nil)
 		return
@@ -497,6 +554,13 @@ func (s *Server) loginSecondStep(w http.ResponseWriter, r *http.Request) {
 	s.accountMu.Lock()
 	defer s.accountMu.Unlock()
 	acct, err := s.Account()
+	var du webauth.User
+	delegated := false
+	if err == nil && acct.User != p.user {
+		if rec, found := s.userRecord(p.user); found && !rec.Disabled {
+			du, acct, delegated = rec, rec.Account(), true
+		}
+	}
 	if err != nil || acct.User != p.user || acct.TOTP == "" {
 		s.twofa.doneLogin(tok)
 		expired()
@@ -516,14 +580,23 @@ func (s *Server) loginSecondStep(w http.ResponseWriter, r *http.Request) {
 	}
 	// A code that cannot be marked as used could be used again, so then there is no session.
 	acct.TOTPStep = step
-	if s.SaveAccount == nil {
-		s.render(w, http.StatusServiceUnavailable, view{Page: "login", Error: T("set.unavailable")})
-		return
-	}
-	if err := s.SaveAccount(acct); err != nil {
-		log.Printf("the used code could not be remembered, sign-in refused: %v", err)
-		s.render(w, http.StatusServiceUnavailable, view{Page: "login", Need2FA: true, Pending: tok, Error: T("set.save")})
-		return
+	if delegated {
+		du.TOTPStep = step
+		if err := s.saveDelegated(du); err != nil {
+			log.Printf("the used code could not be remembered, sign-in refused: %v", err)
+			s.render(w, http.StatusServiceUnavailable, view{Page: "login", Need2FA: true, Pending: tok, Error: T("set.save")})
+			return
+		}
+	} else {
+		if s.SaveAccount == nil {
+			s.render(w, http.StatusServiceUnavailable, view{Page: "login", Error: T("set.unavailable")})
+			return
+		}
+		if err := s.SaveAccount(acct); err != nil {
+			log.Printf("the used code could not be remembered, sign-in refused: %v", err)
+			s.render(w, http.StatusServiceUnavailable, view{Page: "login", Need2FA: true, Pending: tok, Error: T("set.save")})
+			return
+		}
 	}
 	s.note(r, "login.ok", "", "user="+acct.User+" 2fa=yes", false)
 	s.twofa.doneLogin(tok)

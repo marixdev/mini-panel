@@ -35,7 +35,7 @@ type secView struct {
 	PSSL         *pSSLView `json:"-"`
 }
 
-func (s *Server) securityPages(mux *http.ServeMux) {
+func (s *Server) securityPages(mux routeMux) {
 	mux.HandleFunc("GET /security", s.auth(s.securityPage))
 	mux.HandleFunc("POST /security/waf", s.auth(s.secWAF))
 	mux.HandleFunc("POST /security/f2b", s.auth(s.secF2B))

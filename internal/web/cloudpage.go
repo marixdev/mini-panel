@@ -124,7 +124,7 @@ func cloudForms() []cloudForm {
 	return out
 }
 
-func (s *Server) cloudRoutes(mux *http.ServeMux) {
+func (s *Server) cloudRoutes(mux routeMux) {
 	mux.HandleFunc("POST /sites/{name}/cloud/connect", s.auth(s.cloudConnect))
 	mux.HandleFunc("POST /sites/{name}/cloud/configure", s.auth(s.cloudConfigure))
 	mux.HandleFunc("POST /sites/{name}/cloud/finish", s.auth(s.cloudFinish))

@@ -23,7 +23,7 @@ func siteMenu(r siteRow) []siteTabLink {
 	return menu
 }
 
-func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
+func (s *Server) sitePagesOfOne(mux routeMux) {
 	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/logs", "/activity", "/email", "/wordpress"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {

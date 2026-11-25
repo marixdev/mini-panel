@@ -13,8 +13,8 @@
       <td class="max-w-md"><code class="block overflow-x-auto font-mono text-[13px] whitespace-pre">{{.Command}}</code></td>
       <td>{{if .Enabled}}<span class="badge-teal">{{T "cr.on"}}</span>{{else}}<span class="badge-gray">{{T "cr.off"}}</span>{{end}}</td>
       <td><div class="flex items-center justify-end gap-3">
-        <form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/toggle"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="on" value="{{if .Enabled}}0{{else}}1{{end}}"><button class="btn-sm">{{if .Enabled}}{{T "cr.pause"}}{{else}}{{T "cr.resume"}}{{end}}</button></form>
-        <form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="link-danger text-sm">{{T "cr.delete"}}</button></form>
+        {{if call $.Can "manage"}}<form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/toggle"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="on" value="{{if .Enabled}}0{{else}}1{{end}}"><button class="btn-sm">{{if .Enabled}}{{T "cr.pause"}}{{else}}{{T "cr.resume"}}{{end}}</button></form>{{end}}
+        {{if call $.Can "manage"}}<form method="post" action="/sites/{{$.Site.Name}}/cron/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="link-danger text-sm">{{T "cr.delete"}}</button></form>{{end}}
       </div></td>
     </tr>{{end}}
     </tbody>
@@ -22,7 +22,7 @@
 </div>
 {{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "cr.empty"}}</p><p class="hint">{{T "cr.empty.d"}}</p></div>{{end}}
 
-<form method="post" action="/sites/{{.Site.Name}}/cron" class="card mt-6 p-6" autocomplete="off">
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/cron" class="card mt-6 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "cr.add.title"}}</h2>
   <p class="mt-1 text-sm text-muted-foreground">{{T "cr.add.sub" .Site.User}}</p>
@@ -43,5 +43,5 @@
     </div>
   </div>
   <div class="mt-6 flex items-center gap-3"><button class="btn-primary">{{T "cr.add.btn"}}</button><span class="hint mt-0">{{T "cr.max" $c.Max}}</span></div>
-</form>
+</form>{{end}}
 {{end}}

@@ -73,7 +73,7 @@ type mailView struct {
 	WebURL    string          `json:"-"` // where the web mail is reached, on the name this page was opened with
 }
 
-func (s *Server) mailPages(mux *http.ServeMux) {
+func (s *Server) mailPages(mux routeMux) {
 	mux.HandleFunc("GET /email", s.auth(s.mailPage))
 	mux.HandleFunc("POST /email/enable", s.auth(s.mailEnable))
 	mux.HandleFunc("POST /email/disable", s.auth(s.mailDisable))

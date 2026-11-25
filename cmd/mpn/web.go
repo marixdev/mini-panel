@@ -49,6 +49,10 @@ func runWeb(args []string) {
 		webPasswd(args[1:])
 		return
 	}
+	if len(args) > 0 && args[0] == "user-off" {
+		webUserOff(args[1:])
+		return
+	}
 	if len(args) > 0 && args[0] == "2fa-off" {
 		webTwoFAOff(args[1:])
 		return
@@ -150,16 +154,19 @@ func webServe(args []string) {
 		NotifySocket:    notify.Socket,
 		Updates:         updates,
 		Sessions:        sessions,
-		Throttle:        webauth.NewThrottle(),
-		Hosts:           hosts,
-		HostsFile:       panelssl.HostsFile,
-		PMAPort:         *pmaPort,
-		PMAKey:          pmaKey,
-		Secure:          *secure,
-		TrustProxy:      *trustProxy,
-		Dialer:          sshDialer,
-		InstalledPHP:    site.InstalledPHP,
-		NodeRoot:        unit.NodeRoot,
+		// The delegated accounts sit next to the administrator's account. A damaged users file lets no delegated user in; the
+		// administrator still signs in.
+		UsersFile:    filepath.Join(filepath.Dir(*account), "users.json"),
+		Throttle:     webauth.NewThrottle(),
+		Hosts:        hosts,
+		HostsFile:    panelssl.HostsFile,
+		PMAPort:      *pmaPort,
+		PMAKey:       pmaKey,
+		Secure:       *secure,
+		TrustProxy:   *trustProxy,
+		Dialer:       sshDialer,
+		InstalledPHP: site.InstalledPHP,
+		NodeRoot:     unit.NodeRoot,
 		TermLog: func(event, site string, err error) {
 			if err != nil {
 				log.Printf("terminal %s: site %s: %v", event, site, err)
@@ -321,4 +328,69 @@ func webLoginTest(args []string) {
 	out, err := sess.Output("id -un")
 	fail(err)
 	fmt.Print(string(out))
+}
+
+// webUserOff disables a delegated account from the machine, for somebody who cannot reach the panel. It sets Disabled in the users
+// file and ends that user's sessions, both in memory and in the sessions file, so the user is signed out at once. A disabled user is
+// also refused on the next request, because the panel reads the users file on each one.
+func webUserOff(args []string) {
+	fs := flag.NewFlagSet("web user-off", flag.ExitOnError)
+	account := fs.String("account", defaultAccount, "file with the administrator account")
+	webUser := fs.String("web-user", "mpn-web", "account the panel runs as; it will own the file")
+	_ = fs.Parse(args)
+	if fs.NArg() != 1 {
+		fail(errors.New("usage: mpn web user-off <name>"))
+	}
+	if runtime.GOOS != "linux" || os.Geteuid() != 0 {
+		fail(errors.New("disabling a delegated account needs Linux and root"))
+	}
+	u, err := user.Lookup(*webUser)
+	fail(err)
+	uid, err := strconv.Atoi(u.Uid)
+	fail(err)
+	gid, err := strconv.Atoi(u.Gid)
+	fail(err)
+	if uid == 0 {
+		fail(errors.New("the web account must not be root"))
+	}
+	msg, err := disableDelegated(*account, fs.Arg(0), uid, gid)
+	fail(err)
+	fmt.Println(msg)
+}
+
+// disableDelegated sets Disabled on the named delegated user and ends that user's sessions. It is what webUserOff runs, split out
+// so the tests can call it without a root account.
+func disableDelegated(accountPath, name string, uid, gid int) (string, error) {
+	acct, err := webauth.LoadAccount(accountPath)
+	if err != nil {
+		return "", err
+	}
+	usersPath := filepath.Join(filepath.Dir(accountPath), "users.json")
+	users, err := webauth.LoadUsers(usersPath, acct.User)
+	if err != nil {
+		return "", err
+	}
+	idx := -1
+	for i := range users {
+		if users[i].Name == name {
+			idx = i
+		}
+	}
+	if idx < 0 {
+		return "", fmt.Errorf("no delegated user named %q", name)
+	}
+	if users[idx].Disabled {
+		return fmt.Sprintf("user %q is already disabled", name), nil
+	}
+	users[idx].Disabled = true
+	if err := webauth.SaveUsers(usersPath, users, acct.User, uid, gid); err != nil {
+		return "", err
+	}
+	// The same limits as the panel (runWeb), so loading and saving here neither expires nor drops sessions the panel keeps.
+	sess := webauth.NewSessions(2*time.Hour, 24*time.Hour, 20)
+	sess.LongIdle, sess.LongMax = 30*24*time.Hour, 30*24*time.Hour
+	sess.File = filepath.Join(filepath.Dir(accountPath), "sessions.json")
+	sess.Load()
+	sess.DeleteUser(name)
+	return fmt.Sprintf("user %q is disabled and signed out everywhere; enable again in Users", name), nil
 }
