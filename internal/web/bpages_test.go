@@ -101,6 +101,29 @@ func TestPruningNeedsTheNameTypedAndASaneNumber(t *testing.T) {
 	}
 }
 
+func TestTheNumberOfBackupsKeptIsShownAndSaved(t *testing.T) {
+	ops := backupHelper()
+	ops["backup.keepinfo"] = `{"keep":3}`
+	ops["backup.keep"] = "kept"
+	h, f, c, tok := setup(t, byOp(ops))
+	body := do(h, "GET", "/sites/blog/backups", nil, cookie(c)).Body.String()
+	for _, want := range []string{`action="/backups/keep"`, `name="keep" type="number" min="1" max="365" required value="3"`, "3"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	f.reqs = nil
+	post := func(keep string) int {
+		return do(h, "POST", "/backups/keep", url.Values{"csrf": {tok}, "site": {"blog"}, "keep": {keep}}, cookie(c)).Code
+	}
+	if post("0") != 400 || post("366") != 400 || post("x") != 400 || len(f.reqs) != 0 {
+		t.Fatalf("refused numbers must not reach the helper: %+v", f.reqs)
+	}
+	if post("4") != 303 || len(f.reqs) != 1 || f.reqs[0].Op != "backup.keep" || f.reqs[0].Keep != 4 || f.reqs[0].Site != "blog" {
+		t.Errorf("%+v", f.reqs)
+	}
+}
+
 func TestBackupPagesNeedASessionAndAToken(t *testing.T) {
 	h, f, c, _ := setup(t, byOp(backupHelper()))
 	for _, p := range []string{"/sites/blog/backups", "/backups/restore?site=blog&backup=20261104-031500"} {
@@ -108,7 +131,7 @@ func TestBackupPagesNeedASessionAndAToken(t *testing.T) {
 			t.Errorf("%s without a session: %d", p, w.Code)
 		}
 	}
-	for _, p := range []string{"/backups/create", "/backups/restore", "/backups/prune"} {
+	for _, p := range []string{"/backups/create", "/backups/restore", "/backups/prune", "/backups/keep"} {
 		if w := do(h, "POST", p, url.Values{"site": {"blog"}, "confirm": {"blog"}, "keep": {"7"}, "files": {"on"}}, cookie(c)); w.Code != 403 {
 			t.Errorf("%s without a token: %d", p, w.Code)
 		}

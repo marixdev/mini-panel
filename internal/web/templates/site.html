@@ -93,7 +93,16 @@
 <section class="card mt-6 p-6">
   <h2 class="h-section">{{T "site.bk.create"}}</h2>
   <form method="post" action="/backups/create" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups"><button class="btn-primary">{{T "bk.create"}}</button></form>
-  <p class="alert-warn mt-5">{{T "bk.note"}}</p>
+  <p class="alert-warn mt-5">{{T "bk.note" .BackupKeep}}</p>
+</section>
+<section class="card mt-6 p-6">
+  <h2 class="h-section">{{T "bk.keep.title"}}</h2>
+  <form method="post" action="/backups/keep" class="mt-4 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups">
+    <div><label class="label" for="bk-keep">{{T "bk.keep.label"}}</label><input id="bk-keep" name="keep" type="number" min="1" max="365" required value="{{.BackupKeep}}" class="field w-24"></div>
+    <button class="btn-primary">{{T "bk.keep.btn"}}</button>
+  </form>
+  <p class="hint mt-3">{{T "bk.keep.d"}}</p>
 </section>
 {{template "cloudcard" .}}
 {{end}}

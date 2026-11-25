@@ -10,7 +10,7 @@ func TestCategoryGroupsEveryKindOfAction(t *testing.T) {
 	for op, want := range map[string]string{
 		"login.ok": "auth", "logout": "auth", "account.password": "auth", "files.delete": "files", "terminal.open": "terminal",
 		"db.add": "database", "site.ssl": "ssl", "site.csr": "ssl", "panel.sslcustom": "ssl", "site.cronadd": "cron",
-		"backup.restore": "backup", "cloud.sync": "backup", "mail.boxadd": "mail", "firewall.del": "security",
+		"backup.restore": "backup", "backup.keep": "backup", "cloud.sync": "backup", "mail.boxadd": "mail", "firewall.del": "security",
 		"security.waf": "security", "services.control": "system", "panel.update": "system", "site.add": "site", "wp.run": "site",
 	} {
 		if got := Category(op); got != want {

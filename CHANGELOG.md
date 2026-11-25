@@ -14,6 +14,7 @@ Translations: [Tiếng Việt](CHANGELOG.vi.md) · [中文](CHANGELOG.zh.md).
 - **Database server settings.** Services › Database › Settings changes `max_connections`, the buffer pool, the packet size, timeouts and a few other values, each within a checked range. The server is restarted with the new file; when it does not start, the previous file is put back and the server started with it.
 - **SSL through Cloudflare DNS.** A site behind the Cloudflare proxy (orange cloud), or a name that does not point here yet, can get its certificate with a TXT record: give an API token with Zone:Read and DNS:Edit on the SSL tab. The token is kept for the renewals, readable by root only.
 - **Remember this browser.** The sign-in page can keep a browser signed in for 30 days. Sign-ins now outlive a restart or an update of the panel. Settings shows how many browsers are signed in and signs out all the others; a new password signs out every browser, `mpn web passwd` included.
+- **Number of backups kept.** The Backups tab of a website sets how many backups are kept, from 1 to 365 (7 until it is changed). The nightly backup, a backup made by hand and the copy to the storage all keep that many; a smaller number deletes the older backups of the site at once. `mpn backup keep -site NAME -n 3 -apply` does the same over SSH.
 
 ### Fixed
 

@@ -76,7 +76,7 @@ func init() {
 		"cld.site.title":             "Website này",
 		"cld.site.on":                "Bật chép ra ngoài",
 		"cld.site.off":               "Tắt chép ra ngoài",
-		"cld.site.d":                 "Giữ 7 bản mới nhất ở nơi lưu trữ, cùng số lượng giữ trên máy chủ. Bản cũ hơn tự được xóa.",
+		"cld.site.d":                 "Giữ %d bản mới nhất ở nơi lưu trữ, cùng số lượng giữ trên máy chủ. Bản cũ hơn tự được xóa.",
 		"cld.sync":                   "Chép ngay",
 		"cld.sync.d":                 "Chạy nền, có thể mất vài phút đến vài giờ tùy dung lượng. Nếu bị ngắt giữa chừng, lần sau chép tiếp phần còn thiếu.",
 		"cld.last":                   "Lần chép gần nhất",

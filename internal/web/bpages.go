@@ -24,6 +24,26 @@ func (s *Server) backupPages(mux *http.ServeMux) {
 	mux.HandleFunc("GET /backups/restore", s.auth(s.restoreConfirm))
 	mux.HandleFunc("POST /backups/restore", s.auth(s.restoreBackup))
 	mux.HandleFunc("POST /backups/prune", s.auth(s.pruneBackups))
+	mux.HandleFunc("POST /backups/keep", s.auth(s.keepBackups))
+}
+
+// keepBackups saves how many backups of a site are kept. The nightly backup, a backup made by hand and the copy off the server
+// keep that many; a smaller number deletes the older ones at once.
+func (s *Server) keepBackups(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
+	name := r.PostFormValue("site")
+	keep, err := strconv.Atoi(r.PostFormValue("keep"))
+	back := safeBack(r.PostFormValue("back"), "/backups")
+	switch {
+	case !site.ValidName(name):
+		s.refuseTo(w, ss, back, T("bk.keep.fail"), T("err.badsite"))
+	case err != nil || keep < 1 || keep > 365:
+		s.refuseTo(w, ss, back, T("bk.keep.fail"), T("err.keep"))
+	default:
+		res := s.runText(r, T, T("act.bk.keep", name), ctl.Request{Op: "backup.keep", Site: name, Keep: keep})
+		res.Back = back
+		s.finish(w, r, res)
+	}
 }
 
 func (s *Server) createBackup(w http.ResponseWriter, r *http.Request, ss webauth.Session) {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -31,6 +32,8 @@ func runBackup(args []string) {
 		backupRestore(args[1:])
 	case "prune":
 		backupPrune(args[1:])
+	case "keep":
+		backupKeep(args[1:])
 	case "seal":
 		backupSeal(args[1:])
 	default:
@@ -39,7 +42,7 @@ func runBackup(args []string) {
 }
 
 func backupUsage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn backup <create|list|restore|prune> [flags]   (create -h for the flags)")
+	fmt.Fprintln(os.Stderr, "usage: mpn backup <create|list|restore|prune|keep> [flags]   (create -h for the flags)")
 	os.Exit(2)
 }
 
@@ -194,8 +197,8 @@ func backupCreate(args []string) {
 			continue
 		}
 		fmt.Printf("saved %s (%.1f MB)\n", dir, dirSizeMB(dir))
-		if *keep > 0 {
-			if err := pruneSite(s.Name, *keep); err != nil {
+		if n := keepFor(st, s.Name, *keep); n > 0 {
+			if err := pruneSite(s.Name, n); err != nil {
 				report(s, err)
 			}
 		}
@@ -313,6 +316,62 @@ func backupRestore(args []string) {
 	}
 	fail(applyPlan(plan))
 	fmt.Printf("restored backup %s of site %q\n", *stamp, s.Name)
+}
+
+// The number of backups kept of a site is chosen on its Backups tab and saved in the settings. A site without one keeps what the
+// caller asks: 7 for the nightly backup (its unit says -keep 7), all of them for a backup made by hand on a server where the number
+// was never chosen. The copy off the server keeps the same number.
+const (
+	defaultBackupKeep = 7
+	maxBackupKeep     = 365
+)
+
+func backupKeepKey(siteName string) string { return "backup.keep." + siteName }
+
+// keepFor is the number of backups to keep of a site: its own setting, or def when it has none.
+func keepFor(st *store.Store, siteName string, def int) int {
+	v, _ := st.Setting(backupKeepKey(siteName), "")
+	if n, err := strconv.Atoi(v); err == nil && n >= 1 && n <= maxBackupKeep {
+		return n
+	}
+	return def
+}
+
+// backupKeep shows or changes the number of backups kept of a site. A smaller number deletes the backups beyond it at once.
+func backupKeep(args []string) {
+	fs := flag.NewFlagSet("backup keep", flag.ExitOnError)
+	db := fs.String("db", defaultDB, "mpn database path")
+	name := fs.String("site", "", "site")
+	n := fs.Int("n", 0, "number of newest backups to keep, 1 to 365; without it the current number is shown")
+	asJSON := fs.Bool("json", false, "show the number as JSON")
+	apply := fs.Bool("apply", false, "save the number and delete the backups beyond it (Linux, root)")
+	_ = fs.Parse(args)
+	st := openStore(*db)
+	defer st.Close()
+	s, err := st.GetSite(*name)
+	fail(err)
+	if *n == 0 {
+		cur := keepFor(st, s.Name, defaultBackupKeep)
+		if *asJSON {
+			fmt.Printf("{\"keep\":%d}\n", cur)
+			return
+		}
+		fmt.Printf("site %s keeps %d backup(s)\n", s.Name, cur)
+		return
+	}
+	if *n < 1 || *n > maxBackupKeep {
+		fail(fmt.Errorf("-n must be between 1 and %d", maxBackupKeep))
+	}
+	complete, _ := listStamps(s.Name)
+	old := backup.Expired(complete, *n)
+	if !*apply {
+		fmt.Printf("site %s would keep %d backup(s) and delete %d: %s\n", s.Name, *n, len(old), strings.Join(old, ", "))
+		fmt.Println("# dry run: nothing was changed. Add -apply to save it.")
+		return
+	}
+	fail(st.SetSetting(backupKeepKey(s.Name), strconv.Itoa(*n)))
+	fail(pruneSite(s.Name, *n))
+	fmt.Printf("site %s keeps the %d newest backup(s)\n", s.Name, *n)
 }
 
 // pruneSite keeps the newest `keep` finished backups of a site and deletes the rest.

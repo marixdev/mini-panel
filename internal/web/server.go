@@ -379,6 +379,7 @@ type view struct {
 	DBRemote                                    *dbRemote
 	DBSet                                       *dbSetView
 	Backups                                     []backupRow
+	BackupKeep                                  int // how many backups of the site are kept
 	SiteNames                                   []string
 	PHPVersions                                 []string
 	NodeVersions                                []string

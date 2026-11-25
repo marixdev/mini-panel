@@ -220,14 +220,14 @@ var writes = map[string]bool{
 	"wp.run":      true, // an action of the WordPress manager
 	"db.add":      true, "db.passwd": true, "db.remove": true, "db.remote": true, "db.settings": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
-	"backup.create": true, "backup.restore": true, "backup.prune": true,
+	"backup.create": true, "backup.restore": true, "backup.prune": true, "backup.keep": true,
 	"services.control": true, "services.install": true, "services.remove": true, "site.webmail": true,
 	"notify.test": true, "notify.off": true, "notify.hub": true, "notify.chat": true, "notify.rules": true, "notify.noderules": true, // the Telegram alerts
 	"notify.pair": true, "notify.noderemove": true, "notify.agent": true,
 	"panel.update": true, // replaces the program with a signed release (mpn update), in the background
 }
 
-var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "db.remoteinfo": true, "db.settingsinfo": true, "backup.list": true, "panel.updatecheck": true}
+var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "db.remoteinfo": true, "db.settingsinfo": true, "backup.list": true, "backup.keepinfo": true, "panel.updatecheck": true}
 
 var versionRe = regexp.MustCompile(`^\d{1,4}\.\d{1,4}\.\d{1,4}$`)
 
@@ -659,14 +659,22 @@ func (r Request) Argv() ([]string, error) {
 			return nil, err
 		}
 		return []string{"backup", "create", "-site", r.Site, "-apply"}, nil
-	case "backup.prune":
+	case "backup.prune", "backup.keep":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err
 		}
 		if r.Keep < 1 || r.Keep > 365 {
 			return nil, fmt.Errorf("keep must be between 1 and 365")
 		}
+		if r.Op == "backup.keep" {
+			return []string{"backup", "keep", "-site", r.Site, "-n", strconv.Itoa(r.Keep), "-apply"}, nil
+		}
 		return []string{"backup", "prune", "-site", r.Site, "-keep", strconv.Itoa(r.Keep), "-apply"}, nil
+	case "backup.keepinfo":
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		return []string{"backup", "keep", "-site", r.Site, "-json"}, nil
 	case "notify.status", "notify.test", "notify.off", "notify.hub", "notify.chat", "notify.rules", "notify.noderules", "notify.pair", "notify.noderemove", "notify.agent":
 		return r.notifyArgv()
 	case "audit.list":

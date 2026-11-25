@@ -22,6 +22,8 @@ func TestValidRequests(t *testing.T) {
 		{Request{Op: "db.remove", Name: "blog"}, "db remove -name blog -apply"},
 		{Request{Op: "backup.create", Site: "blog"}, "backup create -site blog -apply"},
 		{Request{Op: "backup.prune", Site: "blog", Keep: 7}, "backup prune -site blog -keep 7 -apply"},
+		{Request{Op: "backup.keep", Site: "blog", Keep: 3}, "backup keep -site blog -n 3 -apply"},
+		{Request{Op: "backup.keepinfo", Site: "blog"}, "backup keep -site blog -json"},
 		{Request{Op: "backup.restore", Site: "blog", Backup: "latest", All: true}, "backup restore -site blog -backup latest -all -apply"},
 		{Request{Op: "backup.restore", Site: "blog", Backup: "20261104-031500", Files: true, Databases: []string{"blog", "blog_x"}},
 			"backup restore -site blog -backup 20261104-031500 -files -database blog -database blog_x -apply"},
@@ -59,6 +61,9 @@ func TestRejectedRequests(t *testing.T) {
 		"restore nothing":    {Op: "backup.restore", Site: "blog", Backup: "latest"},
 		"keep zero":          {Op: "backup.prune", Site: "blog", Keep: 0},
 		"keep huge":          {Op: "backup.prune", Site: "blog", Keep: 100000},
+		"set keep zero":      {Op: "backup.keep", Site: "blog", Keep: 0},
+		"set keep huge":      {Op: "backup.keep", Site: "blog", Keep: 366},
+		"set keep bad site":  {Op: "backup.keep", Site: "../x", Keep: 3},
 		"list bad site":      {Op: "db.list", Site: "x y"},
 		"add root user":      {Op: "site.add", Site: "blog", Kind: "php", User: "root", Hosts: []string{"a.example.com"}},
 		"add host injection": {Op: "site.add", Site: "blog", Kind: "php", Hosts: []string{"a.com; } server {"}},
@@ -97,7 +102,7 @@ func TestValuesNeverLookLikeFlags(t *testing.T) {
 }
 
 func TestReadsAreNotWrites(t *testing.T) {
-	for _, op := range []string{"site.list", "db.list", "backup.list"} {
+	for _, op := range []string{"site.list", "db.list", "backup.list", "backup.keepinfo"} {
 		if !Known(op) || IsWrite(op) {
 			t.Errorf("%s must be a known read", op)
 		}

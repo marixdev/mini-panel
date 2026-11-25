@@ -76,7 +76,7 @@ func init() {
 		"cld.site.title":             "This website",
 		"cld.site.on":                "Enable copying",
 		"cld.site.off":               "Disable copying",
-		"cld.site.d":                 "Keep the latest 7 backups in the storage, matching the server retention count. Older copies are deleted automatically.",
+		"cld.site.d":                 "Keep the latest %d backups in the storage, matching the server retention count. Older copies are deleted automatically.",
 		"cld.sync":                   "Copy now",
 		"cld.sync.d":                 "Runs in the background and may take minutes or hours depending on size. An interrupted copy continues with what is missing next time.",
 		"cld.last":                   "Last copy",

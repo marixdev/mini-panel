@@ -142,6 +142,12 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.Error = s.listText(T, ctl.Request{Op: "db.list", Site: row.Name}, &v.DBs)
 	case "backups":
 		v.Error = s.listText(T, ctl.Request{Op: "backup.list", Site: row.Name}, &v.Backups)
+		var k struct{ Keep int }
+		if s.listText(T, ctl.Request{Op: "backup.keepinfo", Site: row.Name}, &k) == "" && k.Keep > 0 {
+			v.BackupKeep = k.Keep
+		} else {
+			v.BackupKeep = 7 // a helper from before the number could be chosen
+		}
 		v.Cloud = s.loadCloudText(T, row.Name)
 	case "wordpress":
 		if row.App != "wordpress" {

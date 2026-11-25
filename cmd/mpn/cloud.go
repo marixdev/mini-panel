@@ -390,7 +390,8 @@ func cloudSyncCmd(st *store.Store, name string, all bool, keep int, detach, appl
 	failed := 0
 	for _, s := range sites {
 		complete, _ := listStamps(s.Name)
-		res, err := cloudsync.SyncSite(ctx, r, s.Name, complete, func(stamp string) string { return backup.Dir(s.Name, stamp) }, keep, os.Stdout)
+		// The storage keeps as many backups as the server does: the site's own number, or -keep when it has none.
+		res, err := cloudsync.SyncSite(ctx, r, s.Name, complete, func(stamp string) string { return backup.Dir(s.Name, stamp) }, keepFor(st, s.Name, keep), os.Stdout)
 		state := cloudsync.State{At: time.Now().Unix(), OK: err == nil, Uploaded: len(res.Uploaded), Present: res.Present}
 		if err != nil {
 			state.Message = err.Error()

@@ -14,6 +14,7 @@ Bản chính bằng tiếng Anh: [CHANGELOG.md](CHANGELOG.md). Có thêm bản [
 - **Cấu hình máy chủ cơ sở dữ liệu.** Dịch vụ › Cơ sở dữ liệu › Cấu hình đổi `max_connections`, buffer pool, kích thước gói, thời gian chờ và vài giá trị khác, mỗi giá trị trong một khoảng được kiểm tra. Máy chủ khởi động lại với tệp mới; nếu không lên được, tệp cũ được đặt lại và máy chủ chạy lại với tệp đó.
 - **SSL qua DNS Cloudflare.** Site nằm sau proxy Cloudflare (mây cam), hoặc tên miền chưa trỏ về máy này, có thể lấy chứng chỉ bằng bản ghi TXT: nhập API token có quyền Zone:Read và DNS:Edit ở tab SSL. Token được giữ để gia hạn, chỉ root đọc được.
 - **Ghi nhớ trình duyệt.** Trang đăng nhập có thể giữ một trình duyệt đăng nhập 30 ngày. Phiên đăng nhập giờ còn sau khi panel khởi động lại hay cập nhật. Trang Cài đặt hiện số trình duyệt đang đăng nhập và đăng xuất tất cả trình duyệt khác; đổi mật khẩu đăng xuất mọi trình duyệt, kể cả bằng `mpn web passwd`.
+- **Số bản sao lưu giữ lại.** Tab Sao lưu của mỗi website chọn số bản được giữ, từ 1 đến 365 (mặc định 7). Bản sao lưu hằng đêm, bản tạo bằng tay và bản sao chép ra nơi lưu trữ đều giữ đúng số đó; giảm số thì các bản cũ hơn bị xóa ngay. Lệnh `mpn backup keep -site TÊN -n 3 -apply` làm tương tự qua SSH.
 
 ### Sửa lỗi
 
