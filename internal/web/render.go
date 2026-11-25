@@ -120,4 +120,4 @@ func (s *Server) assetRoutes(mux routeMux) {
 }
 
 // extraTemplates are files parsed together with a page, for parts of it that are too long to keep in one file.
-var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html", "templates/logs.html", "templates/cloud.html", "templates/wordpress.html", "templates/siteemail.html", "templates/activityrows.html"}, "fileedit": {"templates/fileicons.html"}, "activity": {"templates/activityrows.html"}}
+var extraTemplates = map[string][]string{"site": {"templates/files.html", "templates/filedialogs.html", "templates/fileicons.html", "templates/overview.html", "templates/siteheader.html", "templates/ssl.html", "templates/vhost.html", "templates/cron.html", "templates/bgtab.html", "templates/logs.html", "templates/cloud.html", "templates/wordpress.html", "templates/siteemail.html", "templates/activityrows.html"}, "fileedit": {"templates/fileicons.html"}, "activity": {"templates/activityrows.html"}}

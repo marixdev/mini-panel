@@ -4,6 +4,7 @@ package provision
 import (
 	"fmt"
 
+	"mpn/internal/background"
 	"mpn/internal/distro"
 	"mpn/internal/installer"
 	"mpn/internal/safedir"
@@ -145,6 +146,8 @@ func RemovePlan(s site.Site, purge bool) (installer.Plan, error) {
 	}}}
 	// The scheduled jobs of the site stop with it; the rows in the database go when the site is deleted from the database.
 	plan[0].Actions = append([]installer.Action{installer.Run("rm", "-f", "/etc/cron.d/mpn-"+s.Name)}, plan[0].Actions...)
+	// The background services stop with the site too: every unit of the site is disabled, stopped and deleted.
+	plan[0].Actions = append([]installer.Action{installer.Run("sh", "-c", background.RemoveScript(s.Name))}, plan[0].Actions...)
 	switch s.Kind {
 	case site.PHP:
 		// The master stays only while another pool still uses this PHP version.

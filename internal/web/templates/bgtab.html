@@ -1,0 +1,57 @@
+{{define "bgtab"}}
+{{$b := .Bg}}
+{{if .Notice}}<div role="status" class="alert-ok mb-4"><span>{{.Notice.Title}}</span></div>{{end}}
+{{if $b.Error}}<div role="alert" class="alert-error mb-4"><span>{{$b.Error}}</span></div>{{end}}
+
+{{if not $b.Runtime}}
+<div class="card p-10 text-center"><p class="font-medium">{{T "bg.unsupported"}}</p></div>
+{{else}}
+
+{{if $b.Services}}
+<div class="table-wrap">
+  <table class="tbl">
+    <thead><tr><th>{{T "bg.col.name"}}</th><th>{{T "bg.col.command"}}</th><th>{{T "bg.col.state"}}</th><th>{{T "bg.col.memory"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range $b.Services}}<tr>
+      <td class="font-medium">{{.Name}}</td>
+      <td class="max-w-md"><code class="block overflow-x-auto font-mono text-[13px] whitespace-pre">{{$.Bg.Runtime}} {{.Args}}</code></td>
+      <td>{{if eq .State "active"}}<span class="badge-teal">{{T "bg.state.active"}}</span>{{else if eq .State "failed"}}<span class="badge-rose">{{T "bg.state.failed"}}</span>{{else if eq .State "inactive"}}<span class="badge-gray">{{T "bg.state.inactive"}}</span>{{else}}<span class="badge-gray">{{T "bg.state.unknown"}}</span>{{end}}</td>
+      <td class="whitespace-nowrap">{{if .MemoryMB}}{{T "bg.mb" .MemoryMB}}{{else}}{{T "bg.none"}}{{end}}</td>
+      <td>{{if call $.Can "manage"}}<div class="flex flex-wrap items-center justify-end gap-3">
+        <form method="post" action="/sites/{{$.Site.Name}}/background/{{.ID}}/toggle"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="on" value="{{if .Enabled}}0{{else}}1{{end}}"><button class="btn-sm">{{if .Enabled}}{{T "bg.disable"}}{{else}}{{T "bg.enable"}}{{end}}</button></form>
+        <form method="post" action="/sites/{{$.Site.Name}}/background/{{.ID}}/restart"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="btn-sm">{{T "bg.restart"}}</button></form>
+        <form method="post" action="/sites/{{$.Site.Name}}/background/{{.ID}}/delete"><input type="hidden" name="csrf" value="{{$.CSRF}}"><button class="link-danger text-sm">{{T "bg.delete"}}</button></form>
+      </div>{{end}}</td>
+    </tr>{{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "bg.empty"}}</p><p class="hint">{{T "bg.empty.d"}}</p></div>{{end}}
+
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/background" class="card mt-6 p-6" autocomplete="off">
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <h2 class="h-section">{{T "bg.add.title"}}</h2>
+  <p class="mt-1 text-sm text-muted-foreground">{{T "bg.add.sub" $b.User}}</p>
+  <div class="mt-5 grid gap-5 sm:grid-cols-2">
+    <div>
+      <label for="bg-name" class="label">{{T "bg.field.name"}}</label>
+      <input id="bg-name" name="name" class="field" required maxlength="48" spellcheck="false">
+    </div>
+    <div>
+      <label for="bg-memory" class="label">{{T "bg.field.memory"}}</label>
+      <input id="bg-memory" name="memory_mb" type="number" min="0" max="4096" value="0" class="field">
+      <p class="hint">{{T "bg.field.memory.hint"}}</p>
+    </div>
+    <div class="sm:col-span-2">
+      <label for="bg-args" class="label">{{T "bg.field.args"}}</label>
+      <input id="bg-args" name="args" class="field font-mono" required maxlength="2048" spellcheck="false" autocapitalize="none" placeholder="{{if eq $b.Runtime "python"}}-m celery -A app worker{{else}}queue:work --sleep=3{{end}}">
+      <p class="hint">{{T "bg.field.args.hint"}}</p>
+    </div>
+    <div class="sm:col-span-2">
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" checked> {{T "bg.field.enabled"}}</label>
+    </div>
+  </div>
+  <div class="mt-6 flex items-center gap-3"><button class="btn-primary">{{T "bg.add.btn"}}</button><span class="hint mt-0">{{T "bg.max" $b.Max}}</span></div>
+</form>{{end}}
+{{end}}
+{{end}}

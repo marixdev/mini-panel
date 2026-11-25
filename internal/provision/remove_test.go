@@ -31,6 +31,21 @@ func TestRemovePHPKeepsAccountByDefault(t *testing.T) {
 	}
 }
 
+func TestRemoveStopsTheBackgroundServices(t *testing.T) {
+	s := base(site.PHP)
+	s.PHPVersion = "8.4"
+	p, err := RemovePlan(s, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := p.String()
+	for _, want := range []string{"app-demo-bg-*.service", "daemon-reload"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the removal must stop the background services (%q missing):\n%s", want, out)
+		}
+	}
+}
+
 func TestRemoveNodeAndPurge(t *testing.T) {
 	s := base(site.Node)
 	s.NodePort, s.NodeVersion, s.Entry = 20000, "22", "server.js"

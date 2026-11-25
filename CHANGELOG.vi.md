@@ -4,6 +4,14 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 Bản chính bằng tiếng Anh: [CHANGELOG.md](CHANGELOG.md). Có thêm bản [tiếng Trung](CHANGELOG.zh.md).
 
+## [1.2.5] - 2026-11-26
+
+### Thêm mới
+
+- **Tài khoản theo website.** Quản trị viên có thể tạo tài khoản chỉ vào được các website được chọn, mỗi website một quyền: *view* xem trang, tệp, bản sao lưu và hoạt động của website; *manage* thêm quyền sửa tệp, cơ sở dữ liệu, cron, dịch vụ nền, WordPress và email; *full* thêm quyền sửa SSL, vhost, SSH, terminal và khôi phục bản sao lưu. Trang Người dùng và quyền truy cập (`/users`) tạo tài khoản, chọn website và quyền, đặt lại mật khẩu, khóa, xóa hoặc tắt 2FA. Trang và nút mà tài khoản không dùng được sẽ bị ẩn, và panel vẫn từ chối yêu cầu đó. Mỗi tài khoản có 2FA riêng và tự đổi mật khẩu trong Cài đặt; các cài đặt của máy chủ vẫn chỉ quản trị viên dùng được. phpMyAdmin chỉ mở cho tài khoản này khi quản trị viên cho phép và tài khoản có quyền manage trên website sở hữu cơ sở dữ liệu; cửa sổ phpMyAdmin đang mở vẫn dùng được đến khi user cơ sở dữ liệu tạm hết hạn, 30 phút sau khi mở. Trang Hoạt động chỉ hiện sự kiện của các website của tài khoản đó. Lệnh `mpn web user-off TÊN` khóa tài khoản qua SSH.
+- **Dịch vụ nền.** Website PHP, Node.js hoặc Python có thể chạy tối đa 10 lệnh chạy lâu dài, như queue worker hay bot, dưới dạng dịch vụ systemd với tài khoản của website (tab Dịch vụ nền, hoặc `mpn bg`). Mỗi dịch vụ bật tắt, khởi động lại và giới hạn bộ nhớ được, và tab hiện dịch vụ có đang chạy không. Dịch vụ được ghi lại khi đổi phiên bản PHP, Node.js hoặc Python của website, và bị xóa cùng website. Lệnh `mpn bg sync -site TÊN` (hoặc `-all`) ghi lại mọi dịch vụ từ cơ sở dữ liệu và xóa phần thừa.
+- **Menu cứu hộ.** Gõ `sudo mpn` trên terminal để hiện các lệnh lấy lại quyền truy cập: đặt lại mật khẩu admin, tắt 2FA, khóa tài khoản website, tạo liên kết cài đặt mới, tắt chứng chỉ của panel, xem hoặc hủy việc đổi cổng, bỏ chặn một địa chỉ, tắt tường lửa và khởi động lại panel. Mỗi mục hỏi lại trước khi thay đổi và in ra lệnh nó chạy. Trong script hoặc pipe, `mpn` vẫn in hướng dẫn sử dụng như trước.
+
 ## [1.2.4] - 2026-11-25
 
 ### Thêm mới

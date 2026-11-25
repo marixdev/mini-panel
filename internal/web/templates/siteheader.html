@@ -2,6 +2,7 @@
 {{- if eq . "overview"}}<rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><rect x="11" y="11" width="6" height="6" rx="1.2"/>
 {{- else if eq . "files"}}<path d="M2.5 6A1.5 1.5 0 0 1 4 4.5h3l1.5 1.5H16A1.5 1.5 0 0 1 17.5 7.5V14A1.5 1.5 0 0 1 16 15.5H4A1.5 1.5 0 0 1 2.5 14z"/>
 {{- else if eq . "cron"}}<circle cx="10" cy="10" r="7.5"/><path d="M10 5.5V10l3 2"/>
+{{- else if eq . "background"}}<rect x="3" y="4" width="14" height="5" rx="1.2"/><rect x="3" y="11" width="14" height="5" rx="1.2"/><path d="M6 6.5h.01M6 13.5h.01M9 6.5h4M9 13.5h4"/>
 {{- else if eq . "logs"}}<path d="M5 3.5h7l3 3v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z"/><path d="M7 9.5h6M7 12h6M7 14.5h4"/>
 {{- else if eq . "activity"}}<path d="M2.5 10h3l2-5 3 10 2-5h5"/>
 {{- else if eq . "vhost"}}<path d="M7 6 3 10l4 4M13 6l4 4-4 4M11.5 4l-3 12"/>

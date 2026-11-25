@@ -389,6 +389,7 @@ type view struct {
 	SSL          *sslView
 	VH           *vhostView
 	Cron         *cronView
+	Bg           *bgView
 	Log          *logView
 	Svc          *svcView
 	CF           *cfView

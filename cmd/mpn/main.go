@@ -12,13 +12,22 @@ import (
 var version = "1.2.0"
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn <version|update|tune|plan|site|db|backup|cron|firewall|port|security|panel|cloud|app|wp|mail|services|audit|notify|root|web> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: mpn <version|update|tune|plan|site|db|backup|cron|bg|firewall|port|security|panel|cloud|app|wp|mail|services|audit|notify|root|web|rescue> [flags]")
+	fmt.Fprintln(os.Stderr, "Run \"sudo mpn\" at a terminal for the rescue menu (reset the admin password, turn off 2FA, unban an address...).")
 	os.Exit(2)
 }
 
 func main() {
 	if len(os.Args) < 2 {
+		if isTerminal() {
+			runRescue() // a person at a terminal: the rescue menu
+			return
+		}
 		usage()
+	}
+	if os.Args[1] == "rescue" {
+		runRescue()
+		return
 	}
 	switch os.Args[1] {
 	case "version":
@@ -35,6 +44,8 @@ func main() {
 		runBackup(os.Args[2:])
 	case "cron":
 		runCron(os.Args[2:])
+	case "bg":
+		runBg(os.Args[2:])
 	case "firewall":
 		runFirewall(os.Args[2:])
 	case "port":

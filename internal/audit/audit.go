@@ -72,7 +72,7 @@ func Category(op string) string {
 		return "database"
 	case strings.HasPrefix(op, "site.ssl"), op == "site.csr", strings.HasPrefix(op, "panel.ssl"):
 		return "ssl"
-	case strings.HasPrefix(op, "site.cron"):
+	case strings.HasPrefix(op, "site.cron"), strings.HasPrefix(op, "site.bg"):
 		return "cron"
 	case strings.HasPrefix(op, "backup."), strings.HasPrefix(op, "cloud."):
 		return "backup"

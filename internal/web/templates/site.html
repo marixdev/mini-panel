@@ -23,6 +23,7 @@
 {{else if eq .Tab "ssl"}}{{template "ssltab" .}}
 {{else if eq .Tab "vhost"}}{{template "vhosttab" .}}
 {{else if eq .Tab "cron"}}{{template "crontab" .}}
+{{else if eq .Tab "background"}}{{template "bgtab" .}}
 {{else if eq .Tab "logs"}}{{template "logstab" .}}
 {{else if eq .Tab "activity"}}{{template "activityrows" .}}
 {{else if eq .Tab "email"}}{{template "siteemail" .}}

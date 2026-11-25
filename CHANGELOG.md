@@ -4,6 +4,14 @@ All notable changes to Mini Panel are recorded here. Version numbers follow [Sem
 
 Translations: [Tiếng Việt](CHANGELOG.vi.md) · [中文](CHANGELOG.zh.md).
 
+## [1.2.5] - 2026-11-26
+
+### Added
+
+- **Site users.** The administrator can make accounts that reach only chosen websites, each with a role: *view* sees a website's pages, files, backups and activity; *manage* also changes files, databases, cron jobs, background services, WordPress and email; *full* also changes SSL, the vhost, SSH and the terminal, and restores backups. Users and access (`/users`) creates them, sets their websites and roles, resets a password, disables, removes or turns off 2FA. Pages and buttons a user cannot use are hidden, and the panel refuses the request anyway. A site user has their own 2FA and changes their own password in Settings; the server's settings stay the administrator's. phpMyAdmin is open to a site user only when the administrator allows it and the user can manage the website that owns the database; a phpMyAdmin window already open keeps working until its temporary database user expires, 30 minutes after it was opened. Activity shows a site user only the events of their websites. `mpn web user-off NAME` disables one from SSH.
+- **Background services.** A PHP, Node.js or Python website can run up to 10 long-running commands of its own, such as a queue worker or a bot, as systemd services under the site's account (Background tab, or `mpn bg`). Each can be turned on and off, restarted and given a memory limit, and the tab shows whether it is running. They are written again when the site's PHP, Node.js or Python version changes, and removed with the site. `mpn bg sync -site NAME` (or `-all`) writes every service again from the database and removes what is left over.
+- **Rescue menu.** `sudo mpn` at a terminal shows the commands for getting back in: reset the admin password, turn off 2FA, disable a site user, make a new setup link, turn off the panel's certificate, show or cancel a port change, unban an address, turn the firewall off, and restart the panel. Each asks before it changes anything and prints the command it runs. In a script or a pipe, `mpn` prints its usage as before.
+
 ## [1.2.4] - 2026-11-25
 
 ### Added
