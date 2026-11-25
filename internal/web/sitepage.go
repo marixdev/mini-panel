@@ -16,7 +16,10 @@ type siteTabLink struct{ Key, Path string }
 
 // siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
 func siteMenu(r siteRow) []siteTabLink {
-	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"email", "/email"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"logs", "/logs"}, {"activity", "/activity"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"email", "/email"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"background", "/background"}, {"logs", "/logs"}, {"activity", "/activity"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
+	if bgRuntime(r.Kind) == "" { // static and proxy sites cannot run services, so they get no tab
+		menu = append(menu[:7:7], menu[8:]...)
+	}
 	if r.App == "wordpress" { // the manager comes right after the overview: it is what a WordPress site is mostly used through
 		menu = append([]siteTabLink{menu[0], {"wordpress", "/wordpress"}}, menu[1:]...)
 	}
@@ -24,10 +27,10 @@ func siteMenu(r siteRow) []siteTabLink {
 }
 
 func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
-	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/logs", "/activity", "/email", "/wordpress"} {
+	for _, tab := range []string{"", "/ssl", "/vhost", "/databases", "/backups", "/cron", "/background", "/logs", "/activity", "/email", "/wordpress"} {
 		tab := tab
 		mux.HandleFunc("GET /sites/{name}"+tab, s.auth(func(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
-			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/logs": "logs", "/activity": "activity", "/email": "email", "/wordpress": "wordpress"}[tab])
+			s.siteTab(w, r, ss, map[string]string{"": "overview", "/ssl": "ssl", "/vhost": "vhost", "/databases": "databases", "/backups": "backups", "/cron": "cron", "/background": "background", "/logs": "logs", "/activity": "activity", "/email": "email", "/wordpress": "wordpress"}[tab])
 		}))
 	}
 	// SSH/SFTP moved into the Overview; the old address still works for bookmarks.
@@ -41,6 +44,11 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/cron", s.auth(s.addCron))
 	mux.HandleFunc("POST /sites/{name}/cron/{id}/toggle", s.auth(s.toggleCron))
 	mux.HandleFunc("POST /sites/{name}/cron/{id}/delete", s.auth(s.deleteCron))
+	mux.HandleFunc("POST /sites/{name}/background", s.auth(s.addBg))
+	mux.HandleFunc("POST /sites/{name}/background/{id}/edit", s.auth(s.editBg))
+	mux.HandleFunc("POST /sites/{name}/background/{id}/toggle", s.auth(s.toggleBg))
+	mux.HandleFunc("POST /sites/{name}/background/{id}/restart", s.auth(s.restartBg))
+	mux.HandleFunc("POST /sites/{name}/background/{id}/delete", s.auth(s.deleteBg))
 	mux.HandleFunc("POST /sites/{name}/vhost", s.auth(s.saveVhost))
 	mux.HandleFunc("POST /sites/{name}/vhost/reset", s.auth(s.resetVhost))
 	mux.HandleFunc("POST /sites/{name}/domain", s.auth(s.saveDomain))
@@ -130,6 +138,8 @@ func (s *Server) siteTab(w http.ResponseWriter, r *http.Request, ss webauth.Sess
 		v.VH = s.loadVhostText(T, row)
 	case "cron":
 		v.Cron = s.loadCronText(T, row)
+	case "background":
+		v.Bg = s.loadBgText(T, row)
 	case "logs":
 		v.Log = s.loadLogs(r, row)
 	case "activity":

@@ -163,6 +163,17 @@ CREATE TABLE notify_chats (
 );`,
 	// An application that finishes its setup in the browser (phpBB) has done so.
 	`ALTER TABLE sites ADD COLUMN app_ready INTEGER NOT NULL DEFAULT 0;`,
+	// Background services of a site (queue workers, schedulers). They go away with the site.
+	`CREATE TABLE bg_services (
+    id         INTEGER PRIMARY KEY,
+    site_id    INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+    name       TEXT NOT NULL,
+    args       TEXT NOT NULL,
+    enabled    INTEGER NOT NULL DEFAULT 1,
+    memory_mb  INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX bg_services_site ON bg_services(site_id);`,
 }
 
 // noForeignKeys, at the start of a migration, runs it with foreign key enforcement off and checks them again afterwards.

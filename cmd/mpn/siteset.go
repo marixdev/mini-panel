@@ -150,6 +150,11 @@ func siteSet(args []string) {
 		TLS:     *r.tls, CertDir: *r.certDir, NodeMemMB: *r.nodeMem,
 	})
 	fail(err)
+	bg, err := st.BgServices(cur.Name)
+	fail(err)
+	bgSteps, err := bgVersionPlan(old, cur, bg)
+	fail(err)
+	plan = append(plan, bgSteps...)
 	if !*apply {
 		fmt.Print(plan)
 		fmt.Println("# dry run: nothing was changed. With -apply the files are made and then the settings are stored.")

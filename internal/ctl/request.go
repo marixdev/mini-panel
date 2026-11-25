@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"mpn/internal/audit"
+	"mpn/internal/background"
 	"mpn/internal/backup"
 	"mpn/internal/cloudprov"
 	"mpn/internal/cloudsync"
@@ -73,6 +74,12 @@ type Request struct {
 	Command  string `json:"command,omitempty"`
 	JobID    int64  `json:"job_id,omitempty"` // site.cronset and site.crondel
 	On       bool   `json:"on,omitempty"`     // site.cronset: the job runs
+	// Background services. site.bgadd and site.bgset send the name, arguments, state and memory on standard input.
+	BgID       int64  `json:"bg_id,omitempty"` // site.bgset, site.bgdel and site.bgrestart
+	BgName     string `json:"bg_name,omitempty"`
+	BgArgs     string `json:"bg_args,omitempty"`
+	BgEnabled  bool   `json:"bg_enabled,omitempty"`
+	BgMemoryMB int    `json:"bg_memory_mb,omitempty"`
 	// The firewall. Client is the address of the person, so a rule that would block it is refused.
 	FwAction  string `json:"fw_action,omitempty"`
 	FwProto   string `json:"fw_proto,omitempty"`
@@ -175,6 +182,14 @@ func (r Request) Stdin() string {
 			Command  string `json:"command"`
 		}{r.Schedule, r.Command})
 		return string(b)
+	case r.Op == "site.bgadd", r.Op == "site.bgset":
+		b, _ := json.Marshal(struct {
+			Name     string `json:"name"`
+			Args     string `json:"args"`
+			Enabled  bool   `json:"enabled"`
+			MemoryMB int    `json:"memory_mb"`
+		}{r.BgName, r.BgArgs, r.BgEnabled, r.BgMemoryMB})
+		return string(b)
 	case r.Op == "cloud.connect":
 		b, _ := json.Marshal(struct {
 			ClientID     string `json:"client_id"`
@@ -205,6 +220,7 @@ var writes = map[string]bool{
 	"site.ssl": true, "site.sslcustom": true, "site.csr": true, "site.ssloff": true, "site.sslredirect": true, // where the certificate comes from
 	"site.vhostset": true, "site.vhostreset": true, "site.speed": true, // the nginx configuration of a site
 	"site.cronadd": true, "site.cronset": true, "site.crondel": true, // the scheduled jobs of a site
+	"site.bgadd": true, "site.bgset": true, "site.bgdel": true, "site.bgrestart": true, // the background services of a site
 	"firewall.enable": true, "firewall.disable": true, "firewall.add": true, "firewall.del": true,
 	"port.set": true, "port.finish": true, "port.cancel": true, // the ports of SSH, the panel, phpMyAdmin and the web mail
 	"security.waf": true, "security.f2b": true, "security.unban": true, // ModSecurity with the OWASP rules, and fail2ban
@@ -227,7 +243,7 @@ var writes = map[string]bool{
 	"panel.update": true, // replaces the program with a signed release (mpn update), in the background
 }
 
-var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "db.remoteinfo": true, "db.settingsinfo": true, "backup.list": true, "backup.keepinfo": true, "panel.updatecheck": true}
+var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "site.bglist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "db.remoteinfo": true, "db.settingsinfo": true, "backup.list": true, "backup.keepinfo": true, "panel.updatecheck": true}
 
 var versionRe = regexp.MustCompile(`^\d{1,4}\.\d{1,4}\.\d{1,4}$`)
 
@@ -244,6 +260,23 @@ func optionalSite(s string) error {
 		return fmt.Errorf("invalid site name %q", s)
 	}
 	return nil
+}
+
+// checkBgInput checks a background service as far as the request alone allows: name, memory limit, and the arguments as
+// argv. The rules that depend on the kind of the site (a leading -m only for python, the runtime) are left to the CLI,
+// which loads the site. The check here uses the most permissive kind, so it never refuses what the CLI would accept.
+func checkBgInput(r Request) error {
+	if err := background.ValidName(r.BgName); err != nil {
+		return err
+	}
+	if err := background.ValidMemory(r.BgMemoryMB); err != nil {
+		return err
+	}
+	args, err := background.ParseArgs(r.BgArgs)
+	if err != nil {
+		return err
+	}
+	return background.ValidArgs(site.Python, args)
 }
 
 func requireSite(s string) error {
@@ -508,6 +541,34 @@ func (r Request) Argv() ([]string, error) {
 			return nil, err
 		}
 		return []string{"security", "unban", "-jail=" + r.Jail, "-ip=" + ip, "-apply"}, nil
+	case "site.bglist", "site.bgadd", "site.bgset", "site.bgdel", "site.bgrestart":
+		// The kind-specific checks (a leading -m, the runtime) need the site, so the CLI makes them.
+		if err := requireSite(r.Site); err != nil {
+			return nil, err
+		}
+		switch r.Op {
+		case "site.bglist":
+			return []string{"bg", "list", "-site", r.Site, "-json"}, nil
+		case "site.bgadd":
+			if err := checkBgInput(r); err != nil {
+				return nil, err
+			}
+			return []string{"bg", "add", "-site", r.Site, "-stdin", "-apply"}, nil
+		}
+		if r.BgID < 1 {
+			return nil, fmt.Errorf("service number %d is not valid", r.BgID)
+		}
+		id := strconv.FormatInt(r.BgID, 10)
+		switch r.Op {
+		case "site.bgset":
+			if err := checkBgInput(r); err != nil {
+				return nil, err
+			}
+			return []string{"bg", "set", "-site", r.Site, "-id", id, "-stdin", "-apply"}, nil
+		case "site.bgdel":
+			return []string{"bg", "remove", "-site", r.Site, "-id", id, "-apply"}, nil
+		}
+		return []string{"bg", "restart", "-site", r.Site, "-id", id, "-apply"}, nil
 	case "site.cronlist", "site.cronadd", "site.cronset", "site.crondel":
 		if err := requireSite(r.Site); err != nil {
 			return nil, err
