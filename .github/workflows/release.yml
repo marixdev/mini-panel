@@ -98,3 +98,15 @@ jobs:
           files: release/*
           body_path: release-notes.md
           generate_release_notes: true
+
+      # The same notes go to the Releases topic of the Telegram group (t.me/minipanelbiz). The topic is closed, so members only
+      # read it; the bot is an admin and may still post. A failure here does not undo the release, which is already published.
+      - name: Post to Telegram
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT: '-1006058347558'
+          TELEGRAM_TOPIC: '4'
+        run: |
+          python3 .github/scripts/telegram-release.py "${GITHUB_REF_NAME#v}" release-notes.md \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
