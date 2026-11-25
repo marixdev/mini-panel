@@ -4,7 +4,7 @@
 
 <p align="center">
 Bảng điều khiển hosting nhẹ cho VPS nhỏ, viết bằng Go. Một tệp chạy duy nhất, chạy tốt trên máy 1 vCPU / 1 GB RAM.<br>
-<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">Cài đặt</a> · <a href="https://github.com/marixdev/mini-panel/releases">Bản phát hành</a>
+<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">Cài đặt</a> · <a href="https://github.com/marixdev/mini-panel/releases">Bản phát hành</a> · <a href="https://demo.mpanel.biz">Demo</a> · <a href="https://t.me/minipanelbiz">Telegram</a>
 </p>
 
 <p align="center"><a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh.md">简体中文</a></p>

@@ -4,7 +4,7 @@
 
 <p align="center">
 A lightweight hosting control panel for small VPS, written in Go. One binary, runs well on 1 vCPU / 1 GB RAM.<br>
-<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">Install</a> · <a href="https://github.com/marixdev/mini-panel/releases">Releases</a>
+<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">Install</a> · <a href="https://github.com/marixdev/mini-panel/releases">Releases</a> · <a href="https://demo.mpanel.biz">Demo</a> · <a href="https://t.me/minipanelbiz">Telegram</a>
 </p>
 
 <p align="center"><b>English</b> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh.md">简体中文</a></p>

@@ -4,7 +4,7 @@
 
 <p align="center">
 面向小型 VPS 的轻量主机控制面板，使用 Go 编写。只有一个可执行文件，在 1 vCPU / 1 GB 内存的机器上运行良好。<br>
-<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">安装</a> · <a href="https://github.com/marixdev/mini-panel/releases">发布版本</a>
+<a href="https://mpanel.biz">mpanel.biz</a> · <a href="https://mpanel.biz/install/">安装</a> · <a href="https://github.com/marixdev/mini-panel/releases">发布版本</a> · <a href="https://demo.mpanel.biz">演示</a> · <a href="https://t.me/minipanelbiz">Telegram</a>
 </p>
 
 <p align="center"><a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b></p>
