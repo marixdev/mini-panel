@@ -37,7 +37,7 @@ func (v *fwView) SSHNew() []int {
 	return v.Ports.SSHNew()
 }
 
-func (s *Server) firewallPages(mux *http.ServeMux) {
+func (s *Server) firewallPages(mux routeMux) {
 	mux.HandleFunc("GET /firewall", s.auth(s.firewallPage))
 	mux.HandleFunc("POST /firewall/enable", s.auth(s.fwEnable))
 	mux.HandleFunc("POST /firewall/disable", s.auth(s.fwDisable))

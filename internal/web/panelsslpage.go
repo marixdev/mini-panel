@@ -34,7 +34,7 @@ type pSSLView struct {
 	ServerIP  string `json:"-"`
 }
 
-func (s *Server) panelSSLRoutes(mux *http.ServeMux) {
+func (s *Server) panelSSLRoutes(mux routeMux) {
 	mux.HandleFunc("POST /security/panel-ssl/letsencrypt", s.auth(s.panelSSLLetsEncrypt))
 	mux.HandleFunc("POST /security/panel-ssl/custom", s.auth(s.panelSSLCustom))
 	mux.HandleFunc("POST /security/panel-ssl/off", s.auth(s.panelSSLOff))

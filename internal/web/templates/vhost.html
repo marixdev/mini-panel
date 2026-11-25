@@ -14,10 +14,10 @@
   </div>
   {{if $v.Custom}}<p class="alert-warn mt-4">{{T "vh.custom.warn"}}</p>{{else}}<p class="hint">{{T "vh.default.hint"}}</p>{{end}}
   <label for="vh-text" class="label mt-5">{{T "vh.text"}}</label>
-  <textarea id="vh-text" name="vhost" rows="26" wrap="off" class="field font-mono text-xs leading-relaxed" spellcheck="false" autocapitalize="none" autocomplete="off" required>{{$v.Text}}</textarea>
+  <textarea id="vh-text" name="vhost" rows="26" wrap="off" class="field font-mono text-xs leading-relaxed" spellcheck="false" autocapitalize="none" autocomplete="off" required{{if not (call .Can "full")}} readonly{{end}}>{{$v.Text}}</textarea>
   <p class="hint">{{T "vh.hint" $v.MaxKB}}</p>
   {{if .Site.TLS}}<p class="hint">{{T "vh.hint.ssl"}}</p>{{end}}
-  <div class="mt-5"><button class="btn-primary">{{T "vh.save"}}</button></div>
+  {{if call .Can "full"}}<div class="mt-5"><button class="btn-primary">{{T "vh.save"}}</button></div>{{end}}
 </form>
 
 {{if $v.Custom}}
@@ -25,7 +25,7 @@
   <summary class="cursor-pointer px-6 py-4 text-sm font-semibold">{{T "vh.reset.title"}}</summary>
   <div class="border-t border-border px-6 pb-6">
     <p class="alert-warn mt-4">{{T "vh.reset.warn"}}</p>
-    <form method="post" action="/sites/{{.Site.Name}}/vhost/reset" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "vh.reset.btn"}}</button></form>
+    {{if call .Can "full"}}<form method="post" action="/sites/{{.Site.Name}}/vhost/reset" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "vh.reset.btn"}}</button></form>{{end}}
   </div>
 </details>
 {{end}}

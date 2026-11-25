@@ -36,7 +36,7 @@ func stylePolicy(nonce string) string {
 // terminalPolicy also lets the terminal page open a WebSocket to its own address.
 func terminalPolicy(nonce string) string { return stylePolicy(nonce) + "; connect-src 'self'" }
 
-func (s *Server) terminalPages(mux *http.ServeMux) {
+func (s *Server) terminalPages(mux routeMux) {
 	mux.HandleFunc("GET /sites/{name}/terminal", s.auth(s.terminalPage))
 	mux.HandleFunc("GET /sites/{name}/terminal/ws", s.auth(s.terminalSocket))
 }

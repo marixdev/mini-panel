@@ -18,7 +18,7 @@ import (
 
 var editorFile = regexp.MustCompile(`^[A-Za-z0-9._-]{1,80}\.js$`)
 
-func (s *Server) editorRoutes(mux *http.ServeMux) {
+func (s *Server) editorRoutes(mux routeMux) {
 	mux.HandleFunc("GET /sites/{name}/files/edit", s.auth(s.editPage))
 	mux.HandleFunc("POST /sites/{name}/files/save", s.auth(s.editSave))
 	// The editor is one small file plus a file for each language; the language files are named after their content, so

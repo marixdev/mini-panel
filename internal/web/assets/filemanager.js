@@ -312,7 +312,7 @@
     return true;
   }
   function send(files) {
-    if (!files.length || busy) return;
+    if (!files.length || busy || !upDialog) return; // no upload dialog: the person may not upload
     if (!upDialog.open) openUpload();
     var fd = new FormData();
     if ($('up-over').checked) fd.append('overwrite', 'on'); // the panel reads this before the files

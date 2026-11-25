@@ -83,7 +83,7 @@ type cfView struct {
 	Error    string
 }
 
-func (s *Server) mailCFPages(mux *http.ServeMux) {
+func (s *Server) mailCFPages(mux routeMux) {
 	mux.HandleFunc("GET /email/cf", s.auth(s.cfPage))
 	mux.HandleFunc("POST /email/cf", s.auth(s.cfAdd))
 }

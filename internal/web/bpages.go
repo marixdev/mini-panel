@@ -18,7 +18,7 @@ type backupRow struct {
 	SizeMB              float64 `json:"size_mb"`
 }
 
-func (s *Server) backupPages(mux *http.ServeMux) {
+func (s *Server) backupPages(mux routeMux) {
 	// The list of backups is the Backups tab of each website; only the actions have addresses of their own.
 	mux.HandleFunc("POST /backups/create", s.auth(s.createBackup))
 	mux.HandleFunc("GET /backups/restore", s.auth(s.restoreConfirm))

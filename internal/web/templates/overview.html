@@ -26,7 +26,7 @@
 </section>
 
 {{with .Dom}}
-<form method="post" action="/sites/{{$.Site.Name}}/domain" class="card mt-4 p-6" autocomplete="off">
+{{if call $.Can "full"}}<form method="post" action="/sites/{{$.Site.Name}}/domain" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{$.CSRF}}">
   <h2 class="h-section">{{T "dm.title"}}</h2>
   <p class="mt-1 text-sm text-muted-foreground">{{T "dm.sub"}}</p>
@@ -57,10 +57,10 @@
   </div>
   {{if .TLS}}<p class="alert-warn mt-5">{{T "dm.warn.ssl"}}</p>{{end}}
   <div class="mt-6 flex items-center gap-3"><button class="btn-primary">{{T "dm.save"}}</button><a class="btn-secondary" href="/sites/{{$.Site.Name}}">{{T "dm.reset"}}</a></div>
-</form>
+</form>{{end}}
 {{end}}
 
-<form method="post" action="/sites/{{.Site.Name}}/settings" class="card mt-4 p-6" autocomplete="off">
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/settings" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "ov.settings"}}</h2>
   <p class="mt-1 text-sm text-muted-foreground">{{T "ov.settings.sub"}}</p>
@@ -184,12 +184,12 @@
   {{end}}
 
   <div class="mt-8 flex items-center gap-3"><button class="btn-primary">{{T "ov.save"}}</button><a class="btn-secondary" href="/sites/{{.Site.Name}}">{{T "ov.reset"}}</a></div>
-</form>
+</form>{{end}}
 
 {{end}}
 
 {{define "speedcard"}}
-<form method="post" action="/sites/{{.Site.Name}}/speed" class="card mt-4 p-6">
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/speed" class="card mt-4 p-6">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
@@ -208,11 +208,11 @@
   <div class="mt-5"><button class="{{if .Site.Speed}}btn-secondary{{else}}btn-primary{{end}}">{{if .Site.Speed}}{{T "ps.btn.off"}}{{else}}{{T "ps.btn.on"}}{{end}}</button></div>
   <p class="hint">{{T "ps.note"}}</p>
   {{end}}
-</form>
+</form>{{end}}
 {{end}}
 
 {{define "webmailcard"}}
-<form method="post" action="/sites/{{.Site.Name}}/webmail" class="card mt-4 p-6">
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/webmail" class="card mt-4 p-6">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div class="min-w-0">
@@ -229,7 +229,7 @@
   <div class="mt-5"><button class="{{if .Site.Webmail}}btn-secondary{{else}}btn-primary{{end}}">{{if .Site.Webmail}}{{T "wm.btn.off"}}{{else}}{{T "wm.btn.on"}}{{end}}</button></div>
   <p class="hint">{{T "wm.note"}}</p>
   {{end}}
-</form>
+</form>{{end}}
 {{end}}
 
 {{define "appcard"}}
@@ -253,7 +253,7 @@
   {{if eq .Site.App "wordpress"}}<div class="mt-4"><a class="btn-secondary" href="/sites/{{.Site.Name}}/wordpress">{{T "app.manage"}}</a></div>{{end}}
 </section>
 {{else}}
-<form method="post" action="/sites/{{.Site.Name}}/app/install" class="card mt-4 p-6" autocomplete="off">
+{{if call .Can "manage"}}<form method="post" action="/sites/{{.Site.Name}}/app/install" class="card mt-4 p-6" autocomplete="off">
   <input type="hidden" name="csrf" value="{{.CSRF}}">
   <h2 class="h-section">{{T "app.card.title"}}</h2>
   <p class="mt-1 text-sm text-muted-foreground">{{T "app.card.sub"}}</p>
@@ -275,17 +275,17 @@
   </div>
   <div class="mt-5"><button class="btn-primary">{{T "app.card.btn"}}</button></div>
   <p class="hint">{{T "app.note"}}</p>
-</form>
+</form>{{end}}
 {{end}}
 {{end}}
 {{end}}
 
 {{define "deletecard"}}
-<section class="card mt-4 border-rose-200 p-6 dark:border-rose-900/60">
+{{if .Admin}}<section class="card mt-4 border-rose-200 p-6 dark:border-rose-900/60">
   <h2 class="h-section">{{T "ov.del.title"}}</h2>
   <p class="mt-1 text-sm text-muted-foreground">{{T "ov.del.d"}}</p>
   <div class="mt-4"><a class="btn-danger" href="/sites/remove?site={{.Site.Name}}">{{T "ov.del.btn"}}</a></div>
-</section>
+</section>{{end}}
 {{end}}
 
 {{define "sshcard"}}
@@ -302,13 +302,13 @@
     {{end}}
   </dl>
   <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-    {{if .SSHEnabled}}
+    {{if call .Can "full"}}{{if .SSHEnabled}}
     <a class="btn-secondary" href="/sites/{{.Site.Name}}/ssh/reset">{{T "ssh.reset"}}</a>
     {{if eq .KeyStatus "broken"}}<form method="post" action="/sites/{{.Site.Name}}/ssh/panelkey"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-secondary">{{T "ssh.restore"}}</button></form>{{end}}
     <a class="link-danger text-sm" href="/sites/{{.Site.Name}}/ssh/disable">{{T "ssh.disable"}}</a>
     {{else}}
     <form method="post" action="/sites/{{.Site.Name}}/ssh/enable"><input type="hidden" name="csrf" value="{{.CSRF}}"><button class="btn-primary">{{T "ssh.enable"}}</button></form>
-    {{end}}
+    {{end}}{{end}}
   </div>
   <p class="alert-warn mt-5">{{if .SSHEnabled}}{{T "ssh.note"}}{{else}}{{T "ssh.off.note"}}{{end}}</p>
 </section>

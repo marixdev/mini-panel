@@ -52,7 +52,8 @@ var Kinds = []string{"auth", "site", "files", "terminal", "database", "ssl", "cr
 // takes a note of one of these from the web side and refuses any other name.
 var Events = map[string]bool{
 	"login.ok": true, "login.fail": true, "login.2fa_fail": true, "logout": true,
-	"account.setup": true, "account.password": true, "account.password_fail": true, "account.2fa_on": true, "account.2fa_off": true, "account.sessions_end": true,
+	"account.setup": true, "account.password": true, "account.password_fail": true, "account.2fa_on": true, "account.2fa_off": true, "account.sessions_end": true, "access.denied": true,
+	"users.create": true, "users.sites": true, "users.password": true, "users.disable": true, "users.enable": true, "users.remove": true, "users.2fa_off": true, "users.pma_on": true, "users.pma_off": true,
 	"terminal.open": true, "terminal.close": true,
 	"files.upload": true, "files.mkdir": true, "files.newfile": true, "files.rename": true, "files.delete": true, "files.zip": true,
 	"files.unzip": true, "files.chmod": true, "files.move": true, "files.copy": true, "files.save": true,

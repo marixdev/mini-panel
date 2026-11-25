@@ -59,7 +59,7 @@ func wpMessageText(T translator, out string) string {
 	return out
 }
 
-func (s *Server) wpRoutes(mux *http.ServeMux) {
+func (s *Server) wpRoutes(mux routeMux) {
 	mux.HandleFunc("POST /sites/{name}/wp/run", s.auth(s.wpRun))
 }
 

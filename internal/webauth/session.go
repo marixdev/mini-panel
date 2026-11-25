@@ -145,6 +145,19 @@ func (s *Sessions) DeleteExcept(token string) {
 	s.save()
 }
 
+// CountUser is the number of sessions of the named user that have not ended.
+func (s *Sessions) CountUser(user string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	now, n := s.now(), 0
+	for _, x := range s.m {
+		if x.User == user && !s.expired(x, now) {
+			n++
+		}
+	}
+	return n
+}
+
 // Count is the number of sessions that have not ended.
 func (s *Sessions) Count() int {
 	s.mu.Lock()
@@ -245,4 +258,31 @@ func (s *Sessions) Load() {
 			s.m[k] = v
 		}
 	}
+}
+
+// DeleteUser ends every session of the named user. A password change, a disable or a removal calls it, so nothing signed in
+// with the old state stays signed in.
+func (s *Sessions) DeleteUser(user string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k, x := range s.m {
+		if x.User == user {
+			delete(s.m, k)
+		}
+	}
+	s.save()
+}
+
+// DeleteUserExcept ends every session of the named user but the one that keepToken names. A user who changes their own password
+// keeps the browser they changed it from.
+func (s *Sessions) DeleteUserExcept(user, keepToken string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	keep := keyOf(keepToken)
+	for k, x := range s.m {
+		if x.User == user && k != keep {
+			delete(s.m, k)
+		}
+	}
+	s.save()
 }

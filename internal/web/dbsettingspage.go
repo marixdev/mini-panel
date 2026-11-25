@@ -22,7 +22,7 @@ type dbSetRow struct {
 	Value, Current string
 }
 
-func (s *Server) dbSettingsPages(mux *http.ServeMux) {
+func (s *Server) dbSettingsPages(mux routeMux) {
 	mux.HandleFunc("GET /services/database/settings", s.auth(s.dbSettingsPage))
 	mux.HandleFunc("POST /services/database/settings", s.auth(s.dbSettingsSave))
 }

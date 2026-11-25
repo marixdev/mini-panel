@@ -37,13 +37,13 @@
     <tbody>
     {{range .DBs}}<tr>
       <td class="font-mono text-[13px] font-medium">{{.Name}}</td>
-      <td><div class="flex items-center justify-end gap-4">{{if $.PMA}}<form method="post" action="/databases/pma" target="_blank" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-sm">{{T "pma.open"}}</button></form>{{end}}<a class="btn-sm" href="/databases/remote?name={{.Name}}&amp;site={{$.Site.Name}}">{{T "db.remote"}}</a><a class="btn-sm" href="/databases/passwd?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.passwd"}}</a><a class="link-danger text-sm" href="/databases/remove?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.remove"}}</a></div></td>
+      <td><div class="flex items-center justify-end gap-4">{{if and $.PMA (call $.Can "manage")}}<form method="post" action="/databases/pma" target="_blank" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-sm">{{T "pma.open"}}</button></form>{{end}}{{if call $.Can "full"}}<a class="btn-sm" href="/databases/remote?name={{.Name}}&amp;site={{$.Site.Name}}">{{T "db.remote"}}</a>{{end}}{{if call $.Can "manage"}}<a class="btn-sm" href="/databases/passwd?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.passwd"}}</a><a class="link-danger text-sm" href="/databases/remove?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.remove"}}</a>{{end}}</div></td>
     </tr>{{end}}
     </tbody>
   </table>
 </div>
 {{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "db.empty"}}</p></div>{{end}}
-<section class="card mt-6 p-6">
+{{if call .Can "manage"}}<section class="card mt-6 p-6">
   <h2 class="h-section">{{T "site.dbs.add"}}</h2>
   <form method="post" action="/databases/add" class="mt-4 max-w-2xl">
     <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/databases">
@@ -58,7 +58,7 @@
     <p class="hint">{{T "db.name.hint2" .DBBase}}</p>
   </form>
   <p class="alert-warn mt-5">{{T "db.note"}}</p>
-</section>
+</section>{{end}}
 
 {{else if eq .Tab "terminal"}}
 {{if .SSHEnabled}}
@@ -84,7 +84,7 @@
       <td>{{if eq .State "ok"}}<span class="badge-teal">{{T "backup.state.ok"}}</span>{{else if eq .State "incomplete"}}<span class="badge-amber">{{T "backup.state.incomplete"}}</span>{{else}}<span class="badge-rose">{{T "backup.state.unreadable"}}</span>{{end}}</td>
       <td><div class="flex flex-wrap gap-1">{{if .Files}}<span class="badge-gray">{{T "bk.files"}}</span>{{end}}{{range .Databases}}<span class="badge-gray">db:{{.}}</span>{{end}}</div></td>
       <td class="whitespace-nowrap">{{if eq .State "ok"}}{{printf "%.1f" .SizeMB}} MB{{end}}</td>
-      <td class="text-right">{{if eq .State "ok"}}<a class="btn-sm" href="/backups/restore?site={{.Site}}&amp;backup={{.Backup}}&amp;back=/sites/{{$.Site.Name}}/backups">{{T "bk.restore"}}</a>{{end}}</td>
+      <td class="text-right">{{if eq .State "ok"}}{{if call $.Can "full"}}<a class="btn-sm" href="/backups/restore?site={{.Site}}&amp;backup={{.Backup}}&amp;back=/sites/{{$.Site.Name}}/backups">{{T "bk.restore"}}</a>{{end}}{{end}}</td>
     </tr>{{end}}
     </tbody>
   </table>
@@ -92,10 +92,10 @@
 {{else}}<div class="card p-10 text-center"><p class="font-medium">{{T "bk.empty"}}</p></div>{{end}}
 <section class="card mt-6 p-6">
   <h2 class="h-section">{{T "site.bk.create"}}</h2>
-  <form method="post" action="/backups/create" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups"><button class="btn-primary">{{T "bk.create"}}</button></form>
+  {{if call .Can "manage"}}<form method="post" action="/backups/create" class="mt-4"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups"><button class="btn-primary">{{T "bk.create"}}</button></form>{{end}}
   <p class="alert-warn mt-5">{{T "bk.note" .BackupKeep}}</p>
 </section>
-<section class="card mt-6 p-6">
+{{if call .Can "manage"}}<section class="card mt-6 p-6">
   <h2 class="h-section">{{T "bk.keep.title"}}</h2>
   <form method="post" action="/backups/keep" class="mt-4 flex flex-wrap items-end gap-3">
     <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="site" value="{{.Site.Name}}"><input type="hidden" name="back" value="/sites/{{.Site.Name}}/backups">
@@ -103,7 +103,7 @@
     <button class="btn-primary">{{T "bk.keep.btn"}}</button>
   </form>
   <p class="hint mt-3">{{T "bk.keep.d"}}</p>
-</section>
+</section>{{end}}
 {{template "cloudcard" .}}
 {{end}}
 {{end}}

@@ -44,7 +44,7 @@ for a moment and tells a screen reader through the status element. */}}
   </div>
 </header>
 <nav class="site-tabs" aria-label="{{T "hd.sections"}}">
-  {{range $t := siteMenu $.Site}}<a class="tab" href="/sites/{{$.Site.Name}}{{$t.Path}}"{{if eq $.Tab $t.Key}} aria-current="page"{{end}}>{{template "tabicon" $t.Key}}{{T (printf "tab.%s" $t.Key)}}</a>
+  {{range $t := siteMenu $.Site}}{{if or (ne $t.Key "terminal") (call $.Can "full")}}<a class="tab" href="/sites/{{$.Site.Name}}{{$t.Path}}"{{if eq $.Tab $t.Key}} aria-current="page"{{end}}>{{template "tabicon" $t.Key}}{{T (printf "tab.%s" $t.Key)}}</a>{{end}}
   {{end}}
 </nav>
 {{end}}

@@ -58,7 +58,7 @@ func keyMatches(have, want string) bool {
 	return want != "" && subtle.ConstantTimeCompare([]byte(have), []byte(want)) == 1
 }
 
-func (s *Server) setupPages(mux *http.ServeMux) {
+func (s *Server) setupPages(mux routeMux) {
 	mux.HandleFunc("GET /setup", s.setupGet)
 	mux.HandleFunc("POST /setup", s.setupPost)
 }

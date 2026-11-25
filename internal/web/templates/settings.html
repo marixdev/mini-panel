@@ -99,6 +99,7 @@
   <div class="mt-5"><a class="btn-primary" href="/settings/2fa">{{T "set.2fa.enable"}}</a></div>
   {{end}}
 
+  {{if not $v.Delegated}}
   <div class="mt-6 border-t border-border pt-4">
     <p class="hint !mt-0">{{T "set.2fa.lost"}}</p>
     <div class="mt-2"><button type="button" class="chip chip-copy" data-copy="mpn web 2fa-off" data-copied="{{T "hd.copied"}}" title="{{T "hd.copy" (T "set.2fa.cmd")}}" aria-label="{{T "hd.copy" (T "set.2fa.cmd")}}">
@@ -108,6 +109,7 @@
       <span class="sr-only" role="status" data-copy-status></span>
     </button></div>
   </div>
+  {{end}}
 </section>
 
 </div>
