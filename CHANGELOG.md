@@ -4,6 +4,28 @@ All notable changes to Mini Panel are recorded here. Version numbers follow [Sem
 
 Translations: [Tiếng Việt](CHANGELOG.vi.md) · [中文](CHANGELOG.zh.md).
 
+## [1.2.4] - 2026-11-25
+
+### Added
+
+- **Update notices.** The panel looks for a new release by itself, 30 seconds after it starts and then every 6 hours, and keeps what it found across restarts. When one exists, the Update page shows the changelog of every release after the one that runs, in the panel's language, with a button that installs it; every other page shows a notice in the lower right corner that leads there. Once the program runs the release, the notice goes away. The × on the notice hides it in that browser until the next release. "Check now" asks GitHub at once.
+- **PHP 5.6**, for old sites that cannot move yet. On Debian and Ubuntu it comes from Sury (`php5.6-*`, which Sury still patches); on AlmaLinux, Rocky Linux and CentOS Stream 9 and 10 from [mpn-packages](https://github.com/marixdev/mpn-packages/releases/tag/el-r3), built with OpenSSL 1.0.2u linked in privately. It has mysqli, PDO and the old `mysql_*` functions, opcache, gd, curl, mbstring, xml and zip. PHP itself has made no security fix for 5.6 since January 2019: use it only for a site that cannot run on 7.4 or newer.
+- **Database remote access.** A database can be reached from chosen addresses on port 3306 (Databases › Remote access). The server listens on every address only while some database allows one; the firewall opens 3306 to those addresses alone, and the user made for them has the rights on that database only. Changing the password changes it for every address. `mpn db remote` does the same from SSH.
+- **Database server settings.** Services › Database › Settings changes `max_connections`, the buffer pool, the packet size, timeouts and a few other values, each within a checked range. The server is restarted with the new file; when it does not start, the previous file is put back and the server started with it.
+- **SSL through Cloudflare DNS.** A site behind the Cloudflare proxy (orange cloud), or a name that does not point here yet, can get its certificate with a TXT record: give an API token with Zone:Read and DNS:Edit on the SSL tab. The token is kept for the renewals, readable by root only.
+- **Remember this browser.** The sign-in page can keep a browser signed in for 30 days. Sign-ins now outlive a restart or an update of the panel. Settings shows how many browsers are signed in and signs out all the others; a new password signs out every browser, `mpn web passwd` included.
+
+### Fixed
+
+- The install stopped at the swap step with "fallocate failed: Text file busy" on machines whose provider made a `/swapfile` and already uses it. The swap already there is now kept, and what is missing goes into a file of its own, `/swapfile-mpn`. On a filesystem without fallocate the file is written with dd.
+- Renewing a certificate failed for a site behind Cloudflare in "Full" mode with "Always use HTTPS": the authority follows the redirect to https, where the site sent every path, the challenge included, elsewhere. The https server now answers `/.well-known/acme-challenge/` itself, and the check before a request follows redirects on the same name as Let's Encrypt does.
+- The phpBB installer broke at the end with "The ../styles/prosilver/template directory does not exist": the panel removed `/install/` as soon as an administrator existed, while the installer was still running from it. It now waits until the installer has finished.
+- In the file editor, Ctrl+A outside the text and copying from a menu took only the lines on screen. They now take the whole file.
+
+### Upgrade notes
+
+- The first look for a release is made 30 seconds after the panel starts; until then the Update page says it has not looked yet.
+
 ## [1.2.3] - 2026-11-22
 
 ### Added

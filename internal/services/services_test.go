@@ -89,12 +89,12 @@ func TestOnlyTheListedServicesAndActionsAreAccepted(t *testing.T) {
 }
 
 func TestOnlyWhatTheInstallerSupportsCanBeInstalled(t *testing.T) {
-	for _, k := range []string{PhpMyAdmin, "mariadb", "mysql", "php-7.0", "php-8.5", "node-18", "node-24"} {
+	for _, k := range []string{PhpMyAdmin, "mariadb", "mysql", "php-5.6", "php-7.0", "php-8.5", "node-18", "node-24"} {
 		if err := ValidInstall(k); err != nil {
 			t.Errorf("%s: %v", k, err)
 		}
 	}
-	for _, k := range []string{"redis", "memcached", "nginx", "postfix", "php-5.6", "php-9.0", "node-16", "node-22; id", "", "php-"} {
+	for _, k := range []string{"redis", "memcached", "nginx", "postfix", "php-5.4", "php-9.0", "node-16", "node-22; id", "", "php-"} {
 		if ValidInstall(k) == nil {
 			t.Errorf("%q must be refused", k)
 		}
@@ -116,7 +116,7 @@ func TestEveryPHPAndNodeVersionTheInstallerOffersIsListed(t *testing.T) {
 			php = append(php, it.Key)
 		}
 	}
-	if len(php) != 11 || php[0] != "php-8.5" || php[10] != "php-7.0" {
+	if len(php) != 12 || php[0] != "php-8.5" || php[11] != "php-5.6" {
 		t.Errorf("php order: %v", php)
 	}
 }

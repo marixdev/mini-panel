@@ -27,7 +27,7 @@ const (
 )
 
 // moduleRelease is the release that holds the PageSpeed module of a system: nginx-1.30.7-r2, for Debian, Ubuntu and the RHEL family
-// (r1 has the same files without Ubuntu 26.04). The ModSecurity module of EL is in el-r2 (see elWAFActions).
+// (r1 has the same files without Ubuntu 26.04). The ModSecurity module of EL is in el-r3 (see elWAFActions).
 func moduleRelease(t osinfo.Target) string {
 	return modulesBase
 }
@@ -69,7 +69,7 @@ var moduleSums = map[string]map[string]string{
 		"trixie-arm64":   "8136051db3558796bfd69cb87fd2d250a8be64ab5e5651a8fcbba8d387dfa15d",
 		"resolute":       "b21ed356c1c4faabcad3d866731c795fd1ffe043fb6e867e29d7a73954f56858",
 		"resolute-arm64": "fa9ae5a80498bed519110919c49b813205046b10edb7e5879f36245d97ec8f4a",
-		// The ModSecurity module of EL comes from el-r2 with the rules (see elWAFActions and elSums).
+		// The ModSecurity module of EL comes from el-r3 with the rules (see elWAFActions and elSums).
 	},
 }
 

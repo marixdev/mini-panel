@@ -145,6 +145,8 @@ func (r Request) Dangerous() bool {
 		return !r.SecOn
 	case "site.access":
 		return r.Enable // a password for logging in as the site's account
+	case "db.remote":
+		return len(r.Hosts) > 0 // a database opened to other machines
 	case "services.control":
 		return r.SvcAction == "stop"
 	case "port.set", "port.finish":

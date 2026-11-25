@@ -161,6 +161,9 @@ func (s *Server) runText(r *http.Request, T translator, title string, reqs ...ct
 
 func (s *Server) show(w http.ResponseWriter, status int, ss webauth.Session, v view) {
 	v.User, v.CSRF = ss.User, ss.CSRF
+	if v.UpNotice == nil {
+		v.UpNotice = s.noticeFor(v.Page)
+	}
 	s.render(w, status, v)
 }
 

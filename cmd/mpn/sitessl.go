@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"mpn/internal/acme"
 	"mpn/internal/certs"
+	"mpn/internal/cfdns"
 	"mpn/internal/dnscheck"
 	"mpn/internal/installer"
 	"mpn/internal/provision"
@@ -34,6 +36,7 @@ func siteSSL(args []string) {
 	name := fs.String("name", "", "site name")
 	email := fs.String("email", "", "contact address for Let's Encrypt (optional)")
 	staging := fs.Bool("staging", false, "use the Let's Encrypt test CA; the certificate is saved but not enabled")
+	viaCF := fs.Bool("cf", false, "prove the names with a TXT record at Cloudflare; the API token (Zone:Read, DNS:Edit) comes on standard input")
 	apply := fs.Bool("apply", false, "contact the CA and change this machine (Linux, root); otherwise only describe what would happen")
 	_ = fs.Parse(args)
 	st := openStore(*db)
@@ -47,7 +50,17 @@ func siteSSL(args []string) {
 		return
 	}
 	requireLinuxRoot()
-	if !*staging {
+	// With -cf the names are proved through the DNS of Cloudflare (a TXT record), so a name behind its proxy, or one that does not lead
+	// here yet, can have a certificate. The token comes on standard input and is kept for the renewals, readable by root only.
+	tok := ""
+	if *viaCF {
+		var err error
+		if tok, err = readToken(); err != nil {
+			fail(err)
+		}
+		cfg.DNS = cfdns.ACME{Client: cfdns.Client{Token: tok}}
+	}
+	if !*staging && !*viaCF {
 		ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 		if f := dnscheck.Check(ctx, realDNS(), s.Hostnames); f != nil {
 			cancel()
@@ -58,16 +71,39 @@ func siteSSL(args []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	chain, key, err := acme.Issue(ctx, cfg, s.Hostnames)
+	if err != nil && *viaCF {
+		fail(cfMarker(err))
+	}
 	fail(err)
 	s.SSLMode = site.SSLLetsEncrypt
 	s.TLS = !*staging
 	plan, err := provision.TLSPlan(s, chain, key, !*staging)
 	fail(err)
+	// The token stays for the renewals when it was used, and goes when the names are proved over HTTP again.
+	if *viaCF {
+		plan = append(plan, installer.Step{Name: "Cloudflare token", Actions: []installer.Action{installer.WriteFile(cfTokenFile(s.Name), tok+"\n", 0o600)}})
+	} else {
+		plan = append(plan, installer.Step{Name: "Cloudflare token", Actions: []installer.Action{installer.Run("rm", "-f", cfTokenFile(s.Name))}})
+	}
 	runApply(plan)
 	if !*staging {
 		fail(st.SetSSL(s.Name, site.SSLLetsEncrypt))
-		fmt.Printf("site %q now serves SSL (Let's Encrypt)\n", s.Name)
+		fmt.Printf("site %q now serves SSL (Let's Encrypt%s)\n", s.Name, map[bool]string{true: ", proved through Cloudflare DNS", false: ""}[*viaCF])
 	}
+}
+
+// cfTokenFile keeps the Cloudflare token of a site whose certificate is proved through DNS. It sits with the certificate, so removing
+// SSL (which deletes that folder) removes the token too.
+func cfTokenFile(name string) string { return provision.CertDir(name) + "/cloudflare.token" }
+
+// siteCFToken reads that token; ok is false when the site proves its names over HTTP.
+func siteCFToken(name string) (string, bool) {
+	b, err := os.ReadFile(cfTokenFile(name))
+	if err != nil {
+		return "", false
+	}
+	tok := strings.TrimSpace(string(b))
+	return tok, cfdns.ValidToken(tok)
 }
 
 // customInput is what the web panel sends on standard input: the text of the three boxes. It never travels in an argument.
@@ -299,6 +335,7 @@ type certInfo struct {
 	Covers     bool     `json:"covers"`                // the certificate covers every name of the site
 	PendingCSR string   `json:"pending_csr,omitempty"` // a request made here and not answered yet
 	Trusted    bool     `json:"trusted"`
+	ViaCF      bool     `json:"via_cf,omitempty"` // proved through the DNS of Cloudflare; renewals go the same way
 }
 
 func siteSSLInfo(args []string) {
@@ -311,6 +348,7 @@ func siteSSLInfo(args []string) {
 	s, err := st.GetSite(*name)
 	fail(err)
 	out := certInfo{Mode: s.SSLMode}
+	_, out.ViaCF = siteCFToken(s.Name)
 	if b, err := os.ReadFile(pendingCSR(s.Name)); err == nil {
 		out.PendingCSR = string(b)
 	}

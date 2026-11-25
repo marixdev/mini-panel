@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"mpn/internal/cfdns"
 	"mpn/internal/ctl"
 	"mpn/internal/dnscheck"
 	"mpn/internal/webauth"
@@ -20,6 +21,7 @@ type certInfo struct {
 	Covers     bool     `json:"covers"`
 	PendingCSR string   `json:"pending_csr"`
 	Trusted    bool     `json:"trusted"`
+	ViaCF      bool     `json:"via_cf"` // the names are proved through the DNS of Cloudflare, renewals too
 }
 
 // sslView is what the SSL tab draws.
@@ -77,6 +79,8 @@ func (s *Server) sslAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 			res.Error = T("vh.err.custom")
 		case strings.Contains(res.Output, dnscheck.Marker):
 			res.Error = T("ssl.err.dns")
+		case strings.Contains(res.Output, "cf-badtoken"), strings.Contains(res.Output, "cf-noperm"), strings.Contains(res.Output, "cf-nozone"):
+			res.Error = T("ssl.err.cf")
 		case strings.Contains(res.Output, "ssl-untrusted"):
 			res.Error = T("ssl.err.untrusted")
 		case strings.Contains(res.Output, "no certificate could be had") || strings.Contains(res.Output, "acme"):
@@ -89,6 +93,19 @@ func (s *Server) sslAction(w http.ResponseWriter, r *http.Request, ss webauth.Se
 func (s *Server) sslLetsEncrypt(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	s.sslAction(w, r, ss, "act.ssl.le", func(row siteRow) (ctl.Request, string) {
 		return ctl.Request{Op: "site.ssl", Site: row.Name}, ""
+	})
+}
+
+// sslCloudflare gets the Let's Encrypt certificate with a TXT record in the zone at Cloudflare in place of a file: a name behind its
+// proxy, or one that does not lead here yet, can have a certificate too, and it renews the same way.
+func (s *Server) sslCloudflare(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
+	token := strings.TrimSpace(r.PostFormValue("token"))
+	s.sslAction(w, r, ss, "act.ssl.le", func(row siteRow) (ctl.Request, string) {
+		if !cfdns.ValidToken(token) {
+			return ctl.Request{}, T("mail.cf.err.token")
+		}
+		return ctl.Request{Op: "site.ssl", Site: row.Name, CFToken: token}, ""
 	})
 }
 

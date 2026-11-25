@@ -150,6 +150,22 @@ document.addEventListener('click', function (e) {
   }
 });
 
+// The notice of a new release. It is drawn hidden and shown here unless this browser closed it for that very release; closing it
+// remembers the version, so the next release shows it again. Once the panel runs the release, the server no longer draws it at all.
+(function () {
+  var box = document.querySelector('[data-up-float]');
+  if (!box) return;
+  var v = box.getAttribute('data-version');
+  var closed = null;
+  try { closed = localStorage.getItem('mpn-up-closed'); } catch (_) {}
+  if (closed !== v) box.hidden = false;
+  var btn = box.querySelector('[data-up-close]');
+  if (btn) btn.addEventListener('click', function () {
+    box.hidden = true;
+    try { localStorage.setItem('mpn-up-closed', v); } catch (_) {}
+  });
+})();
+
 // The page that opens the database browser has one link; it is followed at once. The link stays on the page for a browser
 // that does not run this script, or for somebody who wants to open it again.
 (function () {

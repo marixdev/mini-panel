@@ -37,7 +37,7 @@
     <tbody>
     {{range .DBs}}<tr>
       <td class="font-mono text-[13px] font-medium">{{.Name}}</td>
-      <td><div class="flex items-center justify-end gap-4">{{if $.PMA}}<form method="post" action="/databases/pma" target="_blank" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-sm">{{T "pma.open"}}</button></form>{{end}}<a class="btn-sm" href="/databases/passwd?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.passwd"}}</a><a class="link-danger text-sm" href="/databases/remove?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.remove"}}</a></div></td>
+      <td><div class="flex items-center justify-end gap-4">{{if $.PMA}}<form method="post" action="/databases/pma" target="_blank" class="inline"><input type="hidden" name="csrf" value="{{$.CSRF}}"><input type="hidden" name="name" value="{{.Name}}"><button class="btn-sm">{{T "pma.open"}}</button></form>{{end}}<a class="btn-sm" href="/databases/remote?name={{.Name}}&amp;site={{$.Site.Name}}">{{T "db.remote"}}</a><a class="btn-sm" href="/databases/passwd?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.passwd"}}</a><a class="link-danger text-sm" href="/databases/remove?name={{.Name}}&amp;back=/sites/{{$.Site.Name}}/databases">{{T "db.remove"}}</a></div></td>
     </tr>{{end}}
     </tbody>
   </table>

@@ -77,7 +77,7 @@ func TestSiteWithoutTLSAnswersHTTPSByRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 	mustContain(t, out, "listen 443 ssl http2;", "ssl_certificate "+DefaultCertDir+"/fullchain.pem;",
-		"server_name blog.example.com www.blog.example.com;\n    return 302 http://$host$request_uri;")
+		"server_name blog.example.com www.blog.example.com;\n    location /.well-known/acme-challenge/ { root /var/lib/mpn/acme; }\n    location / { return 302 http://$host$request_uri; }")
 	if strings.Count(out, "listen 443") != 1 {
 		t.Errorf("one 443 server expected:\n%s", out)
 	}

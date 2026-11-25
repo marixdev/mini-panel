@@ -123,13 +123,7 @@ func Build(o Options) (Plan, error) {
 	plan := Plan{base}
 	// The kernel reports a swap file a little smaller than its size, so small gaps are ignored.
 	if need := o.Profile.SwapMB - o.CurrentSwapMB; need >= 64 {
-		plan = append(plan, Step{"swap", []Action{
-			Run("fallocate", "-l", fmt.Sprintf("%dM", need), "/swapfile"),
-			Run("chmod", "600", "/swapfile"),
-			Run("mkswap", "/swapfile"),
-			Run("swapon", "/swapfile"),
-			Run("sh", "-c", "grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab"),
-		}})
+		plan = append(plan, Step{"swap", []Action{Run("sh", "-c", swapScript(need))}})
 	}
 	psStep, err := pageSpeedStep(o.Target)
 	if err != nil {
@@ -222,11 +216,14 @@ func phpStep(o Options) (Step, error) {
 		if v < "8.0" {
 			exts = append(exts, "opcache") // built in from 8.0 on
 		}
+		if v < "7.0" {
+			exts = append(exts, "json") // a package of its own before 7.0 (Sury's php5.6-json)
+		}
 		// EL: PHP 7.0 to 7.3 have no packages (distro.OwnPHP); their tarballs from mpn-packages are added in the RHEL work.
 		pkgs := distro.PHPPackages(v, exts)
 		acts = append(acts,
 			aptInstall(pkgs...),
-			WriteFile(distro.PHPConfDir(v)+"99-mpn.ini", o.Profile.OpcacheINI(), 0o644),
+			WriteFile(distro.PHPConfDir(v)+"99-mpn.ini", o.Profile.OpcacheINIFor(v), 0o644),
 			Run("sh", "-c", stopUnusedFPM(v)),
 		)
 	}
@@ -285,6 +282,26 @@ func nodeStep(major string) (Step, error) {
 		WriteFile(NodeKeyringFile, string(nodeReleaseKeys), 0o644),
 		Run("sh", "-c", strings.Replace(nodeScript, "@MAJOR@", major, 1)),
 	}}, nil
+}
+
+// swapScript adds mb megabytes of swap in a file of its own. Some providers ship a /swapfile that is already in use; fallocate on
+// it fails with "Text file busy" (seen on Debian 13, 2026-11-25), so the first of /swapfile, /swapfile-mpn, /swapfile-mpn2 that
+// is not active swap is taken, and the swap already there is kept. Filesystems without fallocate get the file from dd.
+func swapScript(mb int) string {
+	return fmt.Sprintf(`set -e
+active=$(swapon --show=NAME --noheadings 2>/dev/null || true)
+f=
+for c in /swapfile /swapfile-mpn /swapfile-mpn2; do
+  if ! printf '%%s\n' "$active" | grep -qx "$c"; then f=$c; break; fi
+done
+[ -n "$f" ] || { echo "no free name for a swap file"; exit 1; }
+rm -f "$f"
+fallocate -l %[1]dM "$f" 2>/dev/null || dd if=/dev/zero of="$f" bs=1M count=%[1]d status=none
+chmod 600 "$f"
+mkswap "$f" >/dev/null
+swapon "$f"
+grep -q "^$f " /etc/fstab || echo "$f none swap sw 0 0" >> /etc/fstab
+echo "swap: %[1]dM in $f"`, mb)
 }
 
 func hasPHPBefore74(versions []string) bool {

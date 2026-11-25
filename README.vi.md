@@ -29,7 +29,7 @@ Tùy chọn: `MPN_VERSION=1.0.2` để cài một bản cố định, `MPN_PANEL
 
 ## Tính năng
 
-- **Website:** PHP 7.0 đến 8.5 (mỗi site một pool PHP-FPM), Node.js 18 đến 24, Python, site tĩnh và proxy ngược. Mỗi site có tài khoản hệ thống riêng, tên miền, SSH/SFTP, trình quản lý tệp, terminal trên web, cron, nhật ký và vHost tự sửa (kiểm bằng `nginx -t` trước khi nạp).
+- **Website:** PHP 5.6 và 7.0 đến 8.5 (mỗi site một pool PHP-FPM), Node.js 18 đến 24, Python, site tĩnh và proxy ngược. Mỗi site có tài khoản hệ thống riêng, tên miền, SSH/SFTP, trình quản lý tệp, terminal trên web, cron, nhật ký và vHost tự sửa (kiểm bằng `nginx -t` trước khi nạp).
 - **Cài ứng dụng:** WordPress, Laravel, CodeIgniter 4, CakePHP, Yii 2, kèm trang quản lý WordPress (cập nhật, plugin, giao diện).
 - **SSL:** Let's Encrypt có kiểm tra DNS trước và tự gia hạn, chứng chỉ riêng, tạo CSR. Panel cũng có chứng chỉ riêng cho chính nó.
 - **Cơ sở dữ liệu:** MariaDB hoặc MySQL, mỗi cơ sở dữ liệu một người dùng, phpMyAdmin đăng nhập bằng tài khoản tạm.
@@ -57,7 +57,7 @@ Panel tải các thành phần sau từ bản phát hành của chúng và so m�
 | Repo | Panel dùng để | Ghim ở |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | Web mail ở `/webmail/` (bản tùy biến của lilmail) | `internal/mail/webmail.go` |
-| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | Mô-đun PageSpeed và ModSecurity build cho nginx 1.30.7; PHP 7.0 đến 7.3 và OWASP CRS cho AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | Mô-đun PageSpeed và ModSecurity build cho nginx 1.30.7; PHP 5.6, 7.0 đến 7.3 và OWASP CRS cho AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
 
 ## Dòng lệnh
 

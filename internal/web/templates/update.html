@@ -1,31 +1,54 @@
 {{define "content"}}
-{{$v := .Settings}}
+{{$v := .Settings}}{{$u := .Up}}
 <div class="mb-6">
   <h1 class="h-page">{{T "set.up.title"}}</h1>
   <p class="mt-1 text-sm text-muted-foreground">{{T "set.up.sub"}}</p>
 </div>
-{{if .Notice}}<div role="status" class="alert-ok mb-6"><span>{{.Notice.Title}}</span></div>{{end}}
+{{if .Notice}}<div role="status" class="{{if .Notice.OK}}alert-ok{{else}}alert-error{{end}} mb-6"><span>{{.Notice.Title}}</span></div>{{end}}
 
 <section class="card p-6" aria-labelledby="up-h">
   <div class="flex flex-wrap items-start justify-between gap-3">
-    <h2 id="up-h" class="h-section">{{T "set.up.current"}}</h2>
+    <div>
+      <h2 id="up-h" class="h-section">{{T "set.up.current"}}</h2>
+      {{if and $u $u.Auto}}
+      <p class="hint" data-up-state>
+        {{if $u.Latest}}{{T "up.state.new" $u.Latest}}
+        {{else if $u.Known}}{{T "up.state.latest"}}
+        {{else}}{{T "up.state.unknown"}}{{end}}
+        {{if not $u.Checked.IsZero}}<span class="whitespace-nowrap">· {{T "up.checked"}} <time datetime="{{$u.Checked.Format "2006-01-02T15:04:05Z"}}">{{$u.Checked.Format "2006-01-02 15:04"}} UTC</time></span>{{end}}
+      </p>
+      {{end}}
+    </div>
     <span class="badge-gray font-mono" data-version>{{$v.Version}}</span>
   </div>
+  {{if and $u $u.CheckErr}}<p class="mt-3 text-xs text-rose-700 dark:text-rose-400">{{T "up.check.err"}} <span class="font-mono">{{$u.CheckErr}}</span></p>{{end}}
+
   <div class="mt-5 flex flex-wrap items-end gap-3">
+    {{if and $u $u.Latest}}
+    <form method="post" action="/update">
+      <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="version" value="{{$u.Latest}}">
+      <button class="btn-primary">{{T "up.btn.install" $u.Latest}}</button>
+    </form>
+    {{end}}
     <form method="post" action="/update/check">
       <input type="hidden" name="csrf" value="{{.CSRF}}">
       <button class="btn-secondary">{{T "set.up.check"}}</button>
     </form>
-    <form method="post" action="/update" class="flex flex-wrap items-end gap-3">
+  </div>
+  <p class="hint">{{T "set.up.hint"}}</p>
+
+  <details class="mt-4">
+    <summary class="cursor-pointer text-sm font-medium">{{T "up.other"}}</summary>
+    <form method="post" action="/update" class="mt-3 flex flex-wrap items-end gap-3">
       <input type="hidden" name="csrf" value="{{.CSRF}}">
       <div>
         <label for="up-ver" class="label">{{T "set.up.version"}}</label>
         <input id="up-ver" name="version" class="field w-36 font-mono" placeholder="{{T "set.up.latest"}}" pattern="[0-9]+\.[0-9]+\.[0-9]+" maxlength="14" autocomplete="off">
       </div>
-      <button class="btn-primary">{{T "set.up.btn"}}</button>
+      <button class="btn-secondary">{{T "set.up.btn"}}</button>
     </form>
-  </div>
-  <p class="hint">{{T "set.up.hint"}}</p>
+  </details>
+
   {{if $v.UpdateLog}}
   <details class="mt-4" open>
     <summary class="cursor-pointer text-sm font-medium">{{T "set.up.log"}}</summary>
@@ -33,4 +56,21 @@
   </details>
   {{end}}
 </section>
+
+{{if and $u $u.Latest}}
+<section class="card mt-6 p-6" aria-labelledby="cl-h" data-changelog>
+  <h2 id="cl-h" class="h-section">{{T "up.cl.title"}}</h2>
+  <p class="hint">{{T "up.cl.sub" $v.Version $u.Latest}}</p>
+  {{if $u.Changelog}}
+  {{range $i, $c := $u.Changelog}}
+  <article class="{{if $i}}mt-6 border-t border-border pt-6{{else}}mt-5{{end}}">
+    <h3 class="flex flex-wrap items-baseline gap-2"><span class="font-mono text-base font-semibold">{{$c.Version}}</span>{{if $c.Date}}<span class="text-xs text-muted-foreground">{{$c.Date}}</span>{{end}}</h3>
+    <div class="changelog mt-2">{{$c.Body}}</div>
+  </article>
+  {{end}}
+  {{else}}
+  <p class="mt-4 text-sm text-muted-foreground">{{T "up.cl.none"}} <a class="link" href="https://github.com/marixdev/mini-panel/releases/tag/v{{$u.Latest}}" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+  {{end}}
+</section>
+{{end}}
 {{end}}

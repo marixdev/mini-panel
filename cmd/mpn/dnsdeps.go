@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/hex"
 	"io"
 	"net"
@@ -48,9 +49,30 @@ func realDNS() dnscheck.Deps {
 	}
 }
 
+// probeClient follows redirects as Let's Encrypt does: up to 10, to http or https on the same name. A name behind the proxy of
+// Cloudflare with "Always use HTTPS" answers the first request with a redirect to https; the authority follows it, and so must
+// this check, or such a name is refused although a certificate could be had. A redirect to another name is not followed: the file
+// has to come from this name. The certificate of the https answer is not checked, as the authority does not check it either (the
+// site has none yet, or a self-signed one behind the proxy).
+func probeClient(host string) *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, Proxy: nil},
+		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+			// A relative redirect stays on the address of the first request, which is the IP; the name is kept in Host.
+			same := strings.EqualFold(r.URL.Hostname(), host) || r.URL.Hostname() == via[0].URL.Hostname()
+			if len(via) >= 10 || !same || (r.URL.Scheme != "http" && r.URL.Scheme != "https") {
+				return http.ErrUseLastResponse
+			}
+			r.Host = host
+			return nil
+		},
+	}
+}
+
 // probeOurFile puts a file with a random name where the certificate authority would look, then asks the web server at ip for it
 // with host as the Host header. Only this machine can answer with the content, so a machine behind NAT, whose public address is on
-// no network card, still proves that the name leads to it.
+// no network card, still proves that the name leads to it, and so does a name behind a proxy such as Cloudflare's, whose address
+// is the proxy's: the proxy passes the request on to this machine.
 func probeOurFile(ctx context.Context, ip net.IP, host string) bool {
 	buf := make([]byte, 12)
 	if _, err := rand.Read(buf); err != nil {
@@ -78,8 +100,7 @@ func probeOurFile(ctx context.Context, ip net.IP, host string) bool {
 		return false
 	}
 	req.Host = host
-	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	resp, err := client.Do(req)
+	resp, err := probeClient(host).Do(req)
 	if err != nil {
 		return false
 	}

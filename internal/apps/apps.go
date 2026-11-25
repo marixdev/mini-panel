@@ -16,23 +16,24 @@ import (
 // Pinned releases of the two tools that do the work. They are downloaded once, from the project that publishes them, and compared with
 // the checksum the project publishes; a file that does not match is never installed.
 const (
-	WPCLIVersion     = "2.12.0"
-	WPCLIURL         = "https://github.com/wp-cli/wp-cli/releases/download/v" + WPCLIVersion + "/wp-cli-" + WPCLIVersion + ".phar"
-	WPCLISHA512      = "be928f6b8ca1e8dfb9d2f4b75a13aa4aee0896f8a9a0a1c45cd5d2c98605e6172e6d014dda2e27f88c98befc16c040cbb2bd1bfa121510ea5cdf5f6a30fe8832"
-	WPCLIPath        = "/usr/local/bin/wp-cli.phar"
-	ComposerVersion  = "2.11.1"
-	ComposerURL      = "https://getcomposer.org/download/" + ComposerVersion + "/composer.phar"
-	ComposerSHA256   = "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c"
-	ComposerPath     = "/usr/local/bin/composer.phar"
-	StageDir         = "/usr/local/share/mpn/stage"
-	WordPressID      = "wordpress"
-	PHPBBID          = "phpbb"
-	PHPBBVersion     = "3.3.19"
-	PHPBBURL         = "https://download.phpbb.com/pub/release/3.3/" + PHPBBVersion + "/phpBB-" + PHPBBVersion + ".zip"
-	PHPBBSHA256      = "1530e5cabf7ecc9ecfaed3fa13da79f9e8a514623beafababc8800b5ce966de9" // published on phpbb.com, checked on 2026-11-20
-	PHPBBTopDir      = "phpBB3"                                                           // the folder the package unpacks to
-	wpMemoryLimit    = "512M"
-	composerMemoryMB = 768
+	WPCLIVersion      = "2.12.0"
+	WPCLIURL          = "https://github.com/wp-cli/wp-cli/releases/download/v" + WPCLIVersion + "/wp-cli-" + WPCLIVersion + ".phar"
+	WPCLISHA512       = "be928f6b8ca1e8dfb9d2f4b75a13aa4aee0896f8a9a0a1c45cd5d2c98605e6172e6d014dda2e27f88c98befc16c040cbb2bd1bfa121510ea5cdf5f6a30fe8832"
+	WPCLIPath         = "/usr/local/bin/wp-cli.phar"
+	ComposerVersion   = "2.11.1"
+	ComposerURL       = "https://getcomposer.org/download/" + ComposerVersion + "/composer.phar"
+	ComposerSHA256    = "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c"
+	ComposerPath      = "/usr/local/bin/composer.phar"
+	StageDir          = "/usr/local/share/mpn/stage"
+	WordPressID       = "wordpress"
+	PHPBBID           = "phpbb"
+	PHPBBVersion      = "3.3.19"
+	PHPBBURL          = "https://download.phpbb.com/pub/release/3.3/" + PHPBBVersion + "/phpBB-" + PHPBBVersion + ".zip"
+	PHPBBSHA256       = "1530e5cabf7ecc9ecfaed3fa13da79f9e8a514623beafababc8800b5ce966de9" // published on phpbb.com, checked on 2026-11-20
+	PHPBBTopDir       = "phpBB3"                                                           // the folder the package unpacks to
+	PHPBBProgressFile = "store/install_config.php"                                         // the installer's progress; it removes the file when the run ends
+	wpMemoryLimit     = "512M"
+	composerMemoryMB  = 768
 )
 
 // Recipe is one application.

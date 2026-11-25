@@ -221,20 +221,11 @@ func panelAnswers() error {
 }
 
 func latestTag(ctx context.Context) (string, error) {
-	// GitHub answers /releases/latest with a redirect to the tag of the newest release; the redirect is all that is read.
-	req, _ := http.NewRequestWithContext(ctx, "GET", "https://github.com/"+update.Repo+"/releases/latest", nil)
-	c := &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	resp, err := c.Do(req)
+	v, err := update.LatestTag(ctx, update.DefaultClient())
 	if err != nil {
 		return "", err
 	}
-	resp.Body.Close()
-	loc := resp.Header.Get("Location")
-	i := strings.LastIndex(loc, "/tag/")
-	if i < 0 {
-		return "", fmt.Errorf("could not find the latest release (%s)", resp.Status)
-	}
-	return loc[i+5:], nil
+	return v.String(), nil
 }
 
 // ensureMpnCloud downloads mpn-cloud of this very release when it is missing or of another version. An mpn update of 1.2.0 or older

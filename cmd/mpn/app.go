@@ -275,5 +275,11 @@ func phpbbDone(s site.Site, apply bool) (bool, string) {
 	if n, _ := strconv.Atoi(strings.TrimSpace(out)); n < 1 {
 		return false, "no administrator yet"
 	}
+	// The founder is written in the middle of the run: the installer goes on for a while (migrations, packaged extensions, the
+	// style), still loading its files from install/. Removing the folder then broke the rest with "The ../styles/prosilver/template
+	// directory does not exist" (seen 2026-11-23). store/install_config.php holds the run's progress and is removed only when it ends.
+	if _, err := os.Stat(filepath.Join(site.HtdocsOf(s.User), apps.PHPBBProgressFile)); err == nil {
+		return false, "the installer is still running"
+	}
 	return true, ""
 }

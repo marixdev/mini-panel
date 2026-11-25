@@ -147,3 +147,13 @@ request_terminate_timeout = %ds
 func (p Profile) OpcacheINI() string {
 	return fmt.Sprintf("opcache.enable=1\nopcache.memory_consumption=%d\nopcache.jit=off\nopcache.validate_timestamps=1\nopcache.revalidate_freq=2\n", p.OpcacheMB)
 }
+
+// OpcacheINIFor is OpcacheINI for one PHP version. PHP before 8.0 has no JIT; an unknown opcache key is only ignored there, but it is
+// left out so the file says nothing the version does not know.
+func (p Profile) OpcacheINIFor(v string) string {
+	s := p.OpcacheINI()
+	if v < "8.0" {
+		s = strings.Replace(s, "opcache.jit=off\n", "", 1)
+	}
+	return s
+}

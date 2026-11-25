@@ -72,6 +72,22 @@
 <main id="main" class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
 {{template "content" .}}
 </main>
+{{/* A newer release exists. The notice stays at the corner of every page until the program runs that release; closing it hides it in
+     this browser until the next release (app.js keeps the closed version). It is a link to the Update page, where the changelog is. */}}
+{{with .UpNotice}}
+<aside class="up-float" data-up-float data-version="{{.Version}}" role="status" aria-live="polite" hidden>
+  <a href="/update" class="up-float-link">
+    <span class="up-float-ico" aria-hidden="true"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
+    <span class="min-w-0">
+      <span class="block text-sm font-semibold">{{T "up.float.title" .Version}}</span>
+      <span class="text-muted-foreground block text-xs">{{T "up.float.sub"}}</span>
+    </span>
+  </a>
+  <button type="button" class="up-float-close" data-up-close title="{{T "up.float.close"}}" aria-label="{{T "up.float.close"}}">
+    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</aside>
+{{end}}
 {{template "footer" .}}
 <script src="{{asset "app.js"}}" defer></script>
 </body>

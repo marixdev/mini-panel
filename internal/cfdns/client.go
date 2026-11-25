@@ -307,6 +307,15 @@ type createBody struct {
 	Proxied  *bool  `json:"proxied,omitempty"` // only A, AAAA and CNAME can be proxied
 }
 
+// DeleteRecord removes one record by its ID. The certificate check uses it for the TXT record it added itself, and nothing else.
+func (c Client) DeleteRecord(ctx context.Context, zoneID, recordID string) error {
+	if !idRe.MatchString(zoneID) || !idRe.MatchString(recordID) {
+		return &APIError{Kind: ErrNoZone, Message: "the zone or record id is not valid"}
+	}
+	_, err := c.call(ctx, http.MethodDelete, "/zones/"+zoneID+"/dns_records/"+recordID, nil, nil)
+	return err
+}
+
 // CreateRecord adds one record. A TXT value longer than 255 characters (a 2048-bit DKIM key is about 400) is sent as one string. Whether
 // Cloudflare splits it into 255-character pieces itself, as its dashboard does, has not been checked against the real API.
 func (c Client) CreateRecord(ctx context.Context, zoneID string, r Record) (Record, error) {

@@ -26,6 +26,7 @@ import (
 	"mpn/internal/site"
 	"mpn/internal/sitelog"
 	"mpn/internal/svcport"
+	"mpn/internal/tune"
 	"mpn/internal/vhost"
 )
 
@@ -122,7 +123,10 @@ type Request struct {
 	// panel.update: the release to install, such as "1.2.1"; empty means the latest.
 	Version string `json:"version,omitempty"`
 	// mail.cfadd: the API token of Cloudflare, made for the zone of MailDomain. It reaches mpn on standard input only and is not stored.
+	// site.ssl: the same, for a certificate proved through DNS; it is kept for the renewals.
 	CFToken string `json:"cf_token,omitempty"`
+	// db.settings: the settings of the database server, as tune.CheckDBValues takes them. They reach mpn on standard input.
+	DBValues map[string]string `json:"db_values,omitempty"`
 	// The activity log. Actor is the address of the person who sent the request; the web side sets it on every request, and the root
 	// helper writes it to the log with the operation. audit.note is an event only the web side sees (Event, one of audit.Events, with a
 	// Note and whether it Failed). audit.list reads the log: Site, AuditIP, AuditKind, From and To choose, Limit and Offset page.
@@ -154,8 +158,11 @@ func (r Request) Stdin() string {
 		return r.Password + "\n"
 	case r.Op == "mail.boxadd", r.Op == "mail.boxpasswd":
 		return r.MailPassword + "\n"
-	case r.Op == "mail.cfadd":
+	case r.Op == "mail.cfadd", r.Op == "site.ssl" && r.CFToken != "":
 		return r.CFToken + "\n"
+	case r.Op == "db.settings":
+		b, _ := json.Marshal(r.DBValues)
+		return string(b)
 	case r.Op == "notify.hub":
 		return r.Token + "\n"
 	case r.Op == "notify.agent":
@@ -211,7 +218,7 @@ var writes = map[string]bool{
 	"mail.aliasset": true, "mail.aliasdel": true, // aliases
 	"app.install": true, // download and set up WordPress or a framework in a PHP site
 	"wp.run":      true, // an action of the WordPress manager
-	"db.add":      true, "db.passwd": true, "db.remove": true,
+	"db.add":      true, "db.passwd": true, "db.remove": true, "db.remote": true, "db.settings": true,
 	"db.pma": true, "db.pmadrop": true, "db.pmaclean": true, // the temporary users of the database browser
 	"backup.create": true, "backup.restore": true, "backup.prune": true,
 	"services.control": true, "services.install": true, "services.remove": true, "site.webmail": true,
@@ -220,7 +227,7 @@ var writes = map[string]bool{
 	"panel.update": true, // replaces the program with a signed release (mpn update), in the background
 }
 
-var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "backup.list": true, "panel.updatecheck": true}
+var reads = map[string]bool{"port.status": true, "port.sshaddr": true, "notify.status": true, "audit.list": true, "audit.note": true, "mail.cfdetect": true, "site.list": true, "site.info": true, "site.log": true, "services.status": true, "site.sslinfo": true, "site.vhost": true, "site.cronlist": true, "firewall.status": true, "security.status": true, "mail.status": true, "mail.records": true, "panel.sslinfo": true, "cloud.status": true, "cloud.list": true, "wp.status": true, "wp.search": true, "db.list": true, "db.remoteinfo": true, "db.settingsinfo": true, "backup.list": true, "panel.updatecheck": true}
 
 var versionRe = regexp.MustCompile(`^\d{1,4}\.\d{1,4}\.\d{1,4}$`)
 
@@ -606,6 +613,31 @@ func (r Request) Argv() ([]string, error) {
 			return nil, err
 		}
 		return []string{"db", "pma", "-name", r.Name, "-apply"}, nil
+	case "db.settingsinfo":
+		return []string{"db", "settings"}, nil
+	case "db.settings":
+		if _, err := tune.CheckDBValues(r.DBValues); err != nil {
+			return nil, err
+		}
+		return []string{"db", "settings", "-stdin", "-apply"}, nil // the values go on standard input
+	case "db.remoteinfo":
+		if err := requireDB(r.Name); err != nil {
+			return nil, err
+		}
+		return []string{"db", "remote", "-name", r.Name, "-json"}, nil
+	case "db.remote":
+		if err := requireDB(r.Name); err != nil {
+			return nil, err
+		}
+		hosts := "none"
+		if len(r.Hosts) > 0 {
+			list, err := dbadmin.ParseHosts(strings.Join(r.Hosts, ","))
+			if err != nil {
+				return nil, err
+			}
+			hosts = strings.Join(list, ",")
+		}
+		return []string{"db", "remote", "-name", r.Name, "-hosts", hosts, "-apply"}, nil
 	case "db.pmadrop":
 		if !dbadmin.ValidTempName(r.User) {
 			return nil, fmt.Errorf("invalid temporary user %q", r.User)
@@ -732,6 +764,9 @@ func (r Request) sslArgv() ([]string, error) {
 	}
 	switch r.Op {
 	case "site.ssl":
+		if r.CFToken != "" {
+			return []string{"site", "ssl", "-name", r.Site, "-cf", "-apply"}, nil // the token goes on standard input
+		}
 		return []string{"site", "ssl", "-name", r.Site, "-apply"}, nil
 	case "site.ssloff":
 		return []string{"site", "ssl-off", "-name", r.Site, "-apply"}, nil

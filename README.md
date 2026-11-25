@@ -29,7 +29,7 @@ Options: `MPN_VERSION=1.0.2` installs a fixed version, `MPN_PANEL_PORT=2610` cha
 
 ## Features
 
-- **Websites:** PHP 7.0 to 8.5 (one PHP-FPM pool per site), Node.js 18 to 24, Python, static sites and reverse proxies. Each site has its own system account, domain, SSH/SFTP, file manager, web terminal, cron, logs and an editable vHost (checked with `nginx -t` before it is loaded).
+- **Websites:** PHP 5.6 and 7.0 to 8.5 (one PHP-FPM pool per site), Node.js 18 to 24, Python, static sites and reverse proxies. Each site has its own system account, domain, SSH/SFTP, file manager, web terminal, cron, logs and an editable vHost (checked with `nginx -t` before it is loaded).
 - **App installer:** WordPress, Laravel, CodeIgniter 4, CakePHP, Yii 2, plus a WordPress manager (updates, plugins, themes).
 - **SSL:** Let's Encrypt with a DNS check first and automatic renewal, custom certificates, CSR generation. The panel has its own certificate as well.
 - **Databases:** MariaDB or MySQL, one user per database, phpMyAdmin that signs in with a temporary account.
@@ -57,7 +57,7 @@ The panel downloads these components from their releases and checks the SHA-256 
 | Repository | Used by the panel for | Pinned in |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | Web mail at `/webmail/` (a customised lilmail) | `internal/mail/webmail.go` |
-| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | PageSpeed and ModSecurity modules built for nginx 1.30.7; PHP 7.0 to 7.3 and the OWASP CRS for AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | PageSpeed and ModSecurity modules built for nginx 1.30.7; PHP 5.6 and 7.0 to 7.3 and the OWASP CRS for AlmaLinux, Rocky Linux, CentOS Stream | `internal/installer/nginx.go`, `internal/installer/el.go` |
 
 ## Command line
 

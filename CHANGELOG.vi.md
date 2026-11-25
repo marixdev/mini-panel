@@ -4,6 +4,28 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 Bản chính bằng tiếng Anh: [CHANGELOG.md](CHANGELOG.md). Có thêm bản [tiếng Trung](CHANGELOG.zh.md).
 
+## [1.2.4] - 2026-11-25
+
+### Thêm mới
+
+- **Thông báo cập nhật.** Panel tự kiểm tra bản mới 30 giây sau khi khởi động, sau đó mỗi 6 giờ, và giữ kết quả qua các lần khởi động lại. Khi có bản mới, trang Cập nhật hiện nhật ký thay đổi của mọi bản sau bản đang chạy, theo ngôn ngữ của panel, kèm nút cài đặt; các trang khác hiện một thông báo ở góc dưới bên phải dẫn tới đó. Khi chương trình đã chạy bản mới, thông báo tự biến mất. Nút × ẩn thông báo trên trình duyệt đó cho đến bản tiếp theo. "Kiểm tra ngay" hỏi GitHub tức thì.
+- **PHP 5.6**, cho các site cũ chưa chuyển được. Trên Debian và Ubuntu lấy từ Sury (`php5.6-*`, Sury vẫn vá); trên AlmaLinux, Rocky Linux và CentOS Stream 9, 10 lấy từ [mpn-packages](https://github.com/marixdev/mpn-packages/releases/tag/el-r3), build kèm OpenSSL 1.0.2u liên kết riêng. Có mysqli, PDO và các hàm `mysql_*` cũ, opcache, gd, curl, mbstring, xml và zip. Bản thân PHP không còn vá bảo mật cho 5.6 từ tháng 1/2019: chỉ dùng cho site không chạy được trên 7.4 trở lên.
+- **Truy cập cơ sở dữ liệu từ xa.** Một cơ sở dữ liệu có thể được kết nối từ các địa chỉ chọn trước qua cổng 3306 (Cơ sở dữ liệu › Truy cập từ xa). Máy chủ chỉ nghe mọi địa chỉ khi có ít nhất một cơ sở dữ liệu cho phép; tường lửa chỉ mở 3306 cho đúng các địa chỉ đó, và user tạo cho chúng chỉ có quyền trên cơ sở dữ liệu đó. Đổi mật khẩu thì đổi cho mọi địa chỉ. Lệnh `mpn db remote` làm tương tự qua SSH.
+- **Cấu hình máy chủ cơ sở dữ liệu.** Dịch vụ › Cơ sở dữ liệu › Cấu hình đổi `max_connections`, buffer pool, kích thước gói, thời gian chờ và vài giá trị khác, mỗi giá trị trong một khoảng được kiểm tra. Máy chủ khởi động lại với tệp mới; nếu không lên được, tệp cũ được đặt lại và máy chủ chạy lại với tệp đó.
+- **SSL qua DNS Cloudflare.** Site nằm sau proxy Cloudflare (mây cam), hoặc tên miền chưa trỏ về máy này, có thể lấy chứng chỉ bằng bản ghi TXT: nhập API token có quyền Zone:Read và DNS:Edit ở tab SSL. Token được giữ để gia hạn, chỉ root đọc được.
+- **Ghi nhớ trình duyệt.** Trang đăng nhập có thể giữ một trình duyệt đăng nhập 30 ngày. Phiên đăng nhập giờ còn sau khi panel khởi động lại hay cập nhật. Trang Cài đặt hiện số trình duyệt đang đăng nhập và đăng xuất tất cả trình duyệt khác; đổi mật khẩu đăng xuất mọi trình duyệt, kể cả bằng `mpn web passwd`.
+
+### Sửa lỗi
+
+- Cài đặt dừng ở bước swap với "fallocate failed: Text file busy" trên máy mà nhà cung cấp đã tạo sẵn `/swapfile` và đang dùng nó. Swap có sẵn giờ được giữ nguyên, phần còn thiếu nằm trong tệp riêng `/swapfile-mpn`. Hệ tệp không hỗ trợ fallocate thì tệp được tạo bằng dd.
+- Gia hạn chứng chỉ lỗi với site sau Cloudflare chế độ "Full" có "Always use HTTPS": Let's Encrypt đi theo chuyển hướng sang https, nơi site chuyển mọi đường dẫn đi chỗ khác, kể cả đường dẫn xác minh. Máy chủ https giờ tự trả lời `/.well-known/acme-challenge/`, và bước kiểm tra trước khi xin chứng chỉ đi theo chuyển hướng cùng tên miền như Let's Encrypt.
+- Trình cài đặt phpBB lỗi ở cuối với "The ../styles/prosilver/template directory does not exist": panel xoá `/install/` ngay khi có tài khoản quản trị, trong lúc trình cài đặt vẫn đang chạy từ thư mục đó. Giờ panel chờ trình cài đặt chạy xong.
+- Trong trình sửa tệp, Ctrl+A ngoài vùng văn bản và sao chép từ menu chỉ lấy các dòng đang hiện trên màn hình. Giờ lấy cả tệp.
+
+### Ghi chú khi nâng cấp
+
+- Lần kiểm tra bản mới đầu tiên diễn ra 30 giây sau khi panel khởi động; trước đó trang Cập nhật ghi là chưa kiểm tra.
+
 ## [1.2.3] - 2026-11-22
 
 ### Thêm mới

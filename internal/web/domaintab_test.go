@@ -168,7 +168,10 @@ func TestEachSSLActionSendsItsOwnOperation(t *testing.T) {
 		op   string
 		chk  func(ctl.Request) bool
 	}{
-		{"/sites/shop/ssl/letsencrypt", url.Values{}, "site.ssl", func(r ctl.Request) bool { return r.Site == "shop" }},
+		{"/sites/shop/ssl/letsencrypt", url.Values{}, "site.ssl", func(r ctl.Request) bool { return r.Site == "shop" && r.CFToken == "" }},
+		{"/sites/shop/ssl/cloudflare", url.Values{"token": {" abcdefghijklmnopqrstuvwxyz0123456789ABCD "}}, "site.ssl", func(r ctl.Request) bool {
+			return r.Site == "shop" && r.CFToken == "abcdefghijklmnopqrstuvwxyz0123456789ABCD"
+		}},
 		{"/sites/shop/ssl/off", url.Values{}, "site.ssloff", func(r ctl.Request) bool { return r.Site == "shop" }},
 		{"/sites/shop/ssl/redirect", url.Values{"redirect": {"1"}}, "site.sslredirect", func(r ctl.Request) bool { return r.Redirect }},
 		{"/sites/shop/ssl/redirect", url.Values{}, "site.sslredirect", func(r ctl.Request) bool { return !r.Redirect }},

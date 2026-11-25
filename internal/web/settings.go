@@ -30,9 +30,10 @@ const (
 )
 
 type pendingLogin struct {
-	user  string
-	exp   time.Time
-	tries int
+	user     string
+	remember bool // the person ticked "remember this browser" with the password
+	exp      time.Time
+	tries    int
 }
 
 type pendingSetup struct {
@@ -56,7 +57,7 @@ func newToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func (t *twoFactor) newLogin(user string) string {
+func (t *twoFactor) newLogin(user string, remember bool) string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	now := time.Now()
@@ -69,7 +70,7 @@ func (t *twoFactor) newLogin(user string) string {
 		}
 	}
 	tok := newToken()
-	t.login[flashKey(tok)] = &pendingLogin{user: user, exp: now.Add(loginPendingTTL)}
+	t.login[flashKey(tok)] = &pendingLogin{user: user, remember: remember, exp: now.Add(loginPendingTTL)}
 	return tok
 }
 
@@ -144,6 +145,7 @@ type settingsView struct {
 	Min       int
 	Version   string // of the program that runs
 	UpdateLog string // the last update, as mpn update wrote it
+	Sessions  int    // browsers signed in now, this one included
 }
 
 // updateLog is what the last "mpn update" wrote; the root helper makes the file and gives it to mpn-web.
@@ -160,8 +162,13 @@ func readUpdateLog() string {
 	return strings.TrimSpace(string(b))
 }
 
-// updateCheck asks the helper whether a newer release exists. It is a click away and not done on every page: it asks GitHub.
+// updateCheck asks GitHub now, from the "Check now" button. The panel looks by itself every few hours; this is for somebody who knows
+// a release just came out. Without the checker (a test, an old setup) it asks the helper as before.
 func (s *Server) updateCheck(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	if s.Updates != nil {
+		s.updateCheckNow(w, r)
+		return
+	}
 	T := translatorForWriter(w)
 	res := s.runText(r, T, T("set.up.check.title"), ctl.Request{Op: "panel.updatecheck"})
 	res.Back = "/update"
@@ -182,10 +189,35 @@ func (s *Server) updateStart(w http.ResponseWriter, r *http.Request, ss webauth.
 	s.finish(w, r, res)
 }
 
-// updatePage shows the version that runs, the buttons to check and update, and what the last update wrote.
+// updatePageView is what the Update page shows about releases: the newer one with the changelog of everything after this version, or
+// that this is the latest, and when GitHub was last asked.
+type updatePageView struct {
+	Latest    string // the newer release, "" when this is the latest or nothing is known
+	Known     string // the latest release GitHub named, even when it is this one
+	Changelog []changelogEntry
+	Checked   time.Time
+	CheckErr  string
+	Auto      bool // the panel looks by itself
+}
+
+type changelogEntry struct {
+	Version, Date string
+	Body          template.HTML
+}
+
+// updatePage shows the version that runs, a newer release with its changelog, the button to update, and what the last update wrote.
 func (s *Server) updatePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
 	v := settingsView{Version: Version, UpdateLog: readUpdateLog()}
-	s.show(w, http.StatusOK, ss, view{Page: "update", Settings: &v, Notice: s.takeFlash(s.sessionToken(r))})
+	up := &updatePageView{}
+	if s.Updates != nil {
+		info := s.Updates.Info()
+		latest, sections := s.Updates.Available(writerLanguage(w))
+		up.Auto, up.Latest, up.Known, up.Checked, up.CheckErr = true, latest, info.Latest, info.Checked, info.Error
+		for _, sec := range sections {
+			up.Changelog = append(up.Changelog, changelogEntry{Version: sec.Version, Date: sec.Date, Body: changelogHTML(sec.Body)})
+		}
+	}
+	s.show(w, http.StatusOK, ss, view{Page: "update", Settings: &v, Up: up, Notice: s.takeFlash(s.sessionToken(r))})
 }
 
 var versionText = regexp.MustCompile(`^\d{1,4}\.\d{1,4}\.\d{1,4}$`)
@@ -232,6 +264,7 @@ func (s *Server) settingsPages(mux *http.ServeMux) {
 	mux.HandleFunc("POST /settings/password", s.auth(s.changePassword))
 	mux.HandleFunc("POST /settings/2fa/enable", s.auth(s.twoFAEnable))
 	mux.HandleFunc("POST /settings/2fa/disable", s.auth(s.twoFADisable))
+	mux.HandleFunc("POST /settings/sessions/end", s.auth(s.endOtherSessions))
 	mux.HandleFunc("GET /update", s.auth(s.updatePage))
 	mux.HandleFunc("POST /update/check", s.auth(s.updateCheck))
 	mux.HandleFunc("POST /update", s.auth(s.updateStart))
@@ -251,6 +284,7 @@ func (s *Server) sessionToken(r *http.Request) string {
 // showSettings draws the page. The account is read again each time, so what the page says is what is stored.
 func (s *Server) showSettings(w http.ResponseWriter, r *http.Request, ss webauth.Session, status int, v settingsView, notice *result) {
 	v.Min = webauth.MinPasswordLen
+	v.Sessions = s.Sessions.Count()
 	if acct, err := s.Account(); err == nil {
 		v.TOTPOn = acct.TOTP != ""
 	}
@@ -330,6 +364,14 @@ func (s *Server) changePassword(w http.ResponseWriter, r *http.Request, ss webau
 	s.note(r, "account.password", "", "user="+acct.User, false)
 	s.Sessions.DeleteExcept(s.sessionToken(r)) // a browser signed in with the old password does not stay signed in
 	s.settingsDone(w, r, T("set.pw.done"))
+}
+
+// endOtherSessions signs out every browser but this one, remembered ones too: for a lost laptop or a shared computer left signed in.
+func (s *Server) endOtherSessions(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
+	s.Sessions.DeleteExcept(s.sessionToken(r))
+	s.note(r, "account.sessions_end", "", "user="+ss.User, false)
+	s.settingsDone(w, r, T("set.sess.done"))
 }
 
 // twoFASetupPage makes a new secret and shows it as a QR code and as text. It is stored only in memory until a code from the app
@@ -486,5 +528,5 @@ func (s *Server) loginSecondStep(w http.ResponseWriter, r *http.Request) {
 	s.note(r, "login.ok", "", "user="+acct.User+" 2fa=yes", false)
 	s.twofa.doneLogin(tok)
 	s.Throttle.Reset(key)
-	s.startSession(w, r, acct.User)
+	s.startSession(w, r, acct.User, p.remember)
 }

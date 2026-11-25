@@ -34,6 +34,7 @@
           <button type="button" aria-label="{{T "auth.password.show.label"}}" aria-pressed="false" data-toggle-pw="password" data-show="{{T "auth.password.show"}}" data-hide="{{T "auth.password.hide"}}" class="pw-toggle">{{T "auth.password.show"}}</button>
         </div>
       </div>
+      <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="remember" value="1" class="mt-0.5 size-4 rounded border-input text-primary focus:ring-ring"><span>{{T "login.remember"}}<span class="block text-xs text-muted-foreground">{{T "login.remember.d"}}</span></span></label>
       <button class="btn-primary w-full py-2.5" type="submit">{{T "auth.signin"}}</button>
     </form>
     {{end}}

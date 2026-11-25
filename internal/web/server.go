@@ -80,7 +80,9 @@ type Server struct {
 	// NotifySocket is the socket of the mpn-notify service, which takes the reports of other machines when this panel is the hub of the
 	// Telegram alerts; "" switches /_notify/ off.
 	NotifySocket string
-	cf           cfCache // what the name servers of mail domains said, for ten minutes
+	// Updates looks for new releases by itself; nil switches the notice and the changelog off.
+	Updates *UpdateChecker
+	cf      cfCache // what the name servers of mail domains said, for ten minutes
 
 	flashMu   sync.Mutex
 	flash     map[string]*result
@@ -115,6 +117,7 @@ func (s *Server) Handler() http.Handler {
 	s.notifyHubRoutes(mux)
 	s.notifyPages(mux)
 	s.servicesPages(mux)
+	s.dbSettingsPages(mux)
 	s.pmaRoutes(mux)
 	s.backupPages(mux)
 	s.sitePagesOfOne(mux)
@@ -283,13 +286,14 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		s.render(w, http.StatusUnauthorized, view{Page: "login", Error: T("login.wrong")})
 		return
 	}
+	remember := r.PostFormValue("remember") == "1"
 	if acct.TOTP != "" { // the password is right; the code of the app is still to come
-		s.render(w, http.StatusOK, view{Page: "login", Need2FA: true, Pending: s.twofa.newLogin(acct.User)})
+		s.render(w, http.StatusOK, view{Page: "login", Need2FA: true, Pending: s.twofa.newLogin(acct.User, remember)})
 		return
 	}
 	s.note(r, "login.ok", "", "user="+acct.User, false)
 	s.Throttle.Reset(key)
-	s.startSession(w, r, acct.User)
+	s.startSession(w, r, acct.User, remember)
 }
 
 // notFound answers an address the panel does not have with a page of its own. It is the same page for a signed-in person and for a
@@ -298,13 +302,18 @@ func (s *Server) notFound(w http.ResponseWriter, r *http.Request) {
 	s.render(w, http.StatusNotFound, view{Page: "notfound"})
 }
 
-// startSession signs the browser in: a new session, and its cookie.
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, user string) {
+// startSession signs the browser in: a new session, and its cookie. A remembered browser gets a cookie that outlives it, so the next
+// visit within 30 days needs neither the password nor the code; any other cookie ends when the browser closes.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, user string, remember bool) {
 	if c, err := r.Cookie(s.cookieName()); err == nil {
 		s.Sessions.Delete(c.Value) // a login never reuses an older session
 	}
-	tok, _ := s.Sessions.Create(user)
-	http.SetCookie(w, &http.Cookie{Name: s.cookieName(), Value: tok, Path: "/", HttpOnly: true, Secure: s.Secure, SameSite: http.SameSiteStrictMode})
+	tok, sess := s.Sessions.Create(user, remember)
+	c := &http.Cookie{Name: s.cookieName(), Value: tok, Path: "/", HttpOnly: true, Secure: s.Secure, SameSite: http.SameSiteStrictMode}
+	if d := s.Sessions.Lifetime(sess); d > 0 {
+		c.MaxAge = int(d.Seconds())
+	}
+	http.SetCookie(w, c)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
@@ -333,6 +342,8 @@ type view struct {
 	EditMtime                                   int64
 	CRLF, Cut                                   bool
 	Notice                                      *result
+	UpNotice                                    *updateNotice // a newer release exists: the notice at the corner of every page
+	Up                                          *updatePageView
 	Files                                       []fileRow
 	Crumbs                                      []crumb
 	Parent                                      string
@@ -365,6 +376,8 @@ type view struct {
 	Locales                                     []string
 	Mon                                         *monView
 	DBs                                         []dbRow
+	DBRemote                                    *dbRemote
+	DBSet                                       *dbSetView
 	Backups                                     []backupRow
 	SiteNames                                   []string
 	PHPVersions                                 []string

@@ -95,7 +95,7 @@ func clocked(idle, max time.Duration, limit int) (*Sessions, *time.Time) {
 
 func TestSessionLifetime(t *testing.T) {
 	s, now := clocked(10*time.Minute, time.Hour, 5)
-	tok, sess := s.Create("admin")
+	tok, sess := s.Create("admin", false)
 	if len(tok) < 40 || sess.CSRF == "" || sess.CSRF == tok {
 		t.Fatalf("weak tokens: %q %q", tok, sess.CSRF)
 	}
@@ -112,12 +112,12 @@ func TestSessionLifetime(t *testing.T) {
 	if _, ok := s.Get(tok); ok {
 		t.Error("session must end after the idle time and after the maximum time")
 	}
-	tok2, _ := s.Create("admin")
+	tok2, _ := s.Create("admin", false)
 	*now = now.Add(11 * time.Minute)
 	if _, ok := s.Get(tok2); ok {
 		t.Error("an idle session must end")
 	}
-	tok3, _ := s.Create("admin")
+	tok3, _ := s.Create("admin", false)
 	for i := 0; i < 9; i++ {
 		*now = now.Add(9 * time.Minute)
 		s.Get(tok3)
@@ -129,13 +129,13 @@ func TestSessionLifetime(t *testing.T) {
 
 func TestSessionLimitAndLogout(t *testing.T) {
 	s, now := clocked(time.Hour, time.Hour, 2)
-	a, _ := s.Create("admin")
+	a, _ := s.Create("admin", false)
 	*now = now.Add(time.Second)
-	b, _ := s.Create("admin")
+	b, _ := s.Create("admin", false)
 	*now = now.Add(time.Second)
 	s.Get(a) // a is now the more recently used one
 	*now = now.Add(time.Second)
-	c, _ := s.Create("admin")
+	c, _ := s.Create("admin", false)
 	if _, ok := s.Get(b); ok {
 		t.Error("the least recently used session should make room")
 	}
@@ -150,8 +150,8 @@ func TestSessionLimitAndLogout(t *testing.T) {
 
 func TestCSRFCheck(t *testing.T) {
 	s, _ := clocked(time.Hour, time.Hour, 5)
-	tok, sess := s.Create("admin")
-	other, otherSess := s.Create("admin")
+	tok, sess := s.Create("admin", false)
+	other, otherSess := s.Create("admin", false)
 	if !s.CheckCSRF(tok, sess.CSRF) {
 		t.Error("the session's own token must pass")
 	}

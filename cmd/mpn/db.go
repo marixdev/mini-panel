@@ -31,13 +31,17 @@ func runDB(args []string) {
 		dbPmaDrop(args[1:])
 	case "pmaclean":
 		dbPmaClean(args[1:])
+	case "remote":
+		dbRemote(args[1:])
+	case "settings":
+		dbSettings(args[1:])
 	default:
 		dbUsage()
 	}
 }
 
 func dbUsage() {
-	fmt.Fprintln(os.Stderr, "usage: mpn db <add|list|passwd|remove|pma|pmadrop|pmaclean> [flags]   (add -h for the flags)")
+	fmt.Fprintln(os.Stderr, "usage: mpn db <add|list|passwd|remove|remote|settings|pma|pmadrop|pmaclean> [flags]   (add -h for the flags)")
 	os.Exit(2)
 }
 
@@ -185,7 +189,13 @@ func dbRemove(args []string) {
 		return
 	}
 	adm := dbAdmin()
+	hosts, _ := adm.Hosts(d.Name)
 	fail(adm.Drop(d.Name))
 	fail(st.DeleteDatabase(d.Name))
+	if len(hosts) > 0 { // its firewall rules go, and the server stops listening outside when it was the last one
+		if engine, err := dbEngine(); err == nil {
+			fail(dbRemoteSync(st, engine))
+		}
+	}
 	fmt.Printf("database %q and its user were deleted\n", d.Name)
 }

@@ -1,0 +1,40 @@
+{{define "content"}}{{$v := .DBSet}}
+<div class="mx-auto max-w-3xl">
+  <p class="text-sm"><a class="link" href="/services">&larr; {{T "svc.title"}}</a></p>
+  <h1 class="h-page mt-2">{{T "dbset.title"}}{{if $v.Engine}} <span class="text-muted-foreground">({{$v.Engine}})</span>{{end}}</h1>
+  <p class="mt-1.5 text-sm text-muted-foreground">{{T "dbset.sub"}}</p>
+  {{if $v.Error}}<div role="alert" class="alert-error mt-5"><span>{{$v.Error}}</span></div>{{end}}
+  {{if $v.Rows}}
+  <form method="post" action="/services/database/settings" class="card mt-6 p-6" autocomplete="off">
+    <input type="hidden" name="csrf" value="{{.CSRF}}">
+    <div class="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+      {{range $v.Rows}}
+      <div>
+        <label for="s-{{.Key}}" class="label font-mono text-[13px]">{{.Key}}</label>
+        {{if .Choices}}{{$val := .Value}}
+        <select id="s-{{.Key}}" name="{{.Key}}" class="field">
+          <option value=""{{if eq $val ""}} selected{{end}}>{{T "dbset.server"}}</option>
+          {{range .Choices}}{{if ne . "default"}}<option value="{{.}}"{{if eq $val .}} selected{{end}}>{{T (printf "dbset.choice.%s" .)}}</option>{{end}}{{end}}
+        </select>
+        {{else}}
+        <div class="flex items-center gap-2">
+          <input id="s-{{.Key}}" name="{{.Key}}" value="{{.Value}}" class="field font-mono" inputmode="numeric" pattern="[0-9]*" placeholder="{{T "dbset.server"}}">
+          {{if .Unit}}<span class="text-sm text-muted-foreground">{{if eq .Unit "M"}}MB{{else}}{{T "dbset.sec"}}{{end}}</span>{{end}}
+        </div>
+        {{end}}
+        <p class="hint">{{T (printf "dbset.h.%s" .Key)}}{{if .Current}} {{T "dbset.now" .Current}}{{end}}</p>
+      </div>
+      {{end}}
+    </div>
+    <div role="note" class="alert-warn mt-6">
+      <svg viewBox="0 0 24 24" class="mt-0.5 size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v4M12 17h.01"/></svg>
+      <span>{{T "dbset.restart"}}</span>
+    </div>
+    <div class="mt-5 flex items-center gap-3">
+      <button class="btn-primary">{{T "dbset.save"}}</button>
+      <a class="btn-secondary" href="/services">{{T "c.cancel"}}</a>
+    </div>
+  </form>
+  {{end}}
+</div>
+{{end}}

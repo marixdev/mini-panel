@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"mpn/internal/acme"
+	"mpn/internal/cfdns"
 	"mpn/internal/executor"
 	"mpn/internal/provision"
 	"mpn/internal/site"
@@ -73,8 +74,12 @@ func siteRenew(args []string) {
 
 // renewOne gets a new certificate and installs it. The executor restores the old files if nginx rejects the result.
 func renewOne(cfg acme.Config, s site.Site) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
+	// A site whose certificate was had through the DNS of Cloudflare renews the same way, with the token saved for it.
+	if tok, ok := siteCFToken(s.Name); ok {
+		cfg.DNS = cfdns.ACME{Client: cfdns.Client{Token: tok}}
+	}
 	chain, key, err := acme.Issue(ctx, cfg, s.Hostnames)
 	if err != nil {
 		return err

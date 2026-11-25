@@ -1,4 +1,4 @@
-// Package acme gets certificates from Let's Encrypt with the HTTP-01 challenge.
+// Package acme gets certificates from Let's Encrypt with the HTTP-01 challenge, or the DNS-01 one when a DNSSolver is given.
 package acme
 
 import (
@@ -29,6 +29,15 @@ type Config struct {
 	Email      string // optional contact address
 	AccountKey string // file holding the account key; created on first use
 	WebRoot    string // directory nginx serves under /.well-known/acme-challenge/
+	// DNS, when set, proves control with a TXT record (dns-01) in place of a file (http-01). It works whatever is in front of the
+	// web server, a proxy such as Cloudflare's included.
+	DNS DNSSolver
+}
+
+// DNSSolver puts the TXT record "_acme-challenge.<name>" with value in the zone of name, waits until the zone's name servers
+// answer with it, and returns a function that removes it.
+type DNSSolver interface {
+	Present(ctx context.Context, name, value string) (cleanup func(), err error)
 }
 
 var tokenRe = regexp.MustCompile(`^[A-Za-z0-9_-]{8,128}$`)
@@ -55,7 +64,7 @@ func Issue(ctx context.Context, c Config, names []string) (chainPEM, keyPEM []by
 		return nil, nil, fmt.Errorf("creating order: %w", err)
 	}
 	for _, u := range order.AuthzURLs {
-		if err := solve(ctx, client, c.WebRoot, u); err != nil {
+		if err := solve(ctx, client, c, u); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -82,7 +91,7 @@ func Issue(ctx context.Context, c Config, names []string) (chainPEM, keyPEM []by
 	return encodeChain(der), pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER}), nil
 }
 
-func solve(ctx context.Context, client *xacme.Client, webRoot, authzURL string) error {
+func solve(ctx context.Context, client *xacme.Client, c Config, authzURL string) error {
 	z, err := client.GetAuthorization(ctx, authzURL)
 	if err != nil {
 		return err
@@ -90,22 +99,36 @@ func solve(ctx context.Context, client *xacme.Client, webRoot, authzURL string) 
 	if z.Status == xacme.StatusValid {
 		return nil
 	}
+	want := "http-01"
+	if c.DNS != nil {
+		want = "dns-01"
+	}
 	var chal *xacme.Challenge
 	for _, ch := range z.Challenges {
-		if ch.Type == "http-01" {
+		if ch.Type == want {
 			chal = ch
 		}
 	}
 	if chal == nil {
-		return fmt.Errorf("%s: the CA offered no http-01 challenge", z.Identifier.Value)
+		return fmt.Errorf("%s: the CA offered no %s challenge", z.Identifier.Value, want)
 	}
-	body, err := client.HTTP01ChallengeResponse(chal.Token)
-	if err != nil {
-		return err
-	}
-	cleanup, err := putChallenge(webRoot, chal.Token, body)
-	if err != nil {
-		return err
+	var cleanup func()
+	if c.DNS != nil {
+		value, err := client.DNS01ChallengeRecord(chal.Token)
+		if err != nil {
+			return err
+		}
+		if cleanup, err = c.DNS.Present(ctx, z.Identifier.Value, value); err != nil {
+			return fmt.Errorf("%s: %w", z.Identifier.Value, err)
+		}
+	} else {
+		body, err := client.HTTP01ChallengeResponse(chal.Token)
+		if err != nil {
+			return err
+		}
+		if cleanup, err = putChallenge(c.WebRoot, chal.Token, body); err != nil {
+			return err
+		}
 	}
 	defer cleanup()
 	if _, err := client.Accept(ctx, chal); err != nil {

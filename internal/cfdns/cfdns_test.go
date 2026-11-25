@@ -21,17 +21,18 @@ const (
 
 // fake stands in for the API: only the calls the package makes, and it counts any call that would change or delete a record.
 type fake struct {
-	mu     sync.Mutex
-	zones  map[string]string
-	recs   []Record
-	n      int
-	posts  []createBody
-	bad    int // requests with a method the package must never use
-	hits   int
-	auths  []string
-	mode   string // "", "forbid", "rate", "dup", "big", "badpost"
-	echo   bool   // error messages repeat the Authorization header, as a careless server might
-	verify string
+	mu      sync.Mutex
+	zones   map[string]string
+	recs    []Record
+	n       int
+	posts   []createBody
+	bad     int // requests with a method the package must never use
+	hits    int
+	auths   []string
+	mode    string // "", "forbid", "rate", "dup", "big", "badpost"
+	echo    bool   // error messages repeat the Authorization header, as a careless server might
+	verify  string
+	deleted []string
 }
 
 func (f *fake) reply(w http.ResponseWriter, status int, ok bool, result any, code int, msg string) {
@@ -121,6 +122,19 @@ func (f *fake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			f.recs = append(f.recs, rec)
 			f.posts = append(f.posts, b)
 			f.reply(w, 200, true, rec, 0, "")
+		case "DELETE":
+			// Only a record this fake made, by its exact address: the challenge record the package added itself.
+			id := strings.TrimPrefix(p, "/zones/"+zid+"/dns_records/")
+			for i, rec := range f.recs {
+				if rec.ID == id && strings.HasPrefix(rec.Name, "_acme-challenge.") {
+					f.recs = append(f.recs[:i], f.recs[i+1:]...)
+					f.deleted = append(f.deleted, id)
+					f.reply(w, 200, true, map[string]string{"id": id}, 0, "")
+					return
+				}
+			}
+			f.bad++
+			http.Error(w, "no", 404)
 		default:
 			f.bad++
 			http.Error(w, "no", 405)

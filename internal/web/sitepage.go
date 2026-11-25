@@ -45,6 +45,7 @@ func (s *Server) sitePagesOfOne(mux *http.ServeMux) {
 	mux.HandleFunc("POST /sites/{name}/vhost/reset", s.auth(s.resetVhost))
 	mux.HandleFunc("POST /sites/{name}/domain", s.auth(s.saveDomain))
 	mux.HandleFunc("POST /sites/{name}/ssl/letsencrypt", s.auth(s.sslLetsEncrypt))
+	mux.HandleFunc("POST /sites/{name}/ssl/cloudflare", s.auth(s.sslCloudflare))
 	mux.HandleFunc("POST /sites/{name}/ssl/custom", s.auth(s.sslCustom))
 	mux.HandleFunc("POST /sites/{name}/ssl/csr", s.auth(s.sslCSR))
 	mux.HandleFunc("POST /sites/{name}/ssl/off", s.auth(s.sslOff))

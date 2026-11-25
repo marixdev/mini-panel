@@ -22,6 +22,17 @@ func names(p Plan) string {
 	return strings.Join(n, ",")
 }
 
+// scripts is every command of the plan in full; Plan.String cuts a multi-line script after its first line.
+func scripts(p Plan) string {
+	var b strings.Builder
+	for _, s := range p {
+		for _, a := range s.Actions {
+			b.WriteString(strings.Join(a.Args, " ") + "\n")
+		}
+	}
+	return b.String()
+}
+
 func TestStepOrderWithSwap(t *testing.T) {
 	p, err := Build(opts("mariadb", 0))
 	if err != nil {
@@ -30,8 +41,18 @@ func TestStepOrderWithSwap(t *testing.T) {
 	if got, want := names(p), "base packages,swap,journald limit,nginx,nginx pagespeed,database mariadb"; got != want {
 		t.Errorf("steps=%s want %s", got, want)
 	}
-	if !strings.Contains(p.String(), "run   fallocate -l 1024M /swapfile") {
+	if !strings.Contains(scripts(p), `fallocate -l 1024M "$f"`) {
 		t.Errorf("swap size missing:\n%s", p)
+	}
+}
+
+// A /swapfile that is already active swap is left alone: the script picks another name (fallocate on it says "Text file busy").
+func TestSwapScriptSkipsAnActiveSwapfile(t *testing.T) {
+	s := swapScript(512)
+	for _, want := range []string{"swapon --show=NAME", "/swapfile-mpn", `grep -qx "$c"`, "dd if=/dev/zero", "count=512"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %q:\n%s", want, s)
+		}
 	}
 }
 
@@ -44,7 +65,7 @@ func TestSwapSkippedWhenEnough(t *testing.T) {
 
 func TestSwapOnlyTopsUp(t *testing.T) {
 	p, _ := Build(opts("", 256))
-	if !strings.Contains(p.String(), "fallocate -l 768M") {
+	if s := scripts(p); !strings.Contains(s, "fallocate -l 768M") || !strings.Contains(s, "count=768") {
 		t.Errorf("want top-up of 768M:\n%s", p)
 	}
 }

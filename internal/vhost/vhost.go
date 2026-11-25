@@ -138,6 +138,8 @@ server {
 server {
 {{- template "ssl" .}}
     server_name {{.Names}};
+    # Behind a proxy that reaches this machine over https (Cloudflare in "Full" mode), the renewal asks here.
+    location /.well-known/acme-challenge/ { root /var/lib/mpn/acme; }
 {{- template "body" .}}
 }
 {{- end}}
@@ -149,7 +151,8 @@ server {
     ssl_certificate {{.DefaultCert}}/fullchain.pem;
     ssl_certificate_key {{.DefaultCert}}/privkey.pem;
     server_name {{.AllNames}};
-    return 302 http://$host$request_uri;
+    location /.well-known/acme-challenge/ { root /var/lib/mpn/acme; }
+    location / { return 302 http://$host$request_uri; }
 }
 {{- end}}
 {{- if .Aliases}}
@@ -166,7 +169,8 @@ server {
 server {
 {{- template "ssl" .}}
     server_name {{.Aliases}};
-    return 301 https://{{.Primary}}$request_uri;
+    location /.well-known/acme-challenge/ { root /var/lib/mpn/acme; }
+    location / { return 301 https://{{.Primary}}$request_uri; }
 }
 {{- end}}
 {{- end}}

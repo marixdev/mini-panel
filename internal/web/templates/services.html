@@ -27,6 +27,7 @@
           <div class="flex flex-wrap items-center justify-end gap-2">
             {{if .Installed}}
               {{if eq .Key "phpmyadmin"}}<span class="text-xs text-muted-foreground">{{T "svc.pma.where"}}</span>{{end}}
+              {{if and (eq .Group "database") .Unit}}<a class="btn-sm" href="/services/database/settings">{{T "dbset.btn"}}</a>{{end}}
               {{$key := .Key}}{{$active := .Active}}{{$label := .Label}}
               {{/* Each action has its own slot: start or stop, then restart, then reload. A missing action leaves its slot
                    empty, so the same button sits in the same place on every row and in every table. */}}

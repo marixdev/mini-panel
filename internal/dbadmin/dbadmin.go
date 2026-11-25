@@ -197,7 +197,18 @@ func (a Admin) SetPassword(name, password string) error {
 	if !used {
 		return fmt.Errorf("no database or user named %q on the server", name)
 	}
-	_, err = a.R.Run(passwordSQL(name, password))
+	// The users made for remote addresses get the new password too, or they would go on with the old one.
+	hosts, err := a.Hosts(name)
+	if err != nil {
+		return err
+	}
+	sql := passwordSQL(name, password)
+	for _, h := range hosts {
+		if hostCharsRe.MatchString(h) {
+			sql += fmt.Sprintf("ALTER USER '%s'@'%s' IDENTIFIED BY '%s';\n", name, userHost(h), password)
+		}
+	}
+	_, err = a.R.Run(sql)
 	return redact(err, password)
 }
 
@@ -206,6 +217,14 @@ func (a Admin) Drop(name string) error {
 	if !ValidName(name) {
 		return fmt.Errorf("invalid name %q", name)
 	}
-	_, err := a.R.Run(dropSQL(name))
+	sql := dropSQL(name)
+	if hosts, err := a.Hosts(name); err == nil { // the users of remote addresses go with the database
+		for _, h := range hosts {
+			if hostCharsRe.MatchString(h) {
+				sql += fmt.Sprintf("DROP USER IF EXISTS '%s'@'%s';\n", name, userHost(h))
+			}
+		}
+	}
+	_, err := a.R.Run(sql)
 	return err
 }

@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"os/user"
 	"path/filepath"
@@ -127,6 +128,15 @@ func webServe(args []string) {
 		},
 	}
 	collector := monitor.New(monitor.ProcSource, filepath.Join(filepath.Dir(*account), "metrics.json"))
+	// A sign-in lasts 2 hours without use and 24 hours in all; a browser the person asked to remember stays signed in for 30 days.
+	// Both are kept next to the account, so an update or a restart of the panel signs nobody out.
+	sessions := webauth.NewSessions(2*time.Hour, 24*time.Hour, 20)
+	sessions.LongIdle, sessions.LongMax = 30*24*time.Hour, 30*24*time.Hour
+	sessions.File = filepath.Join(filepath.Dir(*account), "sessions.json")
+	sessions.Load()
+	// The panel looks for a new release by itself and keeps what it found next to the account, so a restart does not ask again at once.
+	updates := &web.UpdateChecker{File: filepath.Join(filepath.Dir(*account), "update-check.json")}
+	updates.Load()
 	srv := &web.Server{
 		Mon:     collector,
 		Account: func() (webauth.Account, error) { return webauth.LoadAccount(*account) },
@@ -138,7 +148,8 @@ func webServe(args []string) {
 		// The file of the panel's own name on port 443; when it is there, the database browser is opened under /pma/ of that name.
 		PanelDomainFile: installer.PanelDomainFile,
 		NotifySocket:    notify.Socket,
-		Sessions:        webauth.NewSessions(30*time.Minute, 12*time.Hour, 20),
+		Updates:         updates,
+		Sessions:        sessions,
 		Throttle:        webauth.NewThrottle(),
 		Hosts:           hosts,
 		HostsFile:       panelssl.HostsFile,
@@ -176,6 +187,7 @@ func webServe(args []string) {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go collector.Run(ctx)
+	go updates.Run(ctx)
 	go func() {
 		<-ctx.Done()
 		sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -233,12 +245,23 @@ func webPasswd(args []string) {
 		acct.TOTP, acct.TOTPStep = old.TOTP, old.TOTPStep // a new password does not switch the second step off: "mpn web 2fa-off" does
 	}
 	fail(webauth.SaveAccount(*account, acct, uid, gid))
+	// A new password ends every sign-in, the remembered ones too. The sessions are kept in a file so they outlive a restart of the
+	// panel; removing the file and restarting the panel is what ends them.
+	sessFile := filepath.Join(filepath.Dir(*account), "sessions.json")
+	if err := os.Remove(sessFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		fail(err)
+	}
+	restarted := exec.Command("systemctl", "try-restart", "mpn-web.service").Run() == nil
 	if *stdin {
 		fmt.Printf("password of %q set\n", *name)
 	} else {
 		fmt.Printf("panel login\n\n  user:     %s\n  password: %s\n\nSave it now: only a hash is stored. Set a new one with:  mpn web passwd\n", *name, pw)
 	}
-	fmt.Println("A running panel keeps its signed-in sessions until they expire; restart it to end them: systemctl restart mpn-web")
+	if restarted {
+		fmt.Println("Every browser that was signed in has been signed out.")
+	} else {
+		fmt.Println("Restart the panel to sign out every browser: systemctl restart mpn-web")
+	}
 }
 
 // webTwoFAOff switches the two-step sign-in off, for somebody who has lost the app. It runs as root on the machine, which is

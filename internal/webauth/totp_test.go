@@ -77,8 +77,8 @@ func TestTheAppAddressCarriesTheSecretAndTheSettings(t *testing.T) {
 
 func TestEndingTheOtherSessionsKeepsThisOne(t *testing.T) {
 	s := NewSessions(time.Hour, time.Hour, 10)
-	a, _ := s.Create("admin")
-	b, _ := s.Create("admin")
+	a, _ := s.Create("admin", false)
+	b, _ := s.Create("admin", false)
 	s.DeleteExcept(a)
 	if _, ok := s.Get(a); !ok {
 		t.Error("this session must stay")

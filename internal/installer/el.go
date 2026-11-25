@@ -20,7 +20,7 @@ import (
 //   - SELinux stays on: the panel gives the web roots, the site logs and its own ports the labels nginx and PHP-FPM need.
 
 const (
-	elPackagesRelease = "el-r2"
+	elPackagesRelease = "el-r3"
 	elPackagesBase    = "https://github.com/marixdev/mpn-packages/releases/download/" + elPackagesRelease
 
 	// Fingerprints of the signing keys of the RPM repositories, read on 2026-11-13. A key that does not hold its fingerprint is
@@ -29,33 +29,37 @@ const (
 	mysqlSigningFPR   = "BCA43417C3B485DD128EC6D4B7B3B788A8D3785C"
 )
 
-// elSums are the SHA-256 of the files of the el-r2 release of mpn-packages, by file name.
+// elSums are the SHA-256 of the files of the el-r3 release of mpn-packages, by file name.
 var elSums = map[string]string{
-	"ngx_http_modsecurity_module-el9-nginx1.30.7.so":        "db0bb66b1c2f26ab8663ca308ca9ca9bf4dd998d4658c8d48e4be8bcefba4604",
-	"ngx_http_modsecurity_module-el9-nginx1.30.7-arm64.so":  "a63bd32f54082fbdd1d39fa090332ea4b231c29e8d422378c67bb929c5e344a4",
-	"ngx_http_modsecurity_module-el10-nginx1.30.7.so":       "79db72ac62485d669ca0d9f6b92f6369532480bd8d48406fbc3f4d4e55a6151b",
-	"ngx_http_modsecurity_module-el10-nginx1.30.7-arm64.so": "52da8bb13685ac1b5f1daea23c41aaa74204f06648fd33918c3dc8967ce19a5a",
+	"ngx_http_modsecurity_module-el9-nginx1.30.7.so":        "4eae1556c15ca81787056d50ebd8c06638b7f3e4ba4fcd6c7bf776ed29429c44",
+	"ngx_http_modsecurity_module-el9-nginx1.30.7-arm64.so":  "ad52dcea7098a6585d1439fe383bbb49bcbafeaf13681c9c24717f4911c2f67d",
+	"ngx_http_modsecurity_module-el10-nginx1.30.7.so":       "97e39b6c024d4a2ba57ed2b2db95522083b6320aa08adf61259aab1ea6e26c16",
+	"ngx_http_modsecurity_module-el10-nginx1.30.7-arm64.so": "209cb5434f37dfc3569d478af65c82136304868fa2f2b97584fe4bd527ddae53",
 	"coreruleset-4.25.2.tar.gz":                             "a3ecf5d5b0f8001e2eaf2006448fc8e22d6b645d7fc1c71268be5b99a7395a2d",
-	"php-7.0.33-el9.tar.xz":                                 "cc168ce5cbec382f9da549d8ea0a068455258c005f40521c70e014ea770e7cae",
-	"php-7.0.33-el9-arm64.tar.xz":                           "db6938d20caab24d78319105bb1609aa42b733c060fa0a388972b47d61b9ae9c",
-	"php-7.0.33-el10.tar.xz":                                "91be3ff06f6c37c24efca6945d3a99730af05fa06159ed6cc61ff33b1626bd16",
-	"php-7.0.33-el10-arm64.tar.xz":                          "a55144a999e26ca85fec16776e897bd0d30f71550fce150e818e7ebc85bb6646",
-	"php-7.1.33-el9.tar.xz":                                 "141dff78d74b68072371320efd3923e90786cab3502b944a43716208dfc4dd79",
-	"php-7.1.33-el9-arm64.tar.xz":                           "481e1f4334d4f683a1ad3548f1bbe9fb86e5bfc6e2582537c8593ee7ee94e777",
-	"php-7.1.33-el10.tar.xz":                                "663162cdbe9e5ba54a4f9744db6eec41d23b1d83a72e2580254057828ba17340",
-	"php-7.1.33-el10-arm64.tar.xz":                          "9079e01d8a04dc965552f69f7bbce72f517a5a0fba3c7782e526b00419b3f4ce",
-	"php-7.2.34-el9.tar.xz":                                 "0f0ccd5002c66621f75d7bc1716cc1576d0753dcb7f5538b046ec7df74fe2b30",
-	"php-7.2.34-el9-arm64.tar.xz":                           "8d80628f39f04fa78b3ee8545af6356bbf4abc702e70c63d0ba992570fd1f733",
-	"php-7.2.34-el10.tar.xz":                                "5ffd780c4ec1f4fa5caa66697087ca831c5b7cef649272e60aa670f796db6847",
-	"php-7.2.34-el10-arm64.tar.xz":                          "81d761852957b6dcd10d981522e8ca4d2727e13d9a375e9a7cedb3f7365b8c1b",
-	"php-7.3.33-el9.tar.xz":                                 "e745ad666d97d6c0406ab68db53447f323a490584b1ab3a35f5ae35da4e658d8",
-	"php-7.3.33-el9-arm64.tar.xz":                           "cb06e633125fa05197f23d76148151b33ee58b8911514c3d6fbe98ba883401a9",
-	"php-7.3.33-el10.tar.xz":                                "bf1d97093a1a7f740335162b56fc9c22aad521f604a4b11cb7177934f9f013f1",
-	"php-7.3.33-el10-arm64.tar.xz":                          "5c992c768feaad1c3df75a33fcf84a1bb1be472edb840ec9553fd7f3a65d7c2f",
+	"php-5.6.40-el9.tar.xz":                                 "fad05691e092fde35b837052582ce02e7cd8dbeac5dd933b2518d19e1fc56809",
+	"php-5.6.40-el9-arm64.tar.xz":                           "40c8dad86b8bc2f6c807e9f4def8d2eb6ecc77e34c653e13ab4d0ec501ebcc53",
+	"php-5.6.40-el10.tar.xz":                                "e93d8e801af83074618a742afc81c1a56df491b219babb1586b213daf4740f3f",
+	"php-5.6.40-el10-arm64.tar.xz":                          "c97e0f2dc16be948e70be9e219cf7a08794e3e6f321bfae452168b6568205ce6",
+	"php-7.0.33-el9.tar.xz":                                 "67758c036f55726a25f85a5e83f4a2cc22b85e32639ad5020274f4dafa093bb0",
+	"php-7.0.33-el9-arm64.tar.xz":                           "b822a183e4658d2d078f88b8fe5eb283187679c3c0101f0ec4ff774fb3beb86f",
+	"php-7.0.33-el10.tar.xz":                                "eda5ed755f466ea41f01dd4ef918d5f00171d4c27b51a033c56091a907d8c1bb",
+	"php-7.0.33-el10-arm64.tar.xz":                          "40c758575b33cd4c506593dbbc9674d7a9f334f9709eb2f740c601a8ce792af9",
+	"php-7.1.33-el9.tar.xz":                                 "f111336f21c1ceb45b8fbcd9e65141cb275289ca3191ac7c38d1b8f079ec76b7",
+	"php-7.1.33-el9-arm64.tar.xz":                           "5bef02b87d7b574eb06e6270278733dfcfcac6c7cbace7de699d221141db4b15",
+	"php-7.1.33-el10.tar.xz":                                "dd26a7973876bdc492ddffbc979f00f5bc1a534e7f1bd66b5067bff01a641a11",
+	"php-7.1.33-el10-arm64.tar.xz":                          "af3192a725825ea93b88d345d9bb58c08fca2cc5a30063b6893a8d0c9e7b6c03",
+	"php-7.2.34-el9.tar.xz":                                 "6d7be53a3241fbdfbd8494f932f14305a8ea89a79c3f33f6d5561ad16136948a",
+	"php-7.2.34-el9-arm64.tar.xz":                           "65db9a5e1ae4dbb27977a47c9603f8b440b38f4257425622acd4092b573b07c7",
+	"php-7.2.34-el10.tar.xz":                                "2cd703267652095ca80358a4727114cb12ade0e86399a0848b401c0b702d5341",
+	"php-7.2.34-el10-arm64.tar.xz":                          "856ac55e4975e66bf169c590d76b1b7eb52c36815d5abc090faad1bb5c634039",
+	"php-7.3.33-el9.tar.xz":                                 "a2d3658671695a1221d8bd6e761ce6ffd386598126ff06afdd387b6a138a1b5a",
+	"php-7.3.33-el9-arm64.tar.xz":                           "84d5706c8723bc4049996857095c6ca9bd85cce0dfc90d1104da04a0600e45c4",
+	"php-7.3.33-el10.tar.xz":                                "8f0b6ff87a1c715a5c4c7701c87d07890e838986f9216010c5b62f79436c6472",
+	"php-7.3.33-el10-arm64.tar.xz":                          "d7417a2cf44eebac281a6bd76d4029fde72b1f49fff654964699812dfa6ad870",
 }
 
 // ownPHPRelease is the release of each PHP version that mpn-packages builds for EL.
-var ownPHPRelease = map[string]string{"7.0": "7.0.33", "7.1": "7.1.33", "7.2": "7.2.34", "7.3": "7.3.33"}
+var ownPHPRelease = map[string]string{"5.6": "5.6.40", "7.0": "7.0.33", "7.1": "7.1.33", "7.2": "7.2.34", "7.3": "7.3.33"}
 
 // CRSVersion is the OWASP Core Rule Set that the panel installs on EL, where no package has it.
 const CRSVersion = "4.25.2"
@@ -67,7 +71,7 @@ func archSuffix() string {
 	return ""
 }
 
-// elFetch downloads one file of the el-r2 release into dest after its checksum was compared with the one in this program.
+// elFetch downloads one file of the el-r3 release into dest after its checksum was compared with the one in this program.
 func elFetch(name, dest string) (Action, error) {
 	sum := elSums[name]
 	if sum == "" {
@@ -337,7 +341,7 @@ func elPHPStep(o Options) (Step, error) {
 		}
 		acts = append(acts, pa...)
 		acts = append(acts,
-			WriteFile(distro.PHPConfDir(v)+"99-mpn.ini", o.Profile.OpcacheINI(), 0o644),
+			WriteFile(distro.PHPConfDir(v)+"99-mpn.ini", o.Profile.OpcacheINIFor(v), 0o644),
 			Run("sh", "-c", stopUnusedFPM(v)),
 		)
 	}

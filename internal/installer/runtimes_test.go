@@ -3,6 +3,9 @@ package installer
 import (
 	"strings"
 	"testing"
+
+	"mpn/internal/distro"
+	"mpn/internal/osinfo"
 )
 
 func TestPHPAndNodeSteps(t *testing.T) {
@@ -43,14 +46,59 @@ func TestNodeScriptNamesTheMajor(t *testing.T) {
 
 func TestUnknownRuntimeVersionsFail(t *testing.T) {
 	o := opts("", 1024)
-	o.PHPVersions = []string{"5.6"}
+	o.PHPVersions = []string{"5.4"}
 	if _, err := Build(o); err == nil {
-		t.Error("php 5.6 must be rejected")
+		t.Error("php 5.4 must be rejected")
 	}
 	o = opts("", 1024)
 	o.NodeVersions = []string{"16"}
 	if _, err := Build(o); err == nil {
 		t.Error("node 16 must be rejected")
+	}
+}
+
+// PHP 5.6 comes from Sury on Debian and Ubuntu, with json as a package of its own and the opcache file without the JIT key.
+func TestPHP56OnDebianComesFromSuryWithJSON(t *testing.T) {
+	o := opts("", 1024)
+	o.PHPVersions = []string{"5.6"}
+	p, err := Build(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	all := names(p)
+	var cmds []string
+	for _, st := range p {
+		for _, a := range st.Actions {
+			cmds = append(cmds, strings.Join(a.Args, " ")+"\n"+a.Path+"\n"+a.Content)
+		}
+	}
+	text := strings.Join(cmds, "\n")
+	for _, want := range []string{"php5.6-fpm", "php5.6-json", "php5.6-mysql", "php5.6-opcache", "/etc/php/5.6/fpm/conf.d/99-mpn.ini"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("missing %q in the php step (%s)", want, all)
+		}
+	}
+	if strings.Contains(text, "opcache.jit") {
+		t.Error("PHP 5.6 has no JIT; the opcache file must not name it")
+	}
+}
+
+func TestPHP56OnELIsTheBuildOfMpnPackages(t *testing.T) {
+	distro.SetForTest(distro.EL) // OwnPHP asks the family of the running system
+	t.Cleanup(func() { distro.SetForTest(distro.Debian) })
+	for _, el := range []osinfo.Target{{ID: "almalinux", Version: "9", Codename: "el9"}, {ID: "rocky", Version: "10", Codename: "el10"}} {
+		acts, err := elPHPActions(el, "5.6", nil)
+		if err != nil {
+			t.Fatalf("%s: %v", el.Codename, err)
+		}
+		var text string
+		for _, a := range acts {
+			text += strings.Join(a.Args, " ") + "\n"
+		}
+		name := "php-5.6.40-" + el.Codename + archSuffix() + ".tar.xz"
+		if !strings.Contains(text, name) || elSums[name] == "" {
+			t.Errorf("%s: %s is not fetched or has no checksum", el.Codename, name)
+		}
 	}
 }
 

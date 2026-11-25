@@ -39,8 +39,9 @@ func ValidPythonEntry(e string) bool {
 // VenvDir is the virtual environment of a Python site. The site's own packages go here, never into the system's Python.
 func VenvDir(user string) string { return "/home/" + user + "/venv" }
 
-// PHPVersions are the versions offered. 8.6 is left out until it is confirmed as a stable release.
-var PHPVersions = []string{"7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"}
+// PHPVersions are the versions offered, oldest first. 8.6 is left out until it is confirmed as a stable release. 5.6 is for old
+// sites that cannot move yet; it has had no security fixes from PHP since 2019 (Sury still patches its Debian and Ubuntu packages).
+var PHPVersions = []string{"5.6", "7.0", "7.1", "7.2", "7.3", "7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"}
 
 // NodeVersions are the Node.js major versions offered. Older ones are past end of life; the UI should warn.
 var NodeVersions = []string{"18", "20", "22", "24"}

@@ -39,6 +39,73 @@ func (s *Server) dbPages(mux *http.ServeMux) {
 	mux.HandleFunc("POST /databases/passwd", s.auth(s.dbAct("passwd")))
 	mux.HandleFunc("GET /databases/remove", s.auth(s.dbConfirm("remove")))
 	mux.HandleFunc("POST /databases/remove", s.auth(s.dbAct("remove")))
+	mux.HandleFunc("GET /databases/remote", s.auth(s.dbRemotePage))
+	mux.HandleFunc("POST /databases/remote", s.auth(s.dbRemoteSave))
+}
+
+// dbRemote is what the page of remote access draws: the addresses a database can be reached from, in a box to edit.
+type dbRemote struct {
+	Name, Site, Hosts, Error, ServerIP string
+	Listening, FirewallOn, Any         bool
+	Port                               int
+}
+
+func (s *Server) dbRemoteView(T translator, r *http.Request, name, site string) (*dbRemote, string) {
+	if !dbadmin.ValidName(name) {
+		return nil, T("err.baddb")
+	}
+	var info struct {
+		Hosts      []string `json:"hosts"`
+		Listening  bool     `json:"listening"`
+		FirewallOn bool     `json:"firewall_on"`
+		Port       int      `json:"port"`
+	}
+	if e := s.listText(T, ctl.Request{Op: "db.remoteinfo", Name: name}, &info); e != "" {
+		return nil, e
+	}
+	v := &dbRemote{Name: name, Site: site, Hosts: strings.Join(info.Hosts, "\n"), Listening: info.Listening, FirewallOn: info.FirewallOn, Port: info.Port, ServerIP: serverIP(r.Host)}
+	for _, h := range info.Hosts {
+		v.Any = v.Any || h == dbadmin.AnyHost
+	}
+	return v, ""
+}
+
+func (s *Server) dbRemotePage(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
+	site := r.URL.Query().Get("site")
+	v, e := s.dbRemoteView(T, r, r.URL.Query().Get("name"), site)
+	if e != "" {
+		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("db.remote"), Error: e, Back: siteTab(site, "databases")}})
+		return
+	}
+	s.show(w, http.StatusOK, ss, view{Page: "dbremote", DBRemote: v})
+}
+
+func (s *Server) dbRemoteSave(w http.ResponseWriter, r *http.Request, ss webauth.Session) {
+	T := translatorForWriter(w)
+	name, site := r.PostFormValue("name"), r.PostFormValue("site")
+	back := siteTab(site, "databases")
+	if !dbadmin.ValidName(name) {
+		s.show(w, http.StatusBadRequest, ss, view{Page: "result", Result: &result{Title: T("db.remote"), Error: T("err.baddb"), Back: back}})
+		return
+	}
+	hosts := []string{}
+	if r.PostFormValue("close") != "1" {
+		list, err := dbadmin.ParseHosts(r.PostFormValue("hosts"))
+		if err != nil {
+			v, _ := s.dbRemoteView(T, r, name, site)
+			if v == nil {
+				v = &dbRemote{Name: name, Site: site}
+			}
+			v.Hosts, v.Error = r.PostFormValue("hosts"), T("db.remote.err.hosts")
+			s.show(w, http.StatusBadRequest, ss, view{Page: "dbremote", DBRemote: v})
+			return
+		}
+		hosts = list
+	}
+	res := s.runText(r, T, T("act.db.remote", name), ctl.Request{Op: "db.remote", Name: name, Hosts: hosts})
+	res.Back = back
+	s.finish(w, r, res)
 }
 
 func (s *Server) addDB(w http.ResponseWriter, r *http.Request, ss webauth.Session) {

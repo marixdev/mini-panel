@@ -29,7 +29,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 
 ## 功能
 
-- **网站：** PHP 7.0 至 8.5（每个站点一个 PHP-FPM 池）、Node.js 18 至 24、Python、静态站点和反向代理。每个站点都有独立的系统账户、域名、SSH/SFTP、文件管理器、网页终端、计划任务、日志和可编辑的 vHost（加载前用 `nginx -t` 检查）。
+- **网站：** PHP 5.6 及 7.0 至 8.5（每个站点一个 PHP-FPM 池）、Node.js 18 至 24、Python、静态站点和反向代理。每个站点都有独立的系统账户、域名、SSH/SFTP、文件管理器、网页终端、计划任务、日志和可编辑的 vHost（加载前用 `nginx -t` 检查）。
 - **应用安装：** WordPress、Laravel、CodeIgniter 4、CakePHP、Yii 2，并附带 WordPress 管理页面（更新、插件、主题）。
 - **SSL：** Let's Encrypt（先检查 DNS，自动续期）、自定义证书、生成 CSR。面板本身也有独立的证书。
 - **数据库：** MariaDB 或 MySQL，每个数据库一个用户，phpMyAdmin 使用临时账户登录。
@@ -57,7 +57,7 @@ curl -fsSL https://mpanel.biz/install.sh | sh
 | 仓库 | 面板用途 | 固定位置 |
 |---|---|---|
 | [marixdev/mpn-mail](https://github.com/marixdev/mpn-mail) | `/webmail/` 网页邮件（lilmail 的定制版） | `internal/mail/webmail.go` |
-| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | 为 nginx 1.30.7 构建的 PageSpeed 和 ModSecurity 模块；适用于 AlmaLinux、Rocky Linux、CentOS Stream 的 PHP 7.0 至 7.3 与 OWASP CRS | `internal/installer/nginx.go`、`internal/installer/el.go` |
+| [marixdev/mpn-packages](https://github.com/marixdev/mpn-packages) | 为 nginx 1.30.7 构建的 PageSpeed 和 ModSecurity 模块；适用于 AlmaLinux、Rocky Linux、CentOS Stream 的 PHP 5.6、7.0 至 7.3 与 OWASP CRS | `internal/installer/nginx.go`、`internal/installer/el.go` |
 
 ## 命令行
 
