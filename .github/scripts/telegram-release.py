@@ -117,7 +117,8 @@ def main() -> None:
         print(text)
         print(f"\n({len(text)} characters)")
         return
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    # A secret saved from a Windows shell can carry a byte-order mark or a line break, which would end up in the URL.
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip().lstrip("﻿").strip()
     if not token:
         print("TELEGRAM_BOT_TOKEN is not set; nothing posted")
         return

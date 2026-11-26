@@ -1,5 +1,8 @@
 {{define "content"}}
 {{template "siteheader" .}}
+<div class="site-layout">
+{{template "sitenav" .}}
+<div class="site-body">
 {{if .Error}}<div role="alert" class="alert-error mb-6"><span>{{.Error}}</span></div>{{end}}
 
 {{if eq .Tab "overview"}}
@@ -107,4 +110,6 @@
 </section>{{end}}
 {{template "cloudcard" .}}
 {{end}}
+</div>
+</div>
 {{end}}

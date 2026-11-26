@@ -65,6 +65,17 @@ func init() {
 		"users.state.on":         "Đang hoạt động",
 		"users.sub":              "Tạo các tài khoản để người khác đăng nhập, và chọn website mà mỗi người được làm việc.",
 		"users.title":            "Người dùng",
+		"users.count":            "%d / %d người dùng",
+		"users.roles.heading":    "Ý nghĩa của từng vai trò",
+		"users.role.view.d":      "Xem trang, tệp, bản sao lưu, log và hoạt động của website. Không thay đổi được gì.",
+		"users.role.manage.d":    "Thêm quyền sửa tệp, cơ sở dữ liệu, cron, dịch vụ nền, WordPress và email.",
+		"users.role.full.d":      "Thêm quyền sửa SSL, vHost, SSH, mở terminal và khôi phục bản sao lưu.",
+		"users.empty.d":          "Thêm người dùng ở trên, sau đó chọn website cho họ.",
+		"users.sites.zero":       "Chưa có website nào",
+		"users.open":             "Cài đặt",
+		"users.security.heading": "Đăng nhập",
+		"users.password.new":     "Mật khẩu mới",
+		"users.danger.heading":   "Xóa người dùng",
 	} {
 		vi[k] = v
 	}

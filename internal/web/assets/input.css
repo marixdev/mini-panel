@@ -232,6 +232,59 @@
   .tab[aria-current="page"] svg {
     @apply text-primary;
   }
+
+  /* The page of one website: the side menu, then the open section. The menu is a column from lg up and stays in view while the
+     section scrolls; below lg it is one closed row above the section that opens as a list. */
+  .site-layout {
+    @apply flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8;
+  }
+  .site-body {
+    @apply min-w-0 flex-1;
+  }
+  .site-nav {
+    @apply lg:sticky lg:top-6 lg:w-52 lg:shrink-0;
+  }
+  .site-nav-toggle {
+    @apply border-border bg-card text-foreground focus-visible:ring-ring flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg border px-3 text-sm font-medium focus:outline-none focus-visible:ring-2 lg:hidden;
+  }
+  .site-nav-toggle::-webkit-details-marker {
+    display: none;
+  }
+  .site-nav-toggle svg:first-child {
+    @apply text-primary;
+  }
+  .site-nav-chev {
+    @apply text-muted-foreground size-4 shrink-0 transition-transform duration-150 motion-reduce:transition-none;
+  }
+  .site-nav-box[open] .site-nav-chev {
+    @apply rotate-180;
+  }
+  .site-nav-list {
+    @apply border-border bg-card mt-2 space-y-4 rounded-lg border p-3 lg:mt-0 lg:space-y-5 lg:border-0 lg:bg-transparent lg:p-0;
+  }
+  .site-nav-heading {
+    @apply text-muted-foreground mb-1 px-3 text-xs font-semibold tracking-wide uppercase;
+  }
+  .side-tab {
+    @apply text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring flex min-h-9 items-center gap-2.5 rounded-md px-3 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 motion-reduce:transition-none;
+  }
+  .side-tab[aria-current="page"] {
+    @apply bg-card text-foreground ring-border shadow-xs ring-1;
+  }
+  .side-tab[aria-current="page"] svg {
+    @apply text-primary;
+  }
+  /* Below lg the menu is the details element; from lg up it is the plain copy of the list. */
+  .site-nav-box {
+    @apply lg:hidden;
+  }
+  .site-nav-wide {
+    @apply hidden lg:block;
+  }
+  /* The number of a step in a short list of steps, such as turning on two-step sign-in. */
+  .step-num {
+    @apply bg-primary/10 text-primary inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold;
+  }
   .back-link {
     @apply text-muted-foreground hover:text-foreground focus-visible:ring-ring -ml-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2;
   }

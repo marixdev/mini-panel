@@ -6,110 +6,154 @@
 </div>
 {{if .Notice}}<div role="status" class="alert-ok mb-6"><span>{{.Notice.Title}}</span></div>{{end}}
 
-<div class="grid items-start gap-6 lg:grid-cols-2">
+{{/* One row per part of the account: what it is on the left, the form on the right (stacked below lg). Two-step sign-in comes
+   first, because it is what protects the account most and the one most often left off. */}}
+<div class="space-y-6">
 
-<section class="card p-6" aria-labelledby="pw-h">
-  <h2 id="pw-h" class="h-section">{{T "set.pw.title"}}</h2>
-  <p class="mt-1 text-sm text-muted-foreground">{{T "set.pw.sub"}}</p>
-  {{if and $v.Error (eq $v.Which "password")}}<div role="alert" class="alert-error mt-4"><span>{{$v.Error}}</span></div>{{end}}
-  <form method="post" action="/settings/password" class="mt-5 space-y-4" autocomplete="off">
-    <input type="hidden" name="csrf" value="{{.CSRF}}">
-    <div>
-      <label for="pw-cur" class="label">{{T "set.pw.current"}}</label>
-      <input id="pw-cur" name="current" type="password" class="field" autocomplete="current-password" required>
+<section class="card" aria-labelledby="fa-h">
+  <div class="flex flex-wrap items-start justify-between gap-3 border-b border-border p-5 sm:p-6">
+    <div class="flex min-w-0 items-start gap-3">
+      <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full {{if $v.TOTPOn}}bg-primary/10 text-primary{{else}}bg-muted text-muted-foreground{{end}}" aria-hidden="true">
+        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z"/>{{if $v.TOTPOn}}<path d="m9 12 2 2 4-4"/>{{end}}</svg>
+      </span>
+      <div class="min-w-0">
+        <h2 id="fa-h" class="h-section">{{T "set.2fa.title"}}</h2>
+        <p class="mt-1 max-w-2xl text-sm text-muted-foreground">{{if $v.TOTPOn}}{{T "set.2fa.on.sub"}}{{else}}{{T "set.2fa.sub"}}{{end}}</p>
+      </div>
     </div>
-    <div>
-      <label for="pw-new" class="label">{{T "set.pw.new"}}</label>
-      <input id="pw-new" name="new" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required>
-      <p class="hint">{{T "set.pw.hint" $v.Min}}</p>
-    </div>
-    <div>
-      <label for="pw-again" class="label">{{T "set.pw.again"}}</label>
-      <input id="pw-again" name="again" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required>
-    </div>
-    <button class="btn-primary">{{T "set.pw.btn"}}</button>
-  </form>
-</section>
-
-<section class="card p-6" aria-labelledby="ss-h">
-  <h2 id="ss-h" class="h-section">{{T "set.sess.title"}}</h2>
-  <p class="mt-1 text-sm text-muted-foreground">{{T "set.sess.sub" $v.Sessions}}</p>
-  {{if gt $v.Sessions 1}}
-  <form method="post" action="/settings/sessions/end" class="mt-4">
-    <input type="hidden" name="csrf" value="{{.CSRF}}">
-    <button class="btn-secondary">{{T "set.sess.end"}}</button>
-  </form>
-  {{end}}
-</section>
-
-<section class="card p-6" aria-labelledby="fa-h">
-  <div class="flex flex-wrap items-start justify-between gap-3">
-    <h2 id="fa-h" class="h-section">{{T "set.2fa.title"}}</h2>
     {{if $v.TOTPOn}}<span class="badge-teal">{{T "set.2fa.on"}}</span>{{else}}<span class="badge-gray">{{T "set.2fa.off"}}</span>{{end}}
   </div>
-  <p class="mt-1 text-sm text-muted-foreground">{{T "set.2fa.sub"}}</p>
-  {{if and $v.Error (eq $v.Which "2fa")}}<div role="alert" class="alert-error mt-4"><span>{{$v.Error}}</span></div>{{end}}
+
+  <div class="p-5 sm:p-6">
+  {{if and $v.Error (eq $v.Which "2fa")}}<div role="alert" class="alert-error mb-5"><span>{{$v.Error}}</span></div>{{end}}
 
   {{if $v.Setup}}
-  <div class="mt-5 space-y-5">
-    <p class="text-sm">{{T "set.2fa.step1"}}</p>
-    <div class="flex flex-wrap items-center gap-5">
-      <div class="rounded-lg border border-border bg-white p-2">{{$v.QR}}</div>
+  <ol class="space-y-6">
+    <li class="flex gap-4">
+      <span class="step-num" aria-hidden="true">1</span>
       <div class="min-w-0">
-        <p class="label">{{T "set.2fa.secret"}}</p>
-        <button type="button" class="chip chip-copy mt-1" data-copy="{{$v.SecretRaw}}" data-copied="{{T "hd.copied"}}" title="{{T "hd.copy" (T "set.2fa.secret")}}" aria-label="{{T "hd.copy" (T "set.2fa.secret")}}">
-          <span class="chip-value break-all">{{$v.Secret}}</span>
-          <svg data-copy-icon viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
-          <svg data-copy-done viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>
-          <span class="sr-only" role="status" data-copy-status></span>
-        </button>
+        <p class="font-medium">{{T "set.2fa.s1"}}</p>
+        <p class="mt-1 text-sm text-muted-foreground">{{T "set.2fa.s1.d"}}</p>
       </div>
-    </div>
-    <form method="post" action="/settings/2fa/enable" class="space-y-4" autocomplete="off">
-      <input type="hidden" name="csrf" value="{{.CSRF}}">
-      <p class="text-sm">{{T "set.2fa.step2"}}</p>
-      <div class="max-w-xs">
-        <label for="fa-code" class="label">{{T "set.2fa.code"}}</label>
-        <input id="fa-code" name="code" class="field text-center font-mono text-lg tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required autofocus>
+    </li>
+    <li class="flex gap-4">
+      <span class="step-num" aria-hidden="true">2</span>
+      <div class="min-w-0 flex-1">
+        <p class="font-medium">{{T "set.2fa.s2"}}</p>
+        <p class="mt-1 text-sm text-muted-foreground">{{T "set.2fa.step1"}}</p>
+        <div class="mt-4 flex flex-wrap items-center gap-5">
+          <div class="rounded-lg border border-border bg-white p-2">{{$v.QR}}</div>
+          <div class="min-w-0 max-w-full">
+            <p class="label">{{T "set.2fa.secret"}}</p>
+            <button type="button" class="chip chip-copy mt-1" data-copy="{{$v.SecretRaw}}" data-copied="{{T "hd.copied"}}" title="{{T "hd.copy" (T "set.2fa.secret")}}" aria-label="{{T "hd.copy" (T "set.2fa.secret")}}">
+              <span class="chip-value break-all">{{$v.Secret}}</span>
+              <svg data-copy-icon viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+              <svg data-copy-done viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>
+              <span class="sr-only" role="status" data-copy-status></span>
+            </button>
+            <p class="hint">{{T "set.2fa.secret.hint"}}</p>
+          </div>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <button class="btn-primary">{{T "set.2fa.confirm"}}</button>
-        <a class="btn-secondary" href="/settings">{{T "set.2fa.cancel"}}</a>
-      </div>
-    </form>
-  </div>
+    </li>
+    <li class="flex gap-4">
+      <span class="step-num" aria-hidden="true">3</span>
+      <form method="post" action="/settings/2fa/enable" class="min-w-0 flex-1" autocomplete="off">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <label for="fa-code" class="font-medium">{{T "set.2fa.s3"}}</label>
+        <p class="mt-1 text-sm text-muted-foreground">{{T "set.2fa.step2"}}</p>
+        <input id="fa-code" name="code" class="field mt-3 max-w-xs text-center font-mono text-lg tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required autofocus aria-label="{{T "set.2fa.code"}}">
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button class="btn-primary">{{T "set.2fa.confirm"}}</button>
+          <a class="btn-secondary" href="/settings">{{T "set.2fa.cancel"}}</a>
+        </div>
+      </form>
+    </li>
+  </ol>
 
   {{else if $v.TOTPOn}}
-  <form method="post" action="/settings/2fa/disable" class="mt-5 space-y-4" autocomplete="off">
-    <input type="hidden" name="csrf" value="{{.CSRF}}">
-    <h3 class="text-sm font-semibold">{{T "set.2fa.off.title"}}</h3>
-    <p class="text-sm text-muted-foreground">{{T "set.2fa.off.sub"}}</p>
-    <div>
-      <label for="fa-pw" class="label">{{T "set.pw.current"}}</label>
-      <input id="fa-pw" name="password" type="password" class="field" autocomplete="current-password" required>
-    </div>
-    <div class="max-w-xs">
-      <label for="fa-off-code" class="label">{{T "set.2fa.code"}}</label>
-      <input id="fa-off-code" name="code" class="field text-center font-mono text-lg tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required>
-    </div>
-    <button class="btn-danger">{{T "set.2fa.off.btn"}}</button>
-  </form>
+  {{/* Turning it off is closed by default: it is rare, and it weakens the account. */}}
+  <details class="group rounded-lg border border-border" {{if and $v.Error (eq $v.Which "2fa")}}open{{end}}>
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+      <span>{{T "set.2fa.off.title"}}</span>
+      <svg class="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+    </summary>
+    <form method="post" action="/settings/2fa/disable" class="grid gap-4 border-t border-border p-4 sm:grid-cols-2" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <p class="text-sm text-muted-foreground sm:col-span-2">{{T "set.2fa.off.sub"}}</p>
+      <div>
+        <label for="fa-pw" class="label">{{T "set.pw.current"}}</label>
+        <input id="fa-pw" name="password" type="password" class="field" autocomplete="current-password" required>
+      </div>
+      <div>
+        <label for="fa-off-code" class="label">{{T "set.2fa.code"}}</label>
+        <input id="fa-off-code" name="code" class="field text-center font-mono text-lg tracking-[0.3em]" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" required>
+      </div>
+      <div class="sm:col-span-2"><button class="btn-danger">{{T "set.2fa.off.btn"}}</button></div>
+    </form>
+  </details>
 
   {{else}}
-  <div class="mt-5"><a class="btn-primary" href="/settings/2fa">{{T "set.2fa.enable"}}</a></div>
+  <div class="flex flex-wrap items-center gap-4">
+    <a class="btn-primary" href="/settings/2fa">{{T "set.2fa.enable"}}</a>
+    <p class="text-sm text-muted-foreground">{{T "set.2fa.time"}}</p>
+  </div>
   {{end}}
 
   {{if not $v.Delegated}}
-  <div class="mt-6 border-t border-border pt-4">
-    <p class="hint !mt-0">{{T "set.2fa.lost"}}</p>
-    <div class="mt-2"><button type="button" class="chip chip-copy" data-copy="mpn web 2fa-off" data-copied="{{T "hd.copied"}}" title="{{T "hd.copy" (T "set.2fa.cmd")}}" aria-label="{{T "hd.copy" (T "set.2fa.cmd")}}">
+  <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-muted/60 px-4 py-3">
+    <p class="min-w-0 flex-1 text-sm text-muted-foreground">{{T "set.2fa.lost"}}</p>
+    <button type="button" class="chip chip-copy" data-copy="mpn web 2fa-off" data-copied="{{T "hd.copied"}}" title="{{T "hd.copy" (T "set.2fa.cmd")}}" aria-label="{{T "hd.copy" (T "set.2fa.cmd")}}">
       <span class="chip-value">mpn web 2fa-off</span>
       <svg data-copy-icon viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
       <svg data-copy-done viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg>
       <span class="sr-only" role="status" data-copy-status></span>
-    </button></div>
+    </button>
   </div>
   {{end}}
+  </div>
+</section>
+
+<section class="card grid gap-5 p-5 sm:p-6 lg:grid-cols-3 lg:gap-8" aria-labelledby="pw-h">
+  <div>
+    <h2 id="pw-h" class="h-section">{{T "set.pw.title"}}</h2>
+    <p class="mt-1 text-sm text-muted-foreground">{{T "set.pw.sub"}}</p>
+  </div>
+  <div class="lg:col-span-2">
+    {{if and $v.Error (eq $v.Which "password")}}<div role="alert" class="alert-error mb-4"><span>{{$v.Error}}</span></div>{{end}}
+    <form method="post" action="/settings/password" class="grid gap-4 sm:grid-cols-2" autocomplete="off">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <div class="sm:col-span-2 sm:max-w-[calc(50%-0.5rem)]">
+        <label for="pw-cur" class="label">{{T "set.pw.current"}}</label>
+        <input id="pw-cur" name="current" type="password" class="field" autocomplete="current-password" required>
+      </div>
+      <div>
+        <label for="pw-new" class="label">{{T "set.pw.new"}}</label>
+        <input id="pw-new" name="new" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required aria-describedby="pw-hint">
+      </div>
+      <div>
+        <label for="pw-again" class="label">{{T "set.pw.again"}}</label>
+        <input id="pw-again" name="again" type="password" class="field" autocomplete="new-password" minlength="{{$v.Min}}" maxlength="256" required>
+      </div>
+      <p id="pw-hint" class="hint !mt-0 sm:col-span-2">{{T "set.pw.hint" $v.Min}}</p>
+      <div class="sm:col-span-2"><button class="btn-primary">{{T "set.pw.btn"}}</button></div>
+    </form>
+  </div>
+</section>
+
+<section class="card grid gap-5 p-5 sm:p-6 lg:grid-cols-3 lg:gap-8" aria-labelledby="ss-h">
+  <div>
+    <h2 id="ss-h" class="h-section">{{T "set.sess.title"}}</h2>
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-4 lg:col-span-2">
+    <p class="min-w-0 max-w-xl text-sm text-muted-foreground">{{T "set.sess.sub" $v.Sessions}}</p>
+    {{if gt $v.Sessions 1}}
+    <form method="post" action="/settings/sessions/end">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <button class="btn-secondary">{{T "set.sess.end"}}</button>
+    </form>
+    {{end}}
+  </div>
 </section>
 
 </div>

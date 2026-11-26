@@ -36,6 +36,24 @@ type userSite struct {
 	Name, Role string
 }
 
+// RoleOn is the role the account holds on a website, or "" for none, so each choice of the form starts at what is saved.
+func (u userRow) RoleOn(site string) string {
+	for _, s := range u.Sites {
+		if s.Name == site {
+			return s.Role
+		}
+	}
+	return ""
+}
+
+// Initial is the first letter of the name, for the badge in the list.
+func (u userRow) Initial() string {
+	if u.Name == "" {
+		return "?"
+	}
+	return strings.ToUpper(u.Name[:1])
+}
+
 func (s *Server) usersPages(mux routeMux) {
 	mux.HandleFunc("GET /users", s.auth(s.usersPage))
 	mux.HandleFunc("POST /users/create", s.auth(s.userCreate))

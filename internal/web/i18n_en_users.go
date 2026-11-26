@@ -65,6 +65,17 @@ func init() {
 		"users.state.on":         "Active",
 		"users.sub":              "Create the accounts that other people use to sign in, and choose which websites each one may work on.",
 		"users.title":            "Users",
+		"users.count":            "%d of %d users",
+		"users.roles.heading":    "What each role allows",
+		"users.role.view.d":      "Sees the website's pages, files, backups, logs and activity. Changes nothing.",
+		"users.role.manage.d":    "Also changes files, databases, cron jobs, background services, WordPress and email.",
+		"users.role.full.d":      "Also changes SSL, the vHost and SSH, opens the terminal and restores backups.",
+		"users.empty.d":          "Add a user above, then choose their websites.",
+		"users.sites.zero":       "No websites yet",
+		"users.open":             "Settings",
+		"users.security.heading": "Sign-in",
+		"users.password.new":     "New password",
+		"users.danger.heading":   "Remove user",
 	} {
 		en[k] = v
 	}

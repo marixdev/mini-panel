@@ -65,6 +65,17 @@ func init() {
 		"users.state.on":         "正常",
 		"users.sub":              "创建供他人登录的账户，并选择每个账户可以处理的网站。",
 		"users.title":            "用户",
+		"users.count":            "%d / %d 个用户",
+		"users.roles.heading":    "各角色的含义",
+		"users.role.view.d":      "查看网站的页面、文件、备份、日志和活动。不能做任何修改。",
+		"users.role.manage.d":    "另可修改文件、数据库、计划任务、后台服务、WordPress 和邮件。",
+		"users.role.full.d":      "另可修改 SSL、vHost、SSH，打开终端并恢复备份。",
+		"users.empty.d":          "在上方添加用户，然后为其选择网站。",
+		"users.sites.zero":       "尚无网站",
+		"users.open":             "设置",
+		"users.security.heading": "登录",
+		"users.password.new":     "新密码",
+		"users.danger.heading":   "删除用户",
 	} {
 		zh[k] = v
 	}

@@ -85,6 +85,7 @@ const (
 	navMonitor  = `href="/monitor" class="nav-link"`
 	navUpdate   = `href="/update" class="nav-link"`
 	navNotify   = `href="/notify" class="nav-link"`
+	navUsers    = `href="/users" class="nav-link"`
 	navSitesNew = `href="/sites/new"`
 )
 
@@ -112,7 +113,7 @@ func TestViewUserSeesReadOnlyContentAndNoManageControls(t *testing.T) {
 
 	home := hidingPage(t, h, vic, "/")
 	wantPresent(t, "view user on the sites list", home, navSites, navActivity)
-	wantAbsent(t, "view user on the sites list", home, navFirewall, navMonitor, navUpdate, navNotify, navSitesNew)
+	wantAbsent(t, "view user on the sites list", home, navFirewall, navMonitor, navUpdate, navNotify, navSitesNew, navUsers)
 }
 
 func TestManageUserSeesManageControlsButNotFullOnes(t *testing.T) {
@@ -137,7 +138,7 @@ func TestManageUserSeesManageControlsButNotFullOnes(t *testing.T) {
 
 	home := hidingPage(t, h, max, "/")
 	wantPresent(t, "manage user on the sites list", home, navSites, navActivity)
-	wantAbsent(t, "manage user on the sites list", home, navFirewall, navMonitor, navUpdate, navNotify, navSitesNew)
+	wantAbsent(t, "manage user on the sites list", home, navFirewall, navMonitor, navUpdate, navNotify, navSitesNew, navUsers)
 }
 
 func TestFullUserSeesRestoreTerminalAndSSLControls(t *testing.T) {
@@ -171,5 +172,5 @@ func TestAdminSeesEverything(t *testing.T) {
 
 	home := hidingPage(t, h, adm, "/")
 	wantPresent(t, "the administrator on the sites list", home, navSites, navActivity, navFirewall, navMonitor, navUpdate,
-		navNotify, navSitesNew)
+		navNotify, navSitesNew, navUsers)
 }

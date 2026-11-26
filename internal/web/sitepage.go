@@ -14,16 +14,31 @@ import (
 // siteTabLink is one entry of the menu of a site: the key names its icon and its label (tab.<key>), the path follows /sites/<name>.
 type siteTabLink struct{ Key, Path string }
 
-// siteMenu is the menu of a site, most used first. SSH/SFTP is a card of the Overview, not a tab.
-func siteMenu(r siteRow) []siteTabLink {
-	menu := []siteTabLink{{"overview", ""}, {"files", "/files"}, {"databases", "/databases"}, {"email", "/email"}, {"ssl", "/ssl"}, {"backups", "/backups"}, {"cron", "/cron"}, {"background", "/background"}, {"logs", "/logs"}, {"activity", "/activity"}, {"terminal", "/terminal"}, {"vhost", "/vhost"}}
-	if bgRuntime(r.Kind) == "" { // static and proxy sites cannot run services, so they get no tab
-		menu = append(menu[:7:7], menu[8:]...)
-	}
+// siteTabGroup is a heading of the side menu of a site (sgroup.<key>) and the entries under it.
+type siteTabGroup struct {
+	Key  string
+	Tabs []siteTabLink
+}
+
+// siteMenu is the side menu of a site, in groups, most used first. SSH/SFTP is a card of the Overview, not a tab. An entry the
+// site cannot have is left out, and so is a group left empty.
+func siteMenu(r siteRow) []siteTabGroup {
+	site := []siteTabLink{{"overview", ""}}
 	if r.App == "wordpress" { // the manager comes right after the overview: it is what a WordPress site is mostly used through
-		menu = append([]siteTabLink{menu[0], {"wordpress", "/wordpress"}}, menu[1:]...)
+		site = append(site, siteTabLink{"wordpress", "/wordpress"})
 	}
-	return menu
+	site = append(site, siteTabLink{"files", "/files"}, siteTabLink{"email", "/email"}, siteTabLink{"ssl", "/ssl"})
+	run := []siteTabLink{{"cron", "/cron"}}
+	if bgRuntime(r.Kind) != "" { // static and proxy sites cannot run services, so they get no entry
+		run = append(run, siteTabLink{"background", "/background"})
+	}
+	run = append(run, siteTabLink{"logs", "/logs"}, siteTabLink{"activity", "/activity"})
+	return []siteTabGroup{
+		{"site", site},
+		{"data", []siteTabLink{{"databases", "/databases"}, {"backups", "/backups"}}},
+		{"run", run},
+		{"advanced", []siteTabLink{{"terminal", "/terminal"}, {"vhost", "/vhost"}}},
+	}
 }
 
 func (s *Server) sitePagesOfOne(mux routeMux) {

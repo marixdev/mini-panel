@@ -44,8 +44,36 @@ for a moment and tells a screen reader through the status element. */}}
     <a class="btn-secondary shrink-0 gap-1.5" href="{{.Site.URL}}" target="_blank" rel="noopener noreferrer">{{T "hd.open"}}<svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-3M11 4h5v5M16 4l-7 7"/></svg></a>
   </div>
 </header>
-<nav class="site-tabs" aria-label="{{T "hd.sections"}}">
-  {{range $t := siteMenu $.Site}}{{if or (ne $t.Key "terminal") (call $.Can "full")}}<a class="tab" href="/sites/{{$.Site.Name}}{{$t.Path}}"{{if eq $.Tab $t.Key}} aria-current="page"{{end}}>{{template "tabicon" $t.Key}}{{T (printf "tab.%s" $t.Key)}}</a>{{end}}
-  {{end}}
+{{end}}
+
+{{/* The side menu of a website, in groups. On a wide screen it is a column that stays in view; on a phone it is closed under the
+name of the open section and opens as a list (a details element, so it works without JavaScript). The terminal is left out for a
+user who may not open it, and a group left empty has no heading. */}}
+{{define "sitenav"}}
+<nav class="site-nav" aria-label="{{T "hd.sections"}}">
+  {{/* A browser draws nothing inside a closed details element, whatever the CSS says, so the wide-screen menu is a second
+     copy of the list outside it. CSS shows one copy at a time (display: none also hides the other from screen readers). */}}
+  <details class="site-nav-box" data-site-nav>
+    <summary class="site-nav-toggle">
+      <span class="flex min-w-0 items-center gap-2">{{template "tabicon" .Tab}}<span class="truncate">{{T (printf "tab.%s" .Tab)}}</span></span>
+      <svg class="site-nav-chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+    </summary>
+    {{template "sitenavlist" .}}
+  </details>
+  <div class="site-nav-wide">{{template "sitenavlist" .}}</div>
 </nav>
+{{end}}
+
+{{define "sitenavlist"}}
+{{$menu := siteMenu .Site}}
+<div class="site-nav-list">
+{{range $g := $menu}}{{$shown := false}}{{range $g.Tabs}}{{if or (ne .Key "terminal") (call $.Can "full")}}{{$shown = true}}{{end}}{{end}}{{if $shown}}
+  <div class="site-nav-group">
+    <p class="site-nav-heading">{{T (printf "sgroup.%s" $g.Key)}}</p>
+    <ul>
+    {{range $t := $g.Tabs}}{{if or (ne $t.Key "terminal") (call $.Can "full")}}<li><a class="side-tab" href="/sites/{{$.Site.Name}}{{$t.Path}}"{{if eq $.Tab $t.Key}} aria-current="page"{{end}}>{{template "tabicon" $t.Key}}<span>{{T (printf "tab.%s" $t.Key)}}</span></a></li>{{end}}
+    {{end}}</ul>
+  </div>{{end}}
+{{end}}
+</div>
 {{end}}
