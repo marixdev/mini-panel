@@ -4,7 +4,7 @@ Mọi thay đổi đáng kể của Mini Panel được ghi ở đây. Số phi�
 
 Bản chính bằng tiếng Anh: [CHANGELOG.md](CHANGELOG.md). Có thêm bản [tiếng Trung](CHANGELOG.zh.md).
 
-## [1.2.5] - 2026-11-26
+## [1.2.5] - 2026-11-27
 
 ### Thêm mới
 

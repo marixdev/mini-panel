@@ -4,7 +4,7 @@ All notable changes to Mini Panel are recorded here. Version numbers follow [Sem
 
 Translations: [Tiếng Việt](CHANGELOG.vi.md) · [中文](CHANGELOG.zh.md).
 
-## [1.2.5] - 2026-11-26
+## [1.2.5] - 2026-11-27
 
 ### Added
 

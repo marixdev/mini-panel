@@ -337,16 +337,16 @@
   }
   /* Buttons: one filled primary per screen, an outlined secondary, and a red one kept for what removes or turns off something. */
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:bg-primary/85 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
   }
   .btn-secondary {
-    @apply border-border bg-card text-foreground hover:bg-accent hover:border-muted-foreground/30 focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
+    @apply border-border bg-card text-foreground hover:bg-accent hover:border-muted-foreground/30 focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
   }
   .btn-danger {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive focus-visible:ring-offset-background inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive focus-visible:ring-offset-background inline-flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
   }
   .btn-sm {
-    @apply border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
+    @apply border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring inline-flex min-h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none;
   }
   /* Alerts carry a coloured bar on the left and their words, so the kind is never told by colour alone. */
   .alert-error {
